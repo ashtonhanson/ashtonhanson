@@ -162,8 +162,15 @@ function easeInOutCubic(t: number) {
 /**
  * Native web component: AI / media gallery with hover-to-focus glide
  * and continuous magnification states.
+ *
+ * HTMLElement is browser-only — use a stub base during SSR/prerender.
  */
-export class AhMediaCarousel extends HTMLElement {
+const ElementBase =
+  typeof HTMLElement !== "undefined"
+    ? HTMLElement
+    : (class {} as unknown as typeof HTMLElement);
+
+export class AhMediaCarousel extends ElementBase {
   static get observedAttributes() {
     return ["label"];
   }
