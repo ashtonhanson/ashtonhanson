@@ -2,15 +2,17 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { TitleShine } from "@/components/TitleShine";
-import { TravelSubtitle } from "@/components/TravelSubtitle";
+import {
+  TravelSubtitle,
+  type TitleMotion,
+} from "@/components/TravelSubtitle";
 
 /**
  * Shared parallax title + copy stack used on every page section.
  *
  * Title sits above subtitle/body with reserved travel padding, then drifts
- * behind the copy on scroll. Once behind the subtext it gradually blurs.
- * Optional subtitle rides under the title on the same vertical parallax, while
- * panning horizontally (direction flipped via subtitleReverse).
+ * behind the copy on scroll. Motion is measured from a stable layout anchor
+ * and applied directly to the DOM to avoid scroll jitter.
  */
 export function ParallaxBlock({
   title,
@@ -31,11 +33,14 @@ export function ParallaxBlock({
   children: ReactNode;
   className?: string;
 }) {
+  const anchorRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLElement>(null);
-  const offsetRef = useRef(0);
-  const blurRef = useRef(0);
-  const [offset, setOffset] = useState(0);
-  const [blur, setBlur] = useState(0);
+  const staticSubRef = useRef<HTMLHeadingElement>(null);
+  const motionRef = useRef<TitleMotion>({
+    followY: 0,
+    extraBlur: 0,
+    opacityScale: 1,
+  });
   const [reduced, setReduced] = useState(false);
 
   useEffect(() => {
@@ -47,23 +52,43 @@ export function ParallaxBlock({
   }, []);
 
   useEffect(() => {
+    const titleEl = titleRef.current;
+    const staticSub = staticSubRef.current;
+    const hasSubtitle = Boolean(subtitle);
+
+    const apply = (y: number, blur: number, opacity: number) => {
+      const followY = y + (hasSubtitle ? 10 : 0);
+      motionRef.current.followY = followY;
+      motionRef.current.extraBlur = blur * 0.85;
+      motionRef.current.opacityScale = opacity;
+
+      if (titleEl) {
+        titleEl.style.transform = `translate3d(0, ${y.toFixed(2)}px, 0)`;
+        titleEl.style.filter = `blur(${blur.toFixed(2)}px)`;
+        titleEl.style.opacity = String(opacity);
+      }
+      if (staticSub) {
+        staticSub.style.transform = `translate3d(0, ${followY.toFixed(2)}px, 0)`;
+      }
+    };
+
     if (reduced) {
-      offsetRef.current = 0;
-      blurRef.current = 0;
-      setOffset(0);
-      setBlur(0);
+      apply(0, 0, 1);
       return;
     }
 
     let frame = 0;
+    let lastY = 0;
+    let lastBlur = 0;
+
     const update = () => {
       frame = 0;
-      const titleEl = titleRef.current;
-      if (!titleEl) return;
+      const anchor = anchorRef.current;
+      if (!anchor) return;
 
       const viewH = window.innerHeight || 1;
-      const rect = titleEl.getBoundingClientRect();
-      const naturalCenter = rect.top + rect.height / 2 - offsetRef.current;
+      const rect = anchor.getBoundingClientRect();
+      const naturalCenter = rect.top + rect.height / 2;
       const idealY = viewH * 0.25;
       const pastIdeal = idealY - naturalCenter;
       const next = Math.max(-24, Math.min(132, pastIdeal * 0.55));
@@ -75,17 +100,18 @@ export function ParallaxBlock({
         next <= blurStart
           ? 0
           : Math.min(blurMax, ((next - blurStart) / blurRange) * blurMax);
+      const nextOpacity =
+        nextBlur > 0.05 ? Math.max(0.42, 1 - nextBlur / 14) : 1;
 
       if (
-        Math.abs(next - offsetRef.current) < 0.25 &&
-        Math.abs(nextBlur - blurRef.current) < 0.08
+        Math.abs(next - lastY) < 0.15 &&
+        Math.abs(nextBlur - lastBlur) < 0.05
       ) {
         return;
       }
-      offsetRef.current = next;
-      blurRef.current = nextBlur;
-      setOffset(next);
-      setBlur(nextBlur);
+      lastY = next;
+      lastBlur = nextBlur;
+      apply(next, nextBlur, nextOpacity);
     };
 
     const onScroll = () => {
@@ -93,18 +119,18 @@ export function ParallaxBlock({
       frame = window.requestAnimationFrame(update);
     };
 
+    apply(0, 0, 1);
     update();
-    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true, capture: true });
     window.addEventListener("resize", onScroll);
     return () => {
-      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("scroll", onScroll, {
+        capture: true,
+      } as EventListenerOptions);
       window.removeEventListener("resize", onScroll);
       if (frame) window.cancelAnimationFrame(frame);
     };
-  }, [reduced]);
-
-  const titleOpacity = blur > 0.05 ? Math.max(0.42, 1 - blur / 14) : 1;
-  const followY = offset + (subtitle ? 10 : 0);
+  }, [reduced, subtitle]);
 
   return (
     <div className={`relative mx-auto max-w-3xl text-center ${className}`}>
@@ -118,29 +144,27 @@ export function ParallaxBlock({
         }`}
       >
         <div className="relative left-1/2 flex w-screen max-w-[100vw] -translate-x-1/2 flex-col items-center overflow-x-clip px-5">
-          <TitleShine
-            as={as}
-            ref={titleRef}
-            className="pointer-events-none select-none text-center font-display text-[clamp(2.6rem,10.5vw,6rem)] font-black uppercase leading-[0.9] tracking-[0.04em]"
-            style={{
-              transform: reduced ? undefined : `translate3d(0, ${offset}px, 0)`,
-              filter: blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : undefined,
-              opacity: blur > 0.05 ? titleOpacity : undefined,
-              willChange: reduced ? undefined : "transform, filter, opacity",
-              transition: "filter 120ms linear, opacity 120ms linear",
-            }}
-          >
-            {title}
-          </TitleShine>
+          <div ref={anchorRef} className="relative">
+            <TitleShine
+              as={as}
+              ref={titleRef}
+              className="pointer-events-none select-none text-center font-display text-[clamp(2.6rem,10.5vw,6rem)] font-black uppercase leading-[0.9] tracking-[0.04em]"
+              style={
+                reduced
+                  ? undefined
+                  : { willChange: "transform, filter, opacity" }
+              }
+            >
+              {title}
+            </TitleShine>
+          </div>
 
           {subtitle ? (
             subtitleTravel ? (
               <div className="absolute left-1/2 top-[calc(100%+0.35rem)] -translate-x-1/2">
                 <TravelSubtitle
                   reverse={subtitleReverse}
-                  followY={followY}
-                  extraBlur={blur * 0.85}
-                  opacityScale={titleOpacity}
+                  motionRef={motionRef}
                   className="pointer-events-none select-none"
                 >
                   {subtitle}
@@ -148,10 +172,9 @@ export function ParallaxBlock({
               </div>
             ) : (
               <h3
+                ref={staticSubRef}
                 className="pointer-events-none absolute left-1/2 top-[calc(100%+0.35rem)] w-max max-w-none -translate-x-1/2 select-none whitespace-pre-line text-center font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-tight tracking-[0.18em] text-foreground"
-                style={{
-                  transform: `translate3d(0, ${followY.toFixed(2)}px, 0)`,
-                }}
+                style={reduced ? undefined : { willChange: "transform" }}
               >
                 {subtitle}
               </h3>

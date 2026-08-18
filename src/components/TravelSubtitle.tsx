@@ -1,16 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState, type ElementType } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ElementType,
+  type MutableRefObject,
+} from "react";
+
+export type TitleMotion = {
+  followY: number;
+  extraBlur: number;
+  opacityScale: number;
+};
 
 type TravelSubtitleProps = {
   children: string;
   /** When true, pans right→left; when false, left→right. */
   reverse?: boolean;
-  /** Extra vertical offset (px) — used to ride under a parallax title. */
+  /** Shared motion from ParallaxBlock (vertical follow + blur/opacity). */
+  motionRef?: MutableRefObject<TitleMotion>;
+  /** Fallback vertical offset when motionRef is not provided. */
   followY?: number;
-  /** Extra blur (px) layered on top of the travel edge blur. */
   extraBlur?: number;
-  /** Multiplier for opacity (e.g. when title fades). */
   opacityScale?: number;
   as?: ElementType;
   className?: string;
@@ -18,12 +30,12 @@ type TravelSubtitleProps = {
 
 /**
  * Subtitle that pans horizontally with vertical scroll.
- * Short path near page center; fade in/out close to mid; slow drift.
- * `reverse` flips direction so consecutive labels can alternate.
+ * Writes transforms directly to the DOM to stay in sync with title parallax.
  */
 export function TravelSubtitle({
   children,
   reverse = false,
+  motionRef,
   followY = 0,
   extraBlur = 0,
   opacityScale = 1,
@@ -31,11 +43,9 @@ export function TravelSubtitle({
   className = "",
 }: TravelSubtitleProps) {
   const ref = useRef<HTMLElement>(null);
-  const travelRef = useRef(0);
-  const followYRef = useRef(followY);
-  followYRef.current = followY;
-  const [travel, setTravel] = useState(0);
-  const [span, setSpan] = useState(88);
+  const markerRef = useRef<HTMLSpanElement>(null);
+  const travelRef = useRef(0.5);
+  const spanRef = useRef(88);
   const [reduced, setReduced] = useState(false);
 
   useEffect(() => {
@@ -48,8 +58,7 @@ export function TravelSubtitle({
 
   useEffect(() => {
     const syncSpan = () => {
-      // Keep travel close to center — not the far edges of the screen
-      setSpan(Math.min(120, Math.max(72, window.innerWidth * 0.11)));
+      spanRef.current = Math.min(120, Math.max(72, window.innerWidth * 0.11));
     };
     syncSpan();
     window.addEventListener("resize", syncSpan);
@@ -57,30 +66,50 @@ export function TravelSubtitle({
   }, []);
 
   useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const paint = (travel: number) => {
+      const span = spanRef.current;
+      const motion = motionRef?.current;
+      const follow = motion?.followY ?? followY;
+      const xBlur = motion?.extraBlur ?? extraBlur;
+      const oScale = motion?.opacityScale ?? opacityScale;
+
+      const progress = reduced ? 0.5 : reverse ? 1 - travel : travel;
+      const slideX = -span + progress * span * 2;
+      const edge = reduced ? 0 : Math.abs(progress - 0.5) * 2;
+      const fade = edge * edge;
+      const blur = (reduced ? 0 : fade * 9) + xBlur;
+      const opacity = (reduced ? 1 : Math.max(0, 1 - fade * 1.05)) * oScale;
+
+      el.style.transform = `translate3d(${slideX.toFixed(2)}px, ${follow.toFixed(2)}px, 0)`;
+      el.style.filter = `blur(${blur.toFixed(2)}px)`;
+      el.style.opacity = String(opacity);
+    };
+
     if (reduced) {
       travelRef.current = 0.5;
-      setTravel(0.5);
+      paint(0.5);
       return;
     }
 
     let frame = 0;
     const update = () => {
       frame = 0;
-      const el = ref.current;
-      if (!el) return;
+      const marker = markerRef.current;
+      if (!marker) return;
 
       const viewH = window.innerHeight || 1;
-      const rect = el.getBoundingClientRect();
-      // Undo followY so progress stays tied to layout position.
-      const y = rect.top + rect.height / 2 - followYRef.current;
-      // Wide scroll window ⇒ slower horizontal drift per scroll amount
+      // Marker is untransformed — avoids measure/transform feedback.
+      const rect = marker.getBoundingClientRect();
+      const y = rect.top + rect.height / 2;
       const start = viewH * 1.35;
       const end = viewH * -0.45;
       const next = Math.max(0, Math.min(1, (start - y) / (start - end)));
-
-      if (Math.abs(next - travelRef.current) < 0.002) return;
       travelRef.current = next;
-      setTravel(next);
+      // Always paint so shared title motion (followY / blur) stays current.
+      paint(next);
     };
 
     const onScroll = () => {
@@ -88,6 +117,8 @@ export function TravelSubtitle({
       frame = window.requestAnimationFrame(update);
     };
 
+    el.style.willChange = "transform, filter, opacity";
+    paint(travelRef.current);
     update();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
@@ -96,32 +127,22 @@ export function TravelSubtitle({
       window.removeEventListener("resize", onScroll);
       if (frame) window.cancelAnimationFrame(frame);
     };
-  }, [reduced]);
-
-  // progress 0→1 ⇒ -span→+span (left→right). reverse ⇒ +span→-span.
-  const progress = reduced ? 0.5 : reverse ? 1 - travel : travel;
-  const slideX = -span + progress * span * 2;
-
-  // Fade/blur near the ends of this short center path (not far off-screen)
-  const edge = reduced ? 0 : Math.abs(progress - 0.5) * 2;
-  const fade = edge * edge;
-  const blur = (reduced ? 0 : fade * 9) + extraBlur;
-  const opacity =
-    (reduced ? 1 : Math.max(0, 1 - fade * 1.05)) * opacityScale;
+  }, [reduced, reverse, motionRef, followY, extraBlur, opacityScale]);
 
   return (
-    <Tag
-      ref={ref}
-      data-travel-reverse={reverse ? "1" : "0"}
-      className={`inline-block w-max max-w-none whitespace-pre-line text-center font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-tight tracking-[0.18em] text-foreground ${className}`.trim()}
-      style={{
-        transform: `translate3d(${slideX.toFixed(2)}px, ${followY.toFixed(2)}px, 0)`,
-        filter: blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : undefined,
-        opacity,
-        willChange: reduced ? undefined : "transform, filter, opacity",
-      }}
-    >
-      {children}
-    </Tag>
+    <span className="relative inline-block">
+      <span
+        ref={markerRef}
+        className="pointer-events-none absolute left-1/2 top-1/2 h-0 w-0"
+        aria-hidden
+      />
+      <Tag
+        ref={ref}
+        data-travel-reverse={reverse ? "1" : "0"}
+        className={`inline-block w-max max-w-none whitespace-pre-line text-center font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-tight tracking-[0.18em] text-foreground ${className}`.trim()}
+      >
+        {children}
+      </Tag>
+    </span>
   );
 }
