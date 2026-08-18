@@ -27,7 +27,6 @@ export default function LogosPage() {
               <ParallaxBlock
                 title={study.title}
                 subtitle={study.subtitle}
-                subtitleReverse={isReversed(travelOrder)}
               >
                 <div className="relative">
                   <BodyCopy className="relative z-10 mx-auto max-w-2xl font-display text-[clamp(1.125rem,2.15vw,1.275rem)] font-normal leading-[1.75] tracking-[0.01em] text-foreground">

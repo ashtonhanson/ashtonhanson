@@ -33,11 +33,7 @@ export function CaseStudy({ study, travelOrder = 0 }: CaseStudyProps) {
       id={study.id}
       className="relative px-5 py-[clamp(4.5rem,12vh,8rem)] md:px-8"
     >
-      <ParallaxBlock
-        title={study.title}
-        subtitle={study.subtitle}
-        subtitleReverse={isReversed(travelOrder)}
-      >
+      <ParallaxBlock title={study.title} subtitle={study.subtitle}>
         <BodyCopy className="mx-auto max-w-2xl font-display text-[clamp(1.125rem,2.15vw,1.275rem)] font-normal leading-[1.75] tracking-[0.01em] text-foreground">
           {study.body}
         </BodyCopy>
@@ -52,16 +48,12 @@ export function CaseStudy({ study, travelOrder = 0 }: CaseStudyProps) {
         ) : null}
       </ParallaxBlock>
 
-      {study.sections?.map((section, index) => {
-        const order = travelOrder + 1 + index;
-        const reverse = isReversed(order);
+      {study.sections?.map((section) => {
         return (
           <div key={section.heading} className="mt-16">
             <div className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 px-5">
               <div className="flex justify-center py-1">
-                <TravelSubtitle reverse={reverse} as="h4">
-                  {section.heading}
-                </TravelSubtitle>
+                <TravelSubtitle as="h4">{section.heading}</TravelSubtitle>
               </div>
             </div>
             {section.media?.length ? (

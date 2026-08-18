@@ -3,32 +3,27 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MobileBreakText } from "@/components/MobileBreakText";
 import { TitleShine } from "@/components/TitleShine";
-import {
-  TravelSubtitle,
-  type TitleMotion,
-} from "@/components/TravelSubtitle";
 
 /**
  * Shared parallax title + copy stack used on every page section.
  *
- * Title sits above subtitle/body with reserved travel padding, then drifts
- * behind the copy on scroll. Motion is measured from a stable layout anchor
- * and applied directly to the DOM to avoid scroll jitter.
+ * Title and subtitle share the same vertical parallax / blur behavior
+ * (no horizontal travel). Motion is measured from a stable layout anchor.
  */
 export function ParallaxBlock({
   title,
   subtitle,
-  subtitleTravel = true,
-  subtitleReverse = false,
+  subtitleTravel: _subtitleTravel = true,
+  subtitleReverse: _subtitleReverse = false,
   as = "h2",
   children,
   className = "",
 }: {
   title: string;
   subtitle?: string;
-  /** Horizontal scroll travel. Off for short pages like Contact. */
+  /** @deprecated Horizontal travel removed — kept for call-site compatibility. */
   subtitleTravel?: boolean;
-  /** Flip pan direction (right→left instead of left→right). */
+  /** @deprecated Horizontal travel removed — kept for call-site compatibility. */
   subtitleReverse?: boolean;
   as?: "h1" | "h2";
   children: ReactNode;
@@ -36,12 +31,7 @@ export function ParallaxBlock({
 }) {
   const anchorRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLElement>(null);
-  const staticSubRef = useRef<HTMLHeadingElement>(null);
-  const motionRef = useRef<TitleMotion>({
-    followY: 0,
-    extraBlur: 0,
-    opacityScale: 1,
-  });
+  const subtitleRef = useRef<HTMLHeadingElement>(null);
   const [reduced, setReduced] = useState(false);
 
   useEffect(() => {
@@ -54,22 +44,20 @@ export function ParallaxBlock({
 
   useEffect(() => {
     const titleEl = titleRef.current;
-    const staticSub = staticSubRef.current;
+    const subtitleEl = subtitleRef.current;
     const hasSubtitle = Boolean(subtitle);
 
     const apply = (y: number, blur: number, opacity: number) => {
-      const followY = y + (hasSubtitle ? 10 : 0);
-      motionRef.current.followY = followY;
-      motionRef.current.extraBlur = blur * 0.85;
-      motionRef.current.opacityScale = opacity;
-
       if (titleEl) {
         titleEl.style.transform = `translate3d(0, ${y.toFixed(2)}px, 0)`;
         titleEl.style.filter = `blur(${blur.toFixed(2)}px)`;
         titleEl.style.opacity = String(opacity);
       }
-      if (staticSub) {
-        staticSub.style.transform = `translate3d(0, ${followY.toFixed(2)}px, 0)`;
+      if (subtitleEl) {
+        const followY = y + (hasSubtitle ? 10 : 0);
+        subtitleEl.style.transform = `translate3d(0, ${followY.toFixed(2)}px, 0)`;
+        subtitleEl.style.filter = `blur(${(blur * 0.85).toFixed(2)}px)`;
+        subtitleEl.style.opacity = String(opacity);
       }
     };
 
@@ -137,11 +125,9 @@ export function ParallaxBlock({
     <div className={`relative mx-auto max-w-3xl text-center ${className}`}>
       <div
         className={`relative z-0 flex justify-center ${
-          subtitle && !subtitleTravel
-            ? "items-center pb-[clamp(1.75rem,4vh,2.75rem)] pt-[clamp(0.5rem,1.5vh,1rem)]"
-            : subtitle
-              ? "min-h-[clamp(6.5rem,20vh,11rem)] items-end pb-[clamp(3.5rem,9vh,5.25rem)] pt-[clamp(0.25rem,1.5vh,1rem)]"
-              : "min-h-[clamp(4.75rem,17vh,9rem)] items-end pb-[clamp(2.25rem,6.5vh,3.75rem)] pt-[clamp(0.25rem,1.5vh,1rem)]"
+          subtitle
+            ? "min-h-[clamp(6.5rem,20vh,11rem)] items-end pb-[clamp(3.5rem,9vh,5.25rem)] pt-[clamp(0.25rem,1.5vh,1rem)]"
+            : "min-h-[clamp(4.75rem,17vh,9rem)] items-end pb-[clamp(2.25rem,6.5vh,3.75rem)] pt-[clamp(0.25rem,1.5vh,1rem)]"
         }`}
       >
         <div className="relative left-1/2 flex w-screen max-w-[100vw] -translate-x-1/2 flex-col items-center overflow-x-clip px-5">
@@ -161,25 +147,17 @@ export function ParallaxBlock({
           </div>
 
           {subtitle ? (
-            subtitleTravel ? (
-              <div className="absolute left-1/2 top-[calc(100%+0.35rem)] -translate-x-1/2">
-                <TravelSubtitle
-                  reverse={subtitleReverse}
-                  motionRef={motionRef}
-                  className="pointer-events-none select-none"
-                >
-                  {subtitle}
-                </TravelSubtitle>
-              </div>
-            ) : (
-              <h3
-                ref={staticSubRef}
-                className="pointer-events-none absolute left-1/2 top-[calc(100%+0.35rem)] w-max max-w-none -translate-x-1/2 select-none text-center font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-tight tracking-[0.18em] text-foreground"
-                style={reduced ? undefined : { willChange: "transform" }}
-              >
-                <MobileBreakText text={subtitle} />
-              </h3>
-            )
+            <h3
+              ref={subtitleRef}
+              className="pointer-events-none absolute left-1/2 top-[calc(100%+0.35rem)] w-max max-w-none -translate-x-1/2 select-none text-center font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-tight tracking-[0.18em] text-foreground"
+              style={
+                reduced
+                  ? undefined
+                  : { willChange: "transform, filter, opacity" }
+              }
+            >
+              <MobileBreakText text={subtitle} />
+            </h3>
           ) : null}
         </div>
       </div>
