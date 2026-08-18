@@ -7,6 +7,7 @@ import {
   type ElementType,
   type MutableRefObject,
 } from "react";
+import { MobileBreakText } from "@/components/MobileBreakText";
 
 export type TitleMotion = {
   followY: number;
@@ -139,9 +140,9 @@ export function TravelSubtitle({
       <Tag
         ref={ref}
         data-travel-reverse={reverse ? "1" : "0"}
-        className={`inline-block w-max max-w-none whitespace-pre-line text-center font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-tight tracking-[0.18em] text-foreground ${className}`.trim()}
+        className={`inline-block w-max max-w-none text-center font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-tight tracking-[0.18em] text-foreground ${className}`.trim()}
       >
-        {children}
+        <MobileBreakText text={children} />
       </Tag>
     </span>
   );
