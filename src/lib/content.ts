@@ -150,6 +150,11 @@ export const brandingCases: CaseStudy[] = [
         src: "/branding/wagyu-yume/side-door.png",
         alt: "Wagyu Yume food truck — side door wrap",
       },
+      {
+        src: "/branding/wagyu-yume/food-truck.mp4",
+        alt: "Wagyu Yume food truck video",
+        type: "video",
+      },
     ],
   },
   {
@@ -159,12 +164,28 @@ export const brandingCases: CaseStudy[] = [
     body: "This client was requested a logo that they could use for their dog training business. They were seeking something professional that would depict a solid, dependable organization that people could trust. Red was considered as the main color in efforts to convey a serious yet professional presence. The client was extremely happy with the final result. Now they have become a very popular dog training business in town with a 5 star rating and over 211 positive reviews.",
     media: [
       {
+        src: "/branding/red-rover/sketch.jpg",
+        alt: "Red Rover logo sketch",
+      },
+      {
         src: "/branding/red-rover/logo.jpg",
         alt: "Red Rover logo",
       },
       {
-        src: "/branding/red-rover/social.mp4",
-        alt: "Red Rover social media ad",
+        src: "/branding/red-rover/shirt.jpg",
+        alt: "Red Rover branded shirt",
+      },
+      {
+        src: "/branding/red-rover/ad.jpg",
+        alt: "Red Rover advertisement",
+      },
+      {
+        src: "/branding/red-rover/facebook.png",
+        alt: "Red Rover Facebook graphic",
+      },
+      {
+        src: "/branding/red-rover/video.mp4",
+        alt: "Red Rover social media video",
         type: "video",
       },
     ],
@@ -185,7 +206,27 @@ export const adCases: CaseStudy[] = [
     media: [
       {
         src: "/ads/ternium/01.jpg",
-        alt: "Ternium ad design",
+        alt: "Ternium ad design 01",
+      },
+      {
+        src: "/ads/ternium/02.jpg",
+        alt: "Ternium ad design 02",
+      },
+      {
+        src: "/ads/ternium/03.jpg",
+        alt: "Ternium ad design 03",
+      },
+      {
+        src: "/ads/ternium/04.jpg",
+        alt: "Ternium ad design 04",
+      },
+      {
+        src: "/ads/ternium/05.jpg",
+        alt: "Ternium ad design 05",
+      },
+      {
+        src: "/ads/ternium/06.png",
+        alt: "Ternium ad design 06",
       },
     ],
   },
@@ -197,7 +238,31 @@ export const adCases: CaseStudy[] = [
     media: [
       {
         src: "/ads/reaux-fitness/01.jpg",
-        alt: "Reaux Fitness ad design",
+        alt: "Reaux Fitness ad design 01",
+      },
+      {
+        src: "/ads/reaux-fitness/02.jpg",
+        alt: "Reaux Fitness ad design 02",
+      },
+      {
+        src: "/ads/reaux-fitness/03.jpg",
+        alt: "Reaux Fitness ad design 03",
+      },
+      {
+        src: "/ads/reaux-fitness/04.jpg",
+        alt: "Reaux Fitness ad design 04",
+      },
+      {
+        src: "/ads/reaux-fitness/05.jpg",
+        alt: "Reaux Fitness ad design 05",
+      },
+      {
+        src: "/ads/reaux-fitness/06.jpg",
+        alt: "Reaux Fitness ad design 06",
+      },
+      {
+        src: "/ads/reaux-fitness/07.jpg",
+        alt: "Reaux Fitness ad design 07",
       },
     ],
   },
@@ -209,7 +274,27 @@ export const adCases: CaseStudy[] = [
     media: [
       {
         src: "/ads/air-ref/01.jpg",
-        alt: "Air Ref ad design",
+        alt: "Air Ref ad design 01",
+      },
+      {
+        src: "/ads/air-ref/02.png",
+        alt: "Air Ref ad design 02",
+      },
+      {
+        src: "/ads/air-ref/03.png",
+        alt: "Air Ref ad design 03",
+      },
+      {
+        src: "/ads/air-ref/04.png",
+        alt: "Air Ref ad design 04",
+      },
+      {
+        src: "/ads/air-ref/05.png",
+        alt: "Air Ref ad design 05",
+      },
+      {
+        src: "/ads/air-ref/06.png",
+        alt: "Air Ref ad design 06",
       },
     ],
   },
@@ -226,7 +311,7 @@ export const logoCases: CaseStudy[] = [
     body: "A Norwegian tech start-up client seeking to establish a solid/clean visual for their branding. With an intent to establish a foundation of trust and in efforts to “fit in” with the hotel industry. Being that that is where the HUB Tablet will be utilized by hotel guests. The color foundations are warm grey, and orange. Being that this company is based out of Norway, the visual of the logo and the brand really seems to fit the vibe of the current Norwegian marketing culture.",
     media: [
       {
-        src: "/logos/hub-tablet.jpg",
+        src: "/logos/hub-tablet.jpeg",
         alt: "HUB Tablet logo",
       },
     ],
@@ -238,8 +323,68 @@ export const logoCases: CaseStudy[] = [
     body: "I was requested to design a logo that they could use for their dog training business. They were seeking something professional that would depict a solid, dependable organization that people could trust. Red was considered as the main color in efforts to convey a serious yet professional presence. The client was extremely happy with the final result. Now they have become a very popular dog training business in town with a 5 star rating and over 211 positive reviews.",
     media: [
       {
-        src: "/logos/red-rover.jpg",
+        src: "/logos/red-rover.jpeg",
         alt: "Red Rover logo",
+      },
+    ],
+  },
+  {
+    id: "nexgen",
+    title: "NEXGEN",
+    subtitle: "GAMING LLC",
+    body: "A bold gaming identity built around a metallic wordmark and a neon X emblem—designed to feel premium, competitive, and instantly recognizable.",
+    media: [
+      {
+        src: "/logos/nexgen.jpeg",
+        alt: "Nexgen Gaming logo",
+      },
+    ],
+  },
+  {
+    id: "mira",
+    title: "MIRA",
+    subtitle: "DIRECT PRIMARY CARE",
+    body: "A clean medical brand mark on brushed metal—calm, modern, and trustworthy for a direct primary care practice.",
+    media: [
+      {
+        src: "/logos/mira.jpeg",
+        alt: "Mira Direct Primary Care logo",
+      },
+    ],
+  },
+  {
+    id: "space-kase",
+    title: "SPACE KASE",
+    subtitle: "VISUALS",
+    body: "Playful rocket branding for a visuals studio—fun character energy with a sharp, professional type lockup.",
+    media: [
+      {
+        src: "/logos/space-kase.jpeg",
+        alt: "Space Kase Visuals logo",
+      },
+    ],
+  },
+  {
+    id: "designer-life",
+    title: "DESIGNER",
+    subtitle: "LIFE COACHING",
+    body: "A soft script wordmark with supporting stationery—personal and polished for life coaching brand materials.",
+    media: [
+      {
+        src: "/logos/designer-life.jpeg",
+        alt: "Designer Life Coaching logo",
+      },
+    ],
+  },
+  {
+    id: "3rd-coast",
+    title: "3RD COAST",
+    subtitle: "VETERAN-OWNED EXTERIOR SERVICES",
+    body: "An acquaintance was starting a veteran owned & operated turnkey exterior services business focused on: equipment rental/construction, fencing, pressure washing, small concrete driveway, pergola and patio deck building. They were seeking a clever yet professional vibe. 3rd Coast was used in the name because it is what Houston is now referred to as due to the Gulf of Mexico being in Galveston.",
+    media: [
+      {
+        src: "/logos/3rd-coast.jpeg",
+        alt: "3rd Coast logo",
       },
     ],
   },
@@ -250,7 +395,7 @@ export const logoCases: CaseStudy[] = [
     body: "This client was seeking something fun yet professional in efforts to imitate the direction of a currently popular Asian trend within the advertising market, which is a fun cartoonish illustrated branding style. The client has been very pleased with the logo and the vehicle wrap.",
     media: [
       {
-        src: "/logos/wagyu-yume.jpg",
+        src: "/logos/wagyu-yume.jpeg",
         alt: "Wagyu Yume logo",
       },
     ],
@@ -262,20 +407,8 @@ export const logoCases: CaseStudy[] = [
     body: "This business specializes in soy candles, soaps and scrubs and was looking for something that looked vintage—since they were planning on using mason jars as their candle containers. Ah, the warm scent seems to just pop up off the logo!",
     media: [
       {
-        src: "/logos/garrison-creek.jpg",
+        src: "/logos/garrison-creek.jpeg",
         alt: "Garrison Creek Candles logo",
-      },
-    ],
-  },
-  {
-    id: "3rd-coast",
-    title: "3RD COAST",
-    subtitle: "VETERAN-OWNED EXTERIOR SERVICES",
-    body: "An acquaintance was starting a veteran owned & operated turnkey exterior services business focused on: equipment rental/construction, fencing, pressure washing, small concrete driveway, pergola and patio deck building. They were seeking a clever yet professional vibe. 3rd Coast was used in the name because it is what Houston is now referred to as due to the Gulf of Mexico being in Galveston.",
-    media: [
-      {
-        src: "/logos/3rd-coast.jpg",
-        alt: "3rd Coast logo",
       },
     ],
   },

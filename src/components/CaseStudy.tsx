@@ -11,7 +11,7 @@ type CaseStudyProps = {
 };
 
 /** Even indexes: left→right. Odd indexes: right→left. */
-function isReversed(order: number) {
+export function isReversed(order: number) {
   return Math.abs(order) % 2 === 1;
 }
 

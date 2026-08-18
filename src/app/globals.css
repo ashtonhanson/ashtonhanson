@@ -128,6 +128,68 @@ body {
   }
 }
 
+/* Logo plates — rounded frame + thin traveling metallic edge (title-shine kin) */
+.logo-plate {
+  --logo-radius: 1.15rem;
+  position: relative;
+  border-radius: var(--logo-radius);
+  isolation: isolate;
+}
+
+.logo-plate-image {
+  position: relative;
+  z-index: 0;
+  border-radius: var(--logo-radius);
+}
+
+.logo-plate::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background-image: linear-gradient(
+    105deg,
+    #5a5a58 0%,
+    #9a9a98 18%,
+    #ececea 34%,
+    #7a7a78 50%,
+    #ececea 66%,
+    #9a9a98 82%,
+    #5a5a58 100%
+  );
+  background-size: 200% 100%;
+  background-position: 0% 50%;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .logo-plate::after {
+    animation: title-stroke-shine 8s linear infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-plate::after {
+    animation: none;
+    background-image: linear-gradient(
+      105deg,
+      #5a5a58 0%,
+      #8a8a88 50%,
+      #5a5a58 100%
+    );
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .title-shine::before {
     animation: none;

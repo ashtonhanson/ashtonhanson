@@ -8,6 +8,31 @@ type BodyCopyProps = {
 };
 
 /**
+ * Keep the final line from orphaning a single word by breaking
+ * before the second-to-last word on the last paragraph line.
+ */
+function pairLastTwoWords(text: string): string {
+  const lines = text.split("\n");
+  const lastIndex = lines.length - 1;
+  const last = lines[lastIndex] ?? "";
+  const parts = last.split(/(\s+)/);
+  const wordIndexes = parts
+    .map((part, index) => (/\S/.test(part) ? index : -1))
+    .filter((index) => index >= 0);
+
+  if (wordIndexes.length < 2) return text;
+
+  const secondLast = wordIndexes[wordIndexes.length - 2]!;
+  const wsIndex = secondLast - 1;
+  if (wsIndex >= 0 && /^\s+$/.test(parts[wsIndex] ?? "")) {
+    parts[wsIndex] = "\n";
+  }
+
+  lines[lastIndex] = parts.join("");
+  return lines.join("\n");
+}
+
+/**
  * Body paragraph with horizontal edge mask, plus scroll-linked
  * fade + blur as it nears the top or bottom of the viewport.
  */
@@ -72,10 +97,13 @@ export function BodyCopy({ children, className = "" }: BodyCopyProps) {
   // Don't go fully invisible — leave a soft floor near the edges
   const opacity = reduced ? 1 : 0.18 + edge * edge * 0.82;
 
+  const content =
+    typeof children === "string" ? pairLastTwoWords(children) : children;
+
   return (
     <p
       ref={ref}
-      className={`body-copy ${className}`.trim()}
+      className={`body-copy whitespace-pre-line ${className}`.trim()}
       style={{
         filter: blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : undefined,
         opacity,
@@ -83,7 +111,7 @@ export function BodyCopy({ children, className = "" }: BodyCopyProps) {
         transition: "filter 100ms linear, opacity 100ms linear",
       }}
     >
-      {children}
+      {content}
     </p>
   );
 }

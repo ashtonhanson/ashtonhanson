@@ -21,17 +21,56 @@ Wagyu Yume (wired):
   branding/wagyu-yume/daytime-front.jpg
   branding/wagyu-yume/truck-side.png
   branding/wagyu-yume/side-door.png
+  branding/wagyu-yume/food-truck.mp4
   logos/wagyu-yume.jpg
 
-Still expected (drop files, then tell the agent to wire — or use these paths):
-  branding/red-rover/...
-  ads/ternium/...
-  ads/reaux-fitness/...
-  ads/air-ref/...
-  logos/hub-tablet.jpg
+Red Rover (wired):
+  branding/red-rover/sketch.jpg
+  branding/red-rover/logo.jpg
+  branding/red-rover/shirt.jpg
+  branding/red-rover/ad.jpg
+  branding/red-rover/facebook.png
+  branding/red-rover/video.mp4
   logos/red-rover.jpg
-  logos/garrison-creek.jpg
-  logos/3rd-coast.jpg
+
+Still expected (drop files, then tell the agent to wire — or use these paths):
+  (none for logos — wired below)
+
+Ternium (wired):
+  ads/ternium/01.jpg
+  ads/ternium/02.jpg
+  ads/ternium/03.jpg
+  ads/ternium/04.jpg
+  ads/ternium/05.jpg
+  ads/ternium/06.png
+
+Reaux Fitness (wired):
+  ads/reaux-fitness/01.jpg
+  ads/reaux-fitness/02.jpg
+  ads/reaux-fitness/03.jpg
+  ads/reaux-fitness/04.jpg
+  ads/reaux-fitness/05.jpg
+  ads/reaux-fitness/06.jpg
+  ads/reaux-fitness/07.jpg
+
+Air Ref (wired):
+  ads/air-ref/01.jpg
+  ads/air-ref/02.png
+  ads/air-ref/03.png
+  ads/air-ref/04.png
+  ads/air-ref/05.png
+  ads/air-ref/06.png
+
+Logos (wired — static plates, not carousel):
+  logos/hub-tablet.jpeg
+  logos/red-rover.jpeg
+  logos/nexgen.jpeg
+  logos/mira.jpeg
+  logos/space-kase.jpeg
+  logos/designer-life.jpeg
+  logos/3rd-coast.jpeg
+  logos/wagyu-yume.jpeg
+  logos/garrison-creek.jpeg
 
 Tips:
   - Prefer lowercase, hyphenated folder/file names (no spaces or #).
