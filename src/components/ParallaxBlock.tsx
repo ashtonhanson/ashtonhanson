@@ -148,7 +148,7 @@ export function ParallaxBlock({
               </div>
             ) : (
               <h3
-                className="pointer-events-none absolute left-1/2 top-[calc(100%+0.35rem)] w-max max-w-none -translate-x-1/2 select-none whitespace-nowrap font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-tight tracking-[0.18em] text-foreground"
+                className="pointer-events-none absolute left-1/2 top-[calc(100%+0.35rem)] w-max max-w-none -translate-x-1/2 select-none whitespace-pre-line text-center font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-tight tracking-[0.18em] text-foreground"
                 style={{
                   transform: `translate3d(0, ${followY.toFixed(2)}px, 0)`,
                 }}

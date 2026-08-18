@@ -80,7 +80,7 @@ export const brandingCases: CaseStudy[] = [
   {
     id: "hub-tablet",
     title: "HUB TABLET",
-    subtitle: "NORWEGIAN TECH START-UP",
+    subtitle: "NORWEGIAN\nTECH START-UP",
     body: "In designing this brand I wanted to create something as clean as possible without the use of unnecessary graphics, while at the same time creating a solid visually appealing brand. The client is seeking to stand out as modern, yet classy, being that this piece of tech will be for the hotel industry guest experience. So far we have two hotel branches on board: Smart Hotel and Comfort Xpress, with beta testing and we have also gotten a grant from “Innovasjon Norge”, a Norwegian Federal Government Grant institution. This is a fun piece of work in progress!",
     sections: [
       {
@@ -101,7 +101,7 @@ export const brandingCases: CaseStudy[] = [
         ],
       },
       {
-        heading: "REVISED HUB TABLET LAYOUT",
+        heading: "REVISED\nHUB TABLET LAYOUT",
         media: [
           {
             src: "/branding/hub-tablet/new-layout/pre-comp.mov",
@@ -160,7 +160,7 @@ export const brandingCases: CaseStudy[] = [
   {
     id: "red-rover",
     title: "RED ROVER",
-    subtitle: "DOG OBEDIENCE TRAINING",
+    subtitle: "DOG OBEDIENCE\nTRAINING",
     body: "This client was requested a logo that they could use for their dog training business. They were seeking something professional that would depict a solid, dependable organization that people could trust. Red was considered as the main color in efforts to convey a serious yet professional presence. The client was extremely happy with the final result. Now they have become a very popular dog training business in town with a 5 star rating and over 211 positive reviews.",
     media: [
       {
@@ -307,7 +307,7 @@ export const logoCases: CaseStudy[] = [
   {
     id: "hub-tablet",
     title: "HUB TABLET",
-    subtitle: "NORWEGIAN TECH START-UP",
+    subtitle: "NORWEGIAN\nTECH START-UP",
     body: "A Norwegian tech start-up client seeking to establish a solid/clean visual for their branding. With an intent to establish a foundation of trust and in efforts to “fit in” with the hotel industry. Being that that is where the HUB Tablet will be utilized by hotel guests. The color foundations are warm grey, and orange. Being that this company is based out of Norway, the visual of the logo and the brand really seems to fit the vibe of the current Norwegian marketing culture.",
     media: [
       {
@@ -319,7 +319,7 @@ export const logoCases: CaseStudy[] = [
   {
     id: "red-rover",
     title: "RED ROVER",
-    subtitle: "DOG OBEDIENCE TRAINING",
+    subtitle: "DOG OBEDIENCE\nTRAINING",
     body: "I was requested to design a logo that they could use for their dog training business. They were seeking something professional that would depict a solid, dependable organization that people could trust. Red was considered as the main color in efforts to convey a serious yet professional presence. The client was extremely happy with the final result. Now they have become a very popular dog training business in town with a 5 star rating and over 211 positive reviews.",
     media: [
       {
@@ -379,7 +379,7 @@ export const logoCases: CaseStudy[] = [
   {
     id: "3rd-coast",
     title: "3RD COAST",
-    subtitle: "VETERAN-OWNED EXTERIOR SERVICES",
+    subtitle: "VETERAN-OWNED\nEXTERIOR SERVICES",
     body: "An acquaintance was starting a veteran owned & operated turnkey exterior services business focused on: equipment rental/construction, fencing, pressure washing, small concrete driveway, pergola and patio deck building. They were seeking a clever yet professional vibe. 3rd Coast was used in the name because it is what Houston is now referred to as due to the Gulf of Mexico being in Galveston.",
     media: [
       {
@@ -403,7 +403,7 @@ export const logoCases: CaseStudy[] = [
   {
     id: "garrison-creek",
     title: "GARRISON CREEK CANDELS",
-    subtitle: "SOY CANDLES, SOAPS & SCRUBS",
+    subtitle: "SOY CANDLES,\nSOAPS & SCRUBS",
     body: "This business specializes in soy candles, soaps and scrubs and was looking for something that looked vintage—since they were planning on using mason jars as their candle containers. Ah, the warm scent seems to just pop up off the logo!",
     media: [
       {

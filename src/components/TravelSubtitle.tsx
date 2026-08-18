@@ -113,7 +113,7 @@ export function TravelSubtitle({
     <Tag
       ref={ref}
       data-travel-reverse={reverse ? "1" : "0"}
-      className={`inline-block w-max max-w-none whitespace-nowrap font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-tight tracking-[0.18em] text-foreground ${className}`.trim()}
+      className={`inline-block w-max max-w-none whitespace-pre-line text-center font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-tight tracking-[0.18em] text-foreground ${className}`.trim()}
       style={{
         transform: `translate3d(${slideX.toFixed(2)}px, ${followY.toFixed(2)}px, 0)`,
         filter: blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : undefined,
