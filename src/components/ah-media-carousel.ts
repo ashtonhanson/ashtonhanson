@@ -4,12 +4,15 @@ export type CarouselMediaItem = {
   type?: "image" | "video";
 };
 
+export type GalleryOpenDetail = CarouselMediaItem & { index: number };
+
 const SCALE_MIN = 0.9;
 const SCALE_MAX = 1.08;
 const OPACITY_MIN = 0.5;
 const OPACITY_MAX = 1;
-const BLUR_MAX = 4; // px — fully off-focus slides
-const BLUR_MIN = 0;
+const BLUR_MAX = 4;
+const AUTO_SPEED = 0.28; // px per frame — slow continuous drift
+const USER_PAUSE_MS = 4200;
 
 const STYLES = /* css */ `
 :host {
@@ -159,17 +162,14 @@ function easeInOutCubic(t: number) {
   return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
 }
 
-/**
- * Native web component: AI / media gallery with hover-to-focus glide
- * and continuous magnification states.
- *
- * HTMLElement is browser-only — use a stub base during SSR/prerender.
- */
 const ElementBase =
   typeof HTMLElement !== "undefined"
     ? HTMLElement
     : (class {} as unknown as typeof HTMLElement);
 
+/**
+ * Native gallery: hover focus, slow auto-scroll, click-to-lightbox event.
+ */
 export class AhMediaCarousel extends ElementBase {
   static get observedAttributes() {
     return ["label"];
@@ -182,6 +182,13 @@ export class AhMediaCarousel extends ElementBase {
   #hoverTimer: number | null = null;
   #scrollRaf: number | null = null;
   #scrollFrame: number | null = null;
+  #autoRaf: number | null = null;
+  #autoDir = 1;
+  #autoPaused = false;
+  #lightboxOpen = false;
+  #hoverPaused = false;
+  #userPaused = false;
+  #userPauseTimer: number | null = null;
   #mq: MediaQueryList | null = null;
   #root!: ShadowRoot;
   #track!: HTMLDivElement;
@@ -202,8 +209,20 @@ export class AhMediaCarousel extends ElementBase {
     this.#items = Array.isArray(value) ? value : [];
     this.#targetIndex = 0;
     this.#active = 0;
+    this.#autoDir = 1;
     this.#render();
     this.#scheduleFocus(true);
+    this.#restartAutoplay();
+  }
+
+  pauseAutoplay() {
+    this.#lightboxOpen = true;
+    this.#syncAutoPause();
+  }
+
+  resumeAutoplay() {
+    this.#lightboxOpen = false;
+    this.#syncAutoPause();
   }
 
   connectedCallback() {
@@ -213,13 +232,16 @@ export class AhMediaCarousel extends ElementBase {
     window.addEventListener("resize", this.#onResize);
     this.#render();
     this.#scheduleFocus(true);
+    this.#restartAutoplay();
   }
 
   disconnectedCallback() {
     this.#mq?.removeEventListener("change", this.#onReducedChange);
     window.removeEventListener("resize", this.#onResize);
     this.#track?.removeEventListener("scroll", this.#onScroll);
+    this.#stopAutoplay();
     if (this.#hoverTimer) window.clearTimeout(this.#hoverTimer);
+    if (this.#userPauseTimer) window.clearTimeout(this.#userPauseTimer);
     if (this.#scrollRaf) window.cancelAnimationFrame(this.#scrollRaf);
     if (this.#scrollFrame) window.cancelAnimationFrame(this.#scrollFrame);
   }
@@ -233,6 +255,7 @@ export class AhMediaCarousel extends ElementBase {
 
   #onReducedChange = (event: MediaQueryListEvent) => {
     this.#reduced = event.matches;
+    this.#restartAutoplay();
   };
 
   #onResize = () => {
@@ -249,6 +272,64 @@ export class AhMediaCarousel extends ElementBase {
 
   #label() {
     return this.getAttribute("label") || "Gallery";
+  }
+
+  #syncAutoPause() {
+    this.#autoPaused =
+      this.#reduced ||
+      this.#lightboxOpen ||
+      this.#hoverPaused ||
+      this.#userPaused ||
+      this.#items.length < 2 ||
+      Boolean(this.#scrollRaf);
+  }
+
+  #stopAutoplay() {
+    if (this.#autoRaf) {
+      window.cancelAnimationFrame(this.#autoRaf);
+      this.#autoRaf = null;
+    }
+  }
+
+  #restartAutoplay() {
+    this.#stopAutoplay();
+    this.#syncAutoPause();
+    if (this.#reduced || this.#items.length < 2) return;
+
+    const tick = () => {
+      this.#autoRaf = window.requestAnimationFrame(tick);
+      this.#syncAutoPause();
+      if (this.#autoPaused || !this.#track) return;
+
+      const maxLeft = Math.max(
+        0,
+        this.#track.scrollWidth - this.#track.clientWidth,
+      );
+      if (maxLeft < 1) return;
+
+      let next = this.#track.scrollLeft + this.#autoDir * AUTO_SPEED;
+      if (next >= maxLeft) {
+        next = maxLeft;
+        this.#autoDir = -1;
+      } else if (next <= 0) {
+        next = 0;
+        this.#autoDir = 1;
+      }
+      this.#track.scrollLeft = next;
+    };
+
+    this.#autoRaf = window.requestAnimationFrame(tick);
+  }
+
+  #pauseForUser() {
+    if (this.#userPauseTimer) window.clearTimeout(this.#userPauseTimer);
+    this.#userPaused = true;
+    this.#syncAutoPause();
+    this.#userPauseTimer = window.setTimeout(() => {
+      this.#userPauseTimer = null;
+      this.#userPaused = false;
+      this.#syncAutoPause();
+    }, USER_PAUSE_MS);
   }
 
   #render() {
@@ -270,14 +351,42 @@ export class AhMediaCarousel extends ElementBase {
     this.#dots = this.#root.querySelector("[data-dots]")!;
     this.#prevBtn = this.#root.querySelector("[data-prev]")!;
     this.#nextBtn = this.#root.querySelector("[data-next]")!;
+    const wrap = this.#root.querySelector(".wrap")!;
 
     this.#track.addEventListener("scroll", this.#onScroll, { passive: true });
-    this.#prevBtn.addEventListener("click", () =>
-      this.#goTo(Math.max(0, this.#active - 1)),
+    this.#track.addEventListener(
+      "wheel",
+      () => this.#pauseForUser(),
+      { passive: true },
     );
-    this.#nextBtn.addEventListener("click", () =>
-      this.#goTo(Math.min(this.#items.length - 1, this.#active + 1)),
+    this.#track.addEventListener(
+      "touchstart",
+      () => this.#pauseForUser(),
+      { passive: true },
     );
+    this.#track.addEventListener(
+      "pointerdown",
+      () => this.#pauseForUser(),
+      { passive: true },
+    );
+
+    wrap.addEventListener("pointerenter", () => {
+      this.#hoverPaused = true;
+      this.#syncAutoPause();
+    });
+    wrap.addEventListener("pointerleave", () => {
+      this.#hoverPaused = false;
+      this.#syncAutoPause();
+    });
+
+    this.#prevBtn.addEventListener("click", () => {
+      this.#pauseForUser();
+      this.#goTo(Math.max(0, this.#active - 1));
+    });
+    this.#nextBtn.addEventListener("click", () => {
+      this.#pauseForUser();
+      this.#goTo(Math.min(this.#items.length - 1, this.#active + 1));
+    });
 
     this.#track.innerHTML = "";
     this.#dots.innerHTML = "";
@@ -289,7 +398,10 @@ export class AhMediaCarousel extends ElementBase {
       dot.className = "dot";
       dot.setAttribute("role", "tab");
       dot.setAttribute("aria-label", `Go to slide ${index + 1}`);
-      dot.addEventListener("click", () => this.#goTo(index));
+      dot.addEventListener("click", () => {
+        this.#pauseForUser();
+        this.#goTo(index);
+      });
       this.#dots.appendChild(dot);
     });
 
@@ -337,10 +449,24 @@ export class AhMediaCarousel extends ElementBase {
     slide.addEventListener("mouseenter", () => this.#onSlideHover(index));
     slide.addEventListener("mouseleave", () => this.#onSlideLeave());
     slide.addEventListener("click", () => {
+      this.#pauseForUser();
       if (index !== this.#active) this.#goTo(index);
+      this.#openItem(index);
     });
 
     return slide;
+  }
+
+  #openItem(index: number) {
+    const item = this.#items[index];
+    if (!item) return;
+    this.dispatchEvent(
+      new CustomEvent<GalleryOpenDetail>("ah-media-open", {
+        bubbles: true,
+        composed: true,
+        detail: { ...item, index },
+      }),
+    );
   }
 
   #scheduleFocus(centerActive = false) {
@@ -393,8 +519,6 @@ export class AhMediaCarousel extends ElementBase {
       const mid = rect.left + rect.width / 2;
       const dist = Math.abs(mid - rootMid);
       const amount = Math.max(0, Math.min(1, 1 - dist / falloff));
-      // Ease so near-center stays clear, and leaving focus softens gradually
-      // instead of dropping off a cliff.
       const focus = 1 - (1 - amount) * (1 - amount);
 
       const scale = SCALE_MIN + focus * (SCALE_MAX - SCALE_MIN);
@@ -403,7 +527,6 @@ export class AhMediaCarousel extends ElementBase {
 
       slide.style.transform = `scale(${scale.toFixed(4)})`;
       slide.style.opacity = String(opacity);
-      // Keep filter applied (even at 0) to avoid a compositing snap.
       slide.style.filter = `blur(${blur.toFixed(2)}px)`;
 
       if (amount > bestAmount) {
@@ -418,6 +541,7 @@ export class AhMediaCarousel extends ElementBase {
 
     if (best !== this.#active) {
       this.#active = best;
+      this.#targetIndex = best;
       this.#updateChrome();
       this.#syncPlayback();
     }
@@ -431,7 +555,7 @@ export class AhMediaCarousel extends ElementBase {
       slide.setAttribute("aria-hidden", active ? "false" : "true");
       if (!video) return;
       video.controls = active;
-      if (active) {
+      if (active && !this.#lightboxOpen) {
         void video.play().catch(() => undefined);
       } else {
         video.pause();
@@ -469,6 +593,7 @@ export class AhMediaCarousel extends ElementBase {
     if (Math.abs(delta) < 0.5) return;
 
     const startTime = performance.now();
+    this.#syncAutoPause();
     const step = (now: number) => {
       const t = Math.min(1, (now - startTime) / duration);
       this.#track.scrollLeft = start + delta * easeInOutCubic(t);
@@ -479,6 +604,7 @@ export class AhMediaCarousel extends ElementBase {
         this.#track.scrollLeft = end;
         this.#scrollRaf = null;
         this.#syncFocus();
+        this.#syncAutoPause();
       }
     };
     this.#scrollRaf = window.requestAnimationFrame(step);
@@ -487,7 +613,9 @@ export class AhMediaCarousel extends ElementBase {
   #goTo(index: number) {
     if (!this.#items.length) return;
     const clamped = Math.max(0, Math.min(this.#items.length - 1, index));
-    if (clamped === this.#targetIndex) return;
+    if (clamped === this.#targetIndex && Math.abs(this.#active - clamped) < 1) {
+      return;
+    }
 
     this.#targetIndex = clamped;
     this.#centerSlide(clamped, true);
@@ -520,16 +648,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v4": AhMediaCarousel;
+    "ah-media-gallery-v5": AhMediaCarousel;
   }
 }
 
-/** Tag bumped so HMR re-registers after shadow-DOM behavior changes. */
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v4")
+    !customElements.get("ah-media-gallery-v5")
   ) {
-    customElements.define("ah-media-gallery-v4", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v5", AhMediaCarousel);
   }
 }

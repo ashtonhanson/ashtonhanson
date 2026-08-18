@@ -128,12 +128,16 @@ body {
   }
 }
 
-/* Logo plates — rounded frame + thin traveling metallic edge (title-shine kin) */
+/* Logo plates — soft glowing frame + smooth traveling edge shine */
 .logo-plate {
   --logo-radius: 1.15rem;
   position: relative;
   border-radius: var(--logo-radius);
   isolation: isolate;
+  box-shadow:
+    0 0 18px rgb(232 223 196 / 0.1),
+    0 0 42px rgb(255 255 255 / 0.06),
+    0 0 72px rgb(232 223 196 / 0.04);
 }
 
 .logo-plate-image {
@@ -142,25 +146,37 @@ body {
   border-radius: var(--logo-radius);
 }
 
+.logo-plate::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 1px rgb(232 223 196 / 0.12),
+    0 0 28px rgb(232 223 196 / 0.14);
+  opacity: 0.85;
+}
+
 .logo-plate::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 1;
   border-radius: inherit;
-  padding: 1px;
+  padding: 1.5px;
   pointer-events: none;
   background-image: linear-gradient(
-    105deg,
-    #5a5a58 0%,
-    #9a9a98 18%,
-    #ececea 34%,
-    #7a7a78 50%,
-    #ececea 66%,
-    #9a9a98 82%,
-    #5a5a58 100%
+    115deg,
+    rgb(90 90 88 / 0.35) 0%,
+    rgb(160 160 156 / 0.55) 22%,
+    rgb(245 245 240 / 0.95) 42%,
+    rgb(170 170 166 / 0.5) 58%,
+    rgb(245 245 240 / 0.95) 78%,
+    rgb(90 90 88 / 0.35) 100%
   );
-  background-size: 200% 100%;
+  background-size: 260% 100%;
   background-position: 0% 50%;
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -170,11 +186,24 @@ body {
     linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
+  filter: drop-shadow(0 0 6px rgb(232 223 196 / 0.35));
+}
+
+@keyframes logo-edge-shine {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .logo-plate::after {
-    animation: title-stroke-shine 8s linear infinite;
+    animation: logo-edge-shine 16s ease-in-out infinite;
   }
 }
 
@@ -182,11 +211,12 @@ body {
   .logo-plate::after {
     animation: none;
     background-image: linear-gradient(
-      105deg,
-      #5a5a58 0%,
-      #8a8a88 50%,
-      #5a5a58 100%
+      115deg,
+      rgb(90 90 88 / 0.45) 0%,
+      rgb(180 180 176 / 0.55) 50%,
+      rgb(90 90 88 / 0.45) 100%
     );
+    filter: drop-shadow(0 0 4px rgb(232 223 196 / 0.2));
   }
 }
 
