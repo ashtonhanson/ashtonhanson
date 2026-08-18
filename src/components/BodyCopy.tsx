@@ -8,27 +8,17 @@ type BodyCopyProps = {
 };
 
 /**
- * Keep the final line from orphaning a single word by breaking
- * before the second-to-last word on the last paragraph line.
+ * Join only the final two words with a non-breaking space so a single
+ * trailing word can't wrap alone — without forcing an early line break.
  */
-function pairLastTwoWords(text: string): string {
+function bindLastTwoWords(text: string): string {
   const lines = text.split("\n");
   const lastIndex = lines.length - 1;
   const last = lines[lastIndex] ?? "";
-  const parts = last.split(/(\s+)/);
-  const wordIndexes = parts
-    .map((part, index) => (/\S/.test(part) ? index : -1))
-    .filter((index) => index >= 0);
-
-  if (wordIndexes.length < 2) return text;
-
-  const secondLast = wordIndexes[wordIndexes.length - 2]!;
-  const wsIndex = secondLast - 1;
-  if (wsIndex >= 0 && /^\s+$/.test(parts[wsIndex] ?? "")) {
-    parts[wsIndex] = "\n";
-  }
-
-  lines[lastIndex] = parts.join("");
+  const lastSpace = last.lastIndexOf(" ");
+  if (lastSpace === -1) return text;
+  lines[lastIndex] =
+    last.slice(0, lastSpace) + "\u00A0" + last.slice(lastSpace + 1);
   return lines.join("\n");
 }
 
@@ -98,12 +88,12 @@ export function BodyCopy({ children, className = "" }: BodyCopyProps) {
   const opacity = reduced ? 1 : 0.18 + edge * edge * 0.82;
 
   const content =
-    typeof children === "string" ? pairLastTwoWords(children) : children;
+    typeof children === "string" ? bindLastTwoWords(children) : children;
 
   return (
     <p
       ref={ref}
-      className={`body-copy whitespace-pre-line ${className}`.trim()}
+      className={`body-copy ${className}`.trim()}
       style={{
         filter: blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : undefined,
         opacity,
