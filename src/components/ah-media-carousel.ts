@@ -53,7 +53,7 @@ const STYLES = /* css */ `
     overflow: hidden;
     border: 1px solid #000;
     border-radius: 1.35rem;
-    background: #000;
+    background: transparent;
   }
 
   .track {
@@ -665,15 +665,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v7": AhMediaCarousel;
+    "ah-media-gallery-v8": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v7")
+    !customElements.get("ah-media-gallery-v8")
   ) {
-    customElements.define("ah-media-gallery-v7", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v8", AhMediaCarousel);
   }
 }
