@@ -30,6 +30,10 @@ const STYLES = /* css */ `
   width: 100%;
 }
 
+.viewport {
+  width: 100%;
+}
+
 .track {
   display: flex;
   gap: 0.75rem;
@@ -45,6 +49,13 @@ const STYLES = /* css */ `
 }
 
 @media (min-width: 768px) {
+  .viewport {
+    overflow: hidden;
+    border: 1px solid #000;
+    border-radius: 1.35rem;
+    background: #000;
+  }
+
   .track {
     gap: 1rem;
     padding: 2.5rem 18%;
@@ -338,7 +349,9 @@ export class AhMediaCarousel extends ElementBase {
     this.#root.innerHTML = `
       <style>${STYLES}</style>
       <div class="wrap" data-region role="region" aria-roledescription="carousel" aria-label="${escapeAttr(label)}">
-        <div class="track" part="track"></div>
+        <div class="viewport">
+          <div class="track" part="track"></div>
+        </div>
         <div class="controls" part="controls">
           <button type="button" class="nav-btn" data-prev aria-label="Previous">PREV</button>
           <div class="dots" role="tablist" aria-label="Slides" data-dots></div>
@@ -652,15 +665,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v6": AhMediaCarousel;
+    "ah-media-gallery-v7": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v6")
+    !customElements.get("ah-media-gallery-v7")
   ) {
-    customElements.define("ah-media-gallery-v6", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v7", AhMediaCarousel);
   }
 }
