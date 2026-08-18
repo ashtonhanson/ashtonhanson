@@ -423,14 +423,18 @@ export class AhMediaCarousel extends ElementBase {
       video.playsInline = true;
       video.muted = true;
       video.loop = true;
-      video.preload = "metadata";
+      video.preload = "auto";
       video.setAttribute("aria-label", item.alt);
       video.controls = index === 0;
-      const source = document.createElement("source");
-      source.src = item.src;
-      video.appendChild(source);
+      video.src = item.src;
+
       const markLoaded = () => video.classList.add("is-loaded");
       video.addEventListener("loadeddata", markLoaded);
+      video.addEventListener("canplay", markLoaded);
+      video.addEventListener("playing", markLoaded);
+      video.addEventListener("error", markLoaded);
+      // Kick decode so off-center slides aren't stuck invisible (opacity 0).
+      void video.play().then(markLoaded).catch(() => undefined);
       if (video.readyState >= 2) markLoaded();
       frame.appendChild(video);
     } else {
@@ -648,15 +652,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v5": AhMediaCarousel;
+    "ah-media-gallery-v6": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v5")
+    !customElements.get("ah-media-gallery-v6")
   ) {
-    customElements.define("ah-media-gallery-v5", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v6", AhMediaCarousel);
   }
 }

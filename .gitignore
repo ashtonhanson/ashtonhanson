@@ -39,7 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
-# Over GitHub's 100MB file limit — compress or use Git LFS before committing
+# Over GitHub's 100MB file limit — compress to H.264 MP4 under 100MB, then wire in content.ts
 /public/media/home/ai-animation/01-early-birds-intro.mov
 /public/media/home/ai-animation/03-man-wakes-up-on-moon.mov
 /public/media/home/ai-animation/04-manicure-for-strangers.mov
