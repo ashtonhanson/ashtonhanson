@@ -59,6 +59,17 @@ const STYLES = /* css */ `
   .track {
     gap: 1rem;
     padding: 2.5rem 18%;
+    cursor: grab;
+    touch-action: pan-y;
+  }
+
+  .track.is-dragging {
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  .track.is-dragging .slide {
+    cursor: grabbing;
   }
 }
 
@@ -178,6 +189,8 @@ const ElementBase =
     ? HTMLElement
     : (class {} as unknown as typeof HTMLElement);
 
+const DRAG_THRESHOLD = 6;
+
 /**
  * Native gallery: hover focus, slow auto-scroll, click-to-lightbox event.
  */
@@ -200,6 +213,11 @@ export class AhMediaCarousel extends ElementBase {
   #hoverPaused = false;
   #userPaused = false;
   #userPauseTimer: number | null = null;
+  #dragging = false;
+  #dragMoved = false;
+  #dragStartX = 0;
+  #dragStartScroll = 0;
+  #suppressClick = false;
   #mq: MediaQueryList | null = null;
   #root!: ShadowRoot;
   #track!: HTMLDivElement;
@@ -285,15 +303,75 @@ export class AhMediaCarousel extends ElementBase {
     return this.getAttribute("label") || "Gallery";
   }
 
+  #isDesktop() {
+    return window.matchMedia("(min-width: 768px)").matches;
+  }
+
   #syncAutoPause() {
     this.#autoPaused =
       this.#reduced ||
       this.#lightboxOpen ||
       this.#hoverPaused ||
       this.#userPaused ||
+      this.#dragging ||
       this.#items.length < 2 ||
       Boolean(this.#scrollRaf);
   }
+
+  #cancelScrollAnimation() {
+    if (!this.#scrollRaf) return;
+    window.cancelAnimationFrame(this.#scrollRaf);
+    this.#scrollRaf = null;
+    this.#syncAutoPause();
+  }
+
+  #onPointerDown = (event: PointerEvent) => {
+    if (!this.#isDesktop()) return;
+    if (event.pointerType === "touch") return;
+    if (event.button !== 0) return;
+    if (!this.#track || this.#items.length < 2) return;
+
+    this.#cancelScrollAnimation();
+    this.#dragging = true;
+    this.#dragMoved = false;
+    this.#suppressClick = false;
+    this.#dragStartX = event.clientX;
+    this.#dragStartScroll = this.#track.scrollLeft;
+    this.#track.setPointerCapture(event.pointerId);
+    this.#pauseForUser();
+    this.#syncAutoPause();
+  };
+
+  #onPointerMove = (event: PointerEvent) => {
+    if (!this.#dragging || !this.#track) return;
+    const dx = event.clientX - this.#dragStartX;
+    if (Math.abs(dx) > DRAG_THRESHOLD) {
+      if (!this.#dragMoved) {
+        this.#dragMoved = true;
+        this.#track.classList.add("is-dragging");
+      }
+      const maxLeft = Math.max(
+        0,
+        this.#track.scrollWidth - this.#track.clientWidth,
+      );
+      this.#track.scrollLeft = Math.max(
+        0,
+        Math.min(maxLeft, this.#dragStartScroll - dx),
+      );
+    }
+  };
+
+  #onPointerUp = (event: PointerEvent) => {
+    if (!this.#dragging) return;
+    this.#dragging = false;
+    this.#track?.classList.remove("is-dragging");
+    if (this.#track?.hasPointerCapture(event.pointerId)) {
+      this.#track.releasePointerCapture(event.pointerId);
+    }
+    if (this.#dragMoved) this.#suppressClick = true;
+    this.#dragMoved = false;
+    this.#syncAutoPause();
+  };
 
   #stopAutoplay() {
     if (this.#autoRaf) {
@@ -377,11 +455,11 @@ export class AhMediaCarousel extends ElementBase {
       () => this.#pauseForUser(),
       { passive: true },
     );
-    this.#track.addEventListener(
-      "pointerdown",
-      () => this.#pauseForUser(),
-      { passive: true },
-    );
+    this.#track.addEventListener("pointerdown", this.#onPointerDown);
+    this.#track.addEventListener("pointermove", this.#onPointerMove);
+    this.#track.addEventListener("pointerup", this.#onPointerUp);
+    this.#track.addEventListener("pointercancel", this.#onPointerUp);
+    this.#track.addEventListener("dragstart", (event) => event.preventDefault());
 
     wrap.addEventListener("pointerenter", () => {
       this.#hoverPaused = true;
@@ -465,7 +543,13 @@ export class AhMediaCarousel extends ElementBase {
 
     slide.addEventListener("mouseenter", () => this.#onSlideHover(index));
     slide.addEventListener("mouseleave", () => this.#onSlideLeave());
-    slide.addEventListener("click", () => {
+    slide.addEventListener("click", (event) => {
+      if (this.#suppressClick) {
+        this.#suppressClick = false;
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
       this.#pauseForUser();
       if (index !== this.#active) this.#goTo(index);
       this.#openItem(index);
@@ -639,10 +723,10 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   #onSlideHover(index: number) {
-    if (this.#reduced) return;
+    if (this.#reduced || this.#dragging) return;
     if (this.#hoverTimer) window.clearTimeout(this.#hoverTimer);
     this.#hoverTimer = window.setTimeout(() => {
-      if (index === this.#targetIndex) return;
+      if (this.#dragging || index === this.#targetIndex) return;
       this.#goTo(index);
     }, 240);
   }
@@ -665,15 +749,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v8": AhMediaCarousel;
+    "ah-media-gallery-v9": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v8")
+    !customElements.get("ah-media-gallery-v9")
   ) {
-    customElements.define("ah-media-gallery-v8", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v9", AhMediaCarousel);
   }
 }
