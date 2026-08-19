@@ -533,6 +533,14 @@ body {
   animation-delay: var(--orb-delay, 0s);
 }
 
+@media (max-width: 767px) {
+  .ambient-orb {
+    width: 160vw;
+    height: 160vw;
+    filter: blur(56px);
+  }
+}
+
 .ambient-orb--b {
   animation-name: ambient-orb-b;
 }
