@@ -6,7 +6,7 @@
   deltas vs the background stay the same (light→dark flip).
 */
 :root {
-  --background: #000000;
+  --background: #050304;
   --foreground: rgb(232 223 196 / 0.72);
   --ink: #d2d2d2;
   --muted: #5f5f60;
@@ -15,7 +15,10 @@
   --nav: #0c0c0d;
   --line: #1f1f20;
   --surface: #080809;
-  --orb-color: #6e6e6a;
+  --orb-color: #c4b8a4;
+  --velvet-deep: #0a0507;
+  --velvet-mid: #1a0c10;
+  --velvet-lit: #3a1c22;
 }
 
 @theme inline {
@@ -70,24 +73,58 @@ body {
   );
 }
 
-/* Titles — metallic shine travels through the letter fill (no outer glow) */
+/* Titles — velvet fill + thin metallic edge shine / rim */
 .title-shine {
   position: relative;
   display: inline-block;
   isolation: isolate;
+  color: transparent;
 }
 
-.title-shine-fill {
+/* Outer thin shine border (rim) */
+.title-shine::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  transform: scale(1.012);
+  transform-origin: center;
   background-image: linear-gradient(
     115deg,
-    #3f3f3d 0%,
-    #5a5a58 18%,
-    #a0a09c 32%,
-    #f5f5f0 42%,
-    #8a8a86 52%,
-    #f5f5f0 68%,
-    #5a5a58 82%,
-    #3f3f3d 100%
+    #6a6864 0%,
+    #c8c4ba 28%,
+    #f7f4ea 46%,
+    #a8a49c 62%,
+    #f7f4ea 78%,
+    #6a6864 100%
+  );
+  background-size: 260% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  opacity: 0.9;
+}
+
+/* Inner metallic edge (between rim and velvet fill) */
+.title-shine::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  transform: scale(1.005);
+  transform-origin: center;
+  background-image: linear-gradient(
+    115deg,
+    #4a4844 0%,
+    #9a968c 22%,
+    #efebe0 42%,
+    #7a766e 58%,
+    #efebe0 78%,
+    #4a4844 100%
   );
   background-size: 260% 100%;
   background-position: 0% 50%;
@@ -97,9 +134,54 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
+/* Velvet nap interior — no traveling metallic through the fill */
+.title-shine-fill {
+  position: relative;
+  z-index: 2;
+  background-color: #160a0e;
+  background-image:
+    radial-gradient(
+      ellipse 80% 55% at 28% 22%,
+      rgb(74 36 42 / 0.85) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 70% 60% at 78% 78%,
+      rgb(28 12 16 / 0.9) 0%,
+      transparent 55%
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgb(255 255 255 / 0.02) 0 1px,
+      transparent 1px 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgb(0 0 0 / 0.08) 0 1px,
+      transparent 1px 4px
+    ),
+    linear-gradient(
+      165deg,
+      #2a1418 0%,
+      #14080c 38%,
+      #3a1c22 62%,
+      #100608 100%
+    );
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
 @media (prefers-reduced-motion: no-preference) {
-  .title-shine-fill {
+  .title-shine::before,
+  .title-shine::after {
     animation: logo-edge-shine 16s ease-in-out infinite;
+  }
+
+  .title-shine::after {
+    animation-delay: -4s;
   }
 }
 
@@ -194,11 +276,20 @@ body {
     filter: drop-shadow(0 0 4px rgb(232 223 196 / 0.2));
   }
 
-  .title-shine-fill {
+  .title-shine::before,
+  .title-shine::after {
     animation: none;
-    background-image: none;
-    color: #3f3f3d;
-    -webkit-text-fill-color: #3f3f3d;
+    background-image: linear-gradient(
+      115deg,
+      #6a6864 0%,
+      #d0ccc2 50%,
+      #6a6864 100%
+    );
+    background-size: 100% 100%;
+  }
+
+  .title-shine-fill {
+    -webkit-text-fill-color: transparent;
   }
 }
 
@@ -472,115 +563,138 @@ body {
   }
 }
 
-/* —— whatimado-style ambient orbs (more visible) —— */
-.ambient-orbs {
-  inset: -10vh -10vw;
+/* —— Velvet field + single scroll-linked spotlight —— */
+.site-atmosphere {
+  inset: 0;
 }
 
-.ambient-orb {
+.velvet-field {
+  position: absolute;
+  inset: -8%;
+  background:
+    radial-gradient(
+      ellipse 48% 90% at 0% 45%,
+      rgb(72 28 36 / 0.55) 0%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 48% 90% at 100% 55%,
+      rgb(72 28 36 / 0.55) 0%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 80% 50% at 50% -5%,
+      rgb(48 20 28 / 0.4) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 70% 40% at 50% 110%,
+      rgb(36 14 20 / 0.5) 0%,
+      transparent 55%
+    ),
+    linear-gradient(
+      165deg,
+      #0c0608 0%,
+      #050304 42%,
+      #12080c 78%,
+      #050304 100%
+    );
+}
+
+.velvet-nap {
+  position: absolute;
+  inset: 0;
+  opacity: 0.42;
+  mix-blend-mode: overlay;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgb(255 255 255 / 0.03) 0 1px,
+      transparent 1px 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgb(0 0 0 / 0.12) 0 1px,
+      transparent 1px 5px
+    ),
+    radial-gradient(
+      circle at 20% 30%,
+      rgb(255 220 210 / 0.04),
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 80% 70%,
+      rgb(255 220 210 / 0.03),
+      transparent 45%
+    );
+}
+
+.spotlight {
   position: absolute;
   left: 50%;
-  top: 46%;
-  width: min(88vw, 920px);
-  height: min(88vw, 920px);
+  top: 42%;
+  width: min(140vw, 1600px);
+  height: min(140vw, 1600px);
   border-radius: 50%;
+  transform: translate(-50%, -50%);
   background: radial-gradient(
-    circle at 38% 32%,
-    color-mix(in srgb, var(--orb-color, #6e6e6a) 25%, #f2f2f0) 0%,
-    color-mix(in srgb, var(--orb-color, #6e6e6a) 35%, #d8d8d4) 8%,
-    color-mix(in srgb, var(--orb-color, #6e6e6a) 55%, #a8a8a4) 18%,
-    color-mix(in srgb, var(--orb-color, #6e6e6a) 72%, transparent) 36%,
-    color-mix(in srgb, var(--orb-color, #6e6e6a) 40%, transparent) 54%,
-    color-mix(in srgb, var(--orb-color, #6e6e6a) 16%, transparent) 70%,
-    transparent 84%
+    circle at 42% 36%,
+    rgb(255 246 230 / 0.34) 0%,
+    rgb(232 214 180 / 0.22) 12%,
+    rgb(180 150 120 / 0.14) 28%,
+    rgb(90 60 55 / 0.08) 46%,
+    transparent 68%
   );
   box-shadow:
-    0 0 28px color-mix(in srgb, var(--orb-color, #6e6e6a) 35%, #e8e8e6),
-    0 0 70px color-mix(in srgb, var(--orb-color, #6e6e6a) 45%, transparent),
-    0 0 130px color-mix(in srgb, var(--orb-color, #6e6e6a) 26%, transparent),
-    0 0 200px color-mix(in srgb, var(--orb-color, #6e6e6a) 12%, transparent);
-  filter: blur(48px);
-  opacity: var(--orb-opacity, 0.38);
-  will-change: transform, opacity;
-  animation: ambient-orb-a var(--orb-duration, 38s) ease-in-out infinite;
-  animation-delay: var(--orb-delay, 0s);
+    0 0 60px rgb(232 214 180 / 0.12),
+    0 0 140px rgb(180 120 100 / 0.1),
+    0 0 220px rgb(60 30 35 / 0.15);
+  filter: blur(40px);
+  opacity: 0.72;
+  will-change: transform;
 }
 
 @media (min-width: 1280px) {
-  .ambient-orb {
-    width: min(72vw, 1280px);
-    height: min(72vw, 1280px);
-    filter: blur(56px);
+  .spotlight {
+    width: min(120vw, 1800px);
+    height: min(120vw, 1800px);
+    filter: blur(48px);
   }
 }
 
 @media (min-width: 1536px) {
-  .ambient-orb {
-    width: min(68vw, 1480px);
-    height: min(68vw, 1480px);
+  .spotlight {
+    width: min(110vw, 2000px);
+    height: min(110vw, 2000px);
   }
 }
 
 @media (max-width: 767px) {
-  .ambient-orb {
-    width: 160vw;
-    height: 160vw;
-    filter: blur(56px);
+  .spotlight {
+    width: 180vw;
+    height: 180vw;
+    filter: blur(36px);
+    opacity: 0.78;
   }
-}
 
-.ambient-orb--b {
-  animation-name: ambient-orb-b;
-}
-
-@keyframes ambient-orb-a {
-  0%,
-  100% {
-    transform: translate(-50%, -50%) translate(0, 0) scale(1);
-    opacity: var(--orb-opacity, 0.4);
-  }
-  25% {
-    transform: translate(-50%, -50%) translate(28vw, -16vh) scale(0.86);
-    opacity: calc(var(--orb-opacity, 0.4) * 0.9);
-  }
-  50% {
-    transform: translate(-50%, -50%) translate(10vw, 22vh) scale(1.14);
-    opacity: calc(var(--orb-opacity, 0.4) * 1.12);
-  }
-  75% {
-    transform: translate(-50%, -50%) translate(-26vw, 8vh) scale(0.92);
-    opacity: calc(var(--orb-opacity, 0.4) * 0.95);
-  }
-}
-
-@keyframes ambient-orb-b {
-  0%,
-  100% {
-    transform: translate(-50%, -50%) translate(0, 0) scale(1.06);
-    opacity: var(--orb-opacity, 0.32);
-  }
-  25% {
-    transform: translate(-50%, -50%) translate(-28vw, 16vh) scale(1.16);
-    opacity: calc(var(--orb-opacity, 0.32) * 1.1);
-  }
-  50% {
-    transform: translate(-50%, -50%) translate(-10vw, -22vh) scale(0.84);
-    opacity: calc(var(--orb-opacity, 0.32) * 0.88);
-  }
-  75% {
-    transform: translate(-50%, -50%) translate(26vw, -8vh) scale(0.98);
-    opacity: calc(var(--orb-opacity, 0.32) * 0.96);
+  .velvet-field {
+    background:
+      radial-gradient(
+        ellipse 70% 55% at 50% 20%,
+        rgb(72 28 36 / 0.5) 0%,
+        transparent 65%
+      ),
+      radial-gradient(
+        ellipse 90% 70% at 50% 100%,
+        rgb(48 18 24 / 0.45) 0%,
+        transparent 60%
+      ),
+      linear-gradient(180deg, #0c0608 0%, #050304 50%, #12080c 100%);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ambient-orb {
-    animation: none !important;
-    opacity: calc(var(--orb-opacity, 0.4) * 0.9) !important;
-    transform: translate(-50%, -50%) translate(12vw, -4vh) scale(1) !important;
-  }
-
-  .ambient-orb--b {
-    transform: translate(-50%, -50%) translate(-18vw, 10vh) scale(1.05) !important;
+  .spotlight {
+    opacity: 0.58;
   }
 }

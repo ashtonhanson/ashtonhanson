@@ -1,33 +1,68 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
- * Large dual ambient orbs inspired by whatimado.com's orb theme —
- * soft radial glows that slowly drift across the viewport.
+ * Full-bleed velvet field + a single large spotlight that drifts
+ * slightly with scroll (reads like a soft stage light on nap fabric).
  */
 export function AmbientOrbs() {
-  const orbA = {
-    "--orb-opacity": "0.48",
-    "--orb-duration": "36s",
-    "--orb-delay": "0s",
-    "--orb-color": "#7a7a76",
-  } as CSSProperties;
+  const spotRef = useRef<HTMLSpanElement>(null);
+  const [reduced, setReduced] = useState(false);
 
-  const orbB = {
-    "--orb-opacity": "0.38",
-    "--orb-duration": "44s",
-    "--orb-delay": "-14s",
-    "--orb-color": "#656560",
-  } as CSSProperties;
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReduced(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
+    const el = spotRef.current;
+    if (!el) return;
+
+    if (reduced) {
+      el.style.transform = "translate(-50%, -50%) translate(0, -4vh)";
+      return;
+    }
+
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const maxScroll = Math.max(
+        1,
+        document.documentElement.scrollHeight - window.innerHeight,
+      );
+      const t = Math.min(1, Math.max(0, window.scrollY / maxScroll));
+      const x = Math.sin(t * Math.PI * 1.6) * 5.5;
+      const y = -6 + t * 14;
+      el.style.transform = `translate(-50%, -50%) translate(${x.toFixed(2)}vw, ${y.toFixed(2)}vh)`;
+    };
+
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [reduced]);
 
   return (
     <div
-      className="ambient-orbs pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      className="site-atmosphere pointer-events-none fixed inset-0 z-0 overflow-hidden"
       aria-hidden="true"
     >
-      <span className="ambient-orb ambient-orb--a" style={orbA} />
-      <span className="ambient-orb ambient-orb--b" style={orbB} />
+      <div className="velvet-field" />
+      <div className="velvet-nap" />
+      <span ref={spotRef} className="spotlight" />
     </div>
   );
 }
