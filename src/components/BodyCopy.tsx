@@ -23,8 +23,8 @@ function bindLastTwoWords(text: string): string {
 }
 
 /**
- * Body paragraph with horizontal edge mask, plus scroll-linked
- * fade + blur as it nears the top or bottom of the viewport.
+ * Body paragraph with scroll-linked fade + blur
+ * as it nears the top or bottom of the viewport.
  */
 export function BodyCopy({ children, className = "" }: BodyCopyProps) {
   const ref = useRef<HTMLParagraphElement>(null);

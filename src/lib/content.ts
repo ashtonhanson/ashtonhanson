@@ -23,8 +23,14 @@ export const navLinks = [
 
 export const home = {
   aboutTitle: "ABOUT ME",
-  about: [
-    "As a graphic designer of 10+ years with a strong focus on Illustration, Adobe Creative Suite, AI-assisted visual storytelling and Music Production, blending traditional design principles with emerging tools.",
+  aboutWord: "ABOUT",
+  meWord: "ME",
+  /** One complete straight line per entry (nowrap in the intro stage). */
+  aboutLines: [
+    "As a graphic designer of 10+ years",
+    "with a strong focus on Illustration, Adobe Creative Suite,",
+    "AI-assisted visual storytelling and Music Production,",
+    "blending traditional design principles with emerging tools.",
   ],
   recentWorkTitle: "RECENT WORK",
   seeMenuLines: ["SEE MENU", "FOR OTHER", "WORK."] as const,

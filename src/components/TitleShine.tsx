@@ -15,8 +15,8 @@ type TitleShineProps = {
 };
 
 /**
- * Velvet letter fill with a thin metallic edge shine + rim border.
- * Shine travels along the outline only — not through the interior.
+ * Title fill + FIXED viewport stage-light beam (no outline / no velvet texture).
+ * Shine comes from a fixed beam — letters catch it as they scroll through.
  */
 export const TitleShine = forwardRef<HTMLElement, TitleShineProps>(
   function TitleShine(
@@ -33,6 +33,11 @@ export const TitleShine = forwardRef<HTMLElement, TitleShineProps>(
         style={style}
       >
         <span className="title-shine-fill">{children}</span>
+        {label ? (
+          <span aria-hidden className="title-shine-beam">
+            {label}
+          </span>
+        ) : null}
       </Tag>
     );
   },

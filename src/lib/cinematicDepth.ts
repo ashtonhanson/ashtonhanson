@@ -1,0 +1,434 @@
+/**
+ * Cinematic Z-scroll tuning knobs for the home page.
+ * Adjust these to change how deep the void feels and how soft the gallery landing is.
+ */
+export const DEPTH = {
+  /** CSS perspective on the scene (px). Lower = more dramatic foreshortening. */
+  perspectivePx: 1400,
+  /** Perspective origin Y — slightly high so depth reads toward center stage. */
+  perspectiveOrigin: "50% 38%",
+
+  /** translateZ when a panel is deep in the void (approaching). */
+  voidZ: -380,
+  /** Scale when deep in the void. */
+  voidScale: 0.9,
+  /** Soft blur (px) when deep in the void. */
+  voidBlur: 3.5,
+
+  /** translateZ when a panel has passed focus and recedes. */
+  recedeZ: -260,
+  /** Scale when fully receded. */
+  recedeScale: 0.93,
+  /** Soft blur (px) when receded. */
+  recedeBlur: 2.5,
+
+  /**
+   * Soft-landing plateau around focus (progress units).
+   * Larger = longer “rest” at the AI gallery before phase-2 recession.
+   */
+  restHalfWidth: 0.1,
+
+  /** Viewport Y (0–1) where panels feel centered / at rest. */
+  focusYRatio: 0.42,
+
+  /** Mobile: dial back Z travel for readability + performance. */
+  mobileVoidZ: -220,
+  mobileRecedeZ: -140,
+} as const;
+
+/**
+ * Sticky ABOUT intro chapter — progress windows are 0→1 through the pin.
+ * Elements hand off one-by-one: previous blurs out as next blurs in.
+ * Each element rides a distinct Z-forward path, then vanishes.
+ * Units: x = vw, y = vh, z = px, scale = multiplier, rot = deg.
+ */
+export const ABOUT_INTRO = {
+  /**
+   * Pin height — enough scroll for sharp holds, still tight into RECENT WORK.
+   */
+  pinHeightVh: "175vh",
+  /** Whole sticky stage fades out as the sequence ends. */
+  stageFadeStart: 0.88,
+  stageFadeEnd: 1,
+
+  /** Blur (px) at fully hidden — enter/exit only, never during peak zoom. */
+  enterExitBlurPx: 4,
+  /** Fraction of each beat used for the blur handoff overlap. */
+  handoffRatio: 0.22,
+  /** Sequence fills nearly the whole pin — no long empty gap after body text. */
+  sequenceEnd: 0.9,
+
+  /**
+   * Shared / per-role peak zoom.
+   * Body starts smaller and surges past ABOUT’s peak before exit.
+   */
+  peakScale: 3.2,
+  peakZ: 450,
+  /** Body line zoom: starts small, ends much larger than ABOUT. */
+  bodyStartScale: 0.42,
+  bodyPeakScale: 8.5,
+  bodyStartZ: -180,
+  bodyPeakZ: 560,
+} as const;
+
+export type PathPose = {
+  x: number;
+  y: number;
+  z: number;
+  scale: number;
+  rot: number;
+};
+
+export type BezierPath = {
+  p0: PathPose;
+  p1: PathPose;
+  p2: PathPose;
+  p3: PathPose;
+};
+
+export type IntroHandoff = {
+  appearStart: number;
+  appearEnd: number;
+  /** ≈ next element’s appearStart */
+  exitStart: number;
+  exitEnd: number;
+};
+
+export function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n));
+}
+
+export function easeOutCubic(t: number) {
+  const x = clamp(t, 0, 1);
+  return 1 - (1 - x) ** 3;
+}
+
+export function easeInCubic(t: number) {
+  const x = clamp(t, 0, 1);
+  return x * x * x;
+}
+
+/** Smooth ease-in and ease-out for path sampling. */
+export function easeInOutCubic(t: number) {
+  const x = clamp(t, 0, 1);
+  return x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2;
+}
+
+/**
+ * Sequential handoff windows: each element exits as the next enters.
+ * Index 0 = ABOUT (sharp on load), 1 = ME, 2… = body lines.
+ */
+export function introHandoffs(lineCount: number): IntroHandoff[] {
+  const n = 2 + Math.max(lineCount, 0);
+  const end = ABOUT_INTRO.sequenceEnd;
+  const beat = end / n;
+  const handoff = beat * ABOUT_INTRO.handoffRatio;
+
+  return Array.from({ length: n }, (_, i) => {
+    // ABOUT is already on stage at load — no blur-in.
+    const appearStart = i === 0 ? 0 : i * beat;
+    const appearEnd = i === 0 ? 0 : appearStart + handoff;
+    const exitStart = i === n - 1 ? end : (i + 1) * beat;
+    const exitEnd = Math.min(0.95, exitStart + handoff);
+    return { appearStart, appearEnd, exitStart, exitEnd };
+  });
+}
+
+/**
+ * Opacity + blur envelope for appear / hold / disappear.
+ * visibility 0 = gone+blurred, 1 = sharp+opaque.
+ */
+export function handoffVisibility(
+  progress: number,
+  win: IntroHandoff,
+  blurPx: number = ABOUT_INTRO.enterExitBlurPx,
+) {
+  let visibility = 0;
+
+  if (progress < win.appearStart) {
+    visibility = 0;
+  } else if (win.appearEnd <= win.appearStart) {
+    // Already on stage (ABOUT) — sharp until exit
+    if (progress < win.exitStart) {
+      visibility = 1;
+    } else if (progress < win.exitEnd) {
+      visibility =
+        1 -
+        easeInOutCubic(
+          (progress - win.exitStart) /
+            Math.max(win.exitEnd - win.exitStart, 0.0001),
+        );
+    } else {
+      visibility = 0;
+    }
+  } else if (progress < win.appearEnd) {
+    visibility = easeInOutCubic(
+      (progress - win.appearStart) /
+        Math.max(win.appearEnd - win.appearStart, 0.0001),
+    );
+  } else if (progress < win.exitStart) {
+    visibility = 1;
+  } else if (progress < win.exitEnd) {
+    visibility =
+      1 -
+      easeInOutCubic(
+        (progress - win.exitStart) /
+          Math.max(win.exitEnd - win.exitStart, 0.0001),
+      );
+  }
+
+  return {
+    opacity: visibility,
+    /** No CSS blur on intro handoffs — it left body/ME soft at peak size. */
+    blur: 0,
+    /**
+     * Zoom during the sharp hold only; hit peak early and hold it
+     * so max size is actually visible while fully opaque.
+     */
+    zoomT: zoomProgress(progress, win),
+  };
+}
+
+/** Reach peak scale ~65% into the hold, then stay at peak until exit. */
+function zoomProgress(progress: number, win: IntroHandoff) {
+  if (progress <= win.appearEnd) return 0;
+  const span = Math.max(win.exitStart - win.appearEnd, 0.0001);
+  const t = (progress - win.appearEnd) / span;
+  return clamp(t / 0.65, 0, 1);
+}
+
+/**
+ * ABOUT / ME Z + scale envelope (identical so ME matches ABOUT’s surge).
+ */
+export function aboutZoomPath(): BezierPath {
+  const peakS = ABOUT_INTRO.peakScale;
+  const peakZ = ABOUT_INTRO.peakZ;
+  const midS = 1 + (peakS - 1) * 0.55;
+  const midZ = peakZ * 0.63;
+  return {
+    p0: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
+    p1: { x: 0, y: 0, z: 80, scale: 1.22, rot: 0 },
+    p2: { x: 0, y: 0, z: midZ, scale: midS, rot: 0 },
+    p3: { x: 0, y: 0, z: peakZ, scale: peakS, rot: 0 },
+  };
+}
+
+/**
+ * Body lines — start clearly smaller, expand to a much larger peak than ABOUT.
+ */
+export function bodyZoomPath(): BezierPath {
+  const s0 = ABOUT_INTRO.bodyStartScale;
+  const s3 = ABOUT_INTRO.bodyPeakScale;
+  const z0 = ABOUT_INTRO.bodyStartZ;
+  const z3 = ABOUT_INTRO.bodyPeakZ;
+  return {
+    p0: { x: 0, y: 0, z: z0, scale: s0, rot: 0 },
+    p1: { x: 0, y: 0, z: z0 * 0.35, scale: s0 + (s3 - s0) * 0.18, rot: 0 },
+    p2: { x: 0, y: 0, z: z3 * 0.55, scale: s0 + (s3 - s0) * 0.62, rot: 0 },
+    p3: { x: 0, y: 0, z: z3, scale: s3, rot: 0 },
+  };
+}
+
+/**
+ * Unique lateral path (X/Y/rot only). Z + scale come from aboutZoomPath().
+ */
+export function introElementPath(index: number): BezierPath {
+  switch (index) {
+    case 0: // ABOUT — straight
+    case 1: // ME — identical motion to ABOUT
+      return {
+        p0: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
+        p1: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
+        p2: { x: 1.5, y: -3, z: 0, scale: 1, rot: 0.4 },
+        p3: { x: -1.5, y: -52, z: 0, scale: 1, rot: -0.6 },
+      };
+    case 2: // line 0 — from below-right
+      return {
+        p0: { x: 10, y: 10, z: 0, scale: 1, rot: 2 },
+        p1: { x: 4, y: 4, z: 0, scale: 1, rot: 1 },
+        p2: { x: -3, y: -5, z: 0, scale: 1, rot: -1 },
+        p3: { x: -8, y: -48, z: 0, scale: 1, rot: -2 },
+      };
+    case 3: // line 1 — high arc from left
+      return {
+        p0: { x: -12, y: -8, z: 0, scale: 1, rot: 4 },
+        p1: { x: -3, y: -2, z: 0, scale: 1, rot: 1 },
+        p2: { x: 6, y: 3, z: 0, scale: 1, rot: -1.5 },
+        p3: { x: 11, y: -48, z: 0, scale: 1, rot: -3 },
+      };
+    case 4: // line 2 — S-curve
+      return {
+        p0: { x: 8, y: 6, z: 0, scale: 1, rot: -2.5 },
+        p1: { x: -6, y: -2, z: 0, scale: 1, rot: 1.5 },
+        p2: { x: 5, y: -8, z: 0, scale: 1, rot: -1 },
+        p3: { x: -8, y: -50, z: 0, scale: 1, rot: 2 },
+      };
+    default: {
+      const sway = index % 2 === 0 ? 1 : -1;
+      return {
+        p0: { x: 10 * sway, y: 8 * sway, z: 0, scale: 1, rot: 3 * sway },
+        p1: { x: -2 * sway, y: 2, z: 0, scale: 1, rot: -1 * sway },
+        p2: { x: 4 * sway, y: -6, z: 0, scale: 1, rot: 1.2 * sway },
+        p3: { x: -7 * sway, y: -50, z: 0, scale: 1, rot: -2 * sway },
+      };
+    }
+  }
+}
+
+/** Pose: ABOUT/ME share zoom; body uses the small→huge body zoom. */
+export function sampleIntroPose(index: number, zoomT: number): PathPose {
+  const lateral = sampleBezierPathEased(zoomT, introElementPath(index));
+  const zoom =
+    index >= 2
+      ? sampleBezierPathEased(zoomT, bodyZoomPath())
+      : sampleBezierPathEased(zoomT, aboutZoomPath());
+  return {
+    x: lateral.x,
+    y: lateral.y,
+    z: zoom.z,
+    scale: zoom.scale,
+    rot: lateral.rot,
+  };
+}
+
+/** @deprecated Prefer introElementPath / sampleIntroPose. */
+export function bodyLinePath(index: number): BezierPath {
+  return introElementPath(index + 2);
+}
+
+/** Cubic bezier scalar. */
+export function cubicBezier(
+  t: number,
+  p0: number,
+  p1: number,
+  p2: number,
+  p3: number,
+) {
+  const u = 1 - t;
+  return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3;
+}
+
+/** Sample a 3D+scale+rotate bezier path at t ∈ [0,1]. */
+export function sampleBezierPath(t: number, path: BezierPath): PathPose {
+  const s = clamp(t, 0, 1);
+  return {
+    x: cubicBezier(s, path.p0.x, path.p1.x, path.p2.x, path.p3.x),
+    y: cubicBezier(s, path.p0.y, path.p1.y, path.p2.y, path.p3.y),
+    z: cubicBezier(s, path.p0.z, path.p1.z, path.p2.z, path.p3.z),
+    scale: cubicBezier(s, path.p0.scale, path.p1.scale, path.p2.scale, path.p3.scale),
+    rot: cubicBezier(s, path.p0.rot, path.p1.rot, path.p2.rot, path.p3.rot),
+  };
+}
+
+/** Sample a path with smooth ease-in-out on t. */
+export function sampleBezierPathEased(t: number, path: BezierPath): PathPose {
+  return sampleBezierPath(easeInOutCubic(t), path);
+}
+
+export function poseToTransform(pose: PathPose) {
+  return `translate3d(${pose.x.toFixed(2)}vw, ${pose.y.toFixed(2)}vh, ${pose.z.toFixed(1)}px) rotateZ(${pose.rot.toFixed(2)}deg) scale(${pose.scale.toFixed(4)})`;
+}
+
+/** Fixed stage-light beam in viewport coordinates (for title shine). */
+export const SPOTLIGHT = {
+  /** Horizontal focus of the beam (vw). <50 = slightly left of center. */
+  xVw: 38,
+  /** Vertical focus of the beam (vh). Low = light from above. */
+  yVh: 14,
+  /** Ellipse radii of the soft beam. */
+  radiusXVw: 72,
+  radiusYVh: 52,
+} as const;
+
+/**
+ * Flatten progress near the focus so Z-motion decelerates into a soft rest
+ * (used for the AI gallery landing), then eases out again for phase 2.
+ */
+export function softPlateau(progress: number, center = 0.5, half = DEPTH.restHalfWidth) {
+  const p = clamp(progress, 0, 1);
+  const d = p - center;
+  const flat = 0.22; // how much motion remains inside the plateau
+
+  if (Math.abs(d) <= half) {
+    return center + d * flat;
+  }
+
+  if (d > 0) {
+    const outer = 1 - center - half;
+    const t = clamp((d - half) / Math.max(outer, 0.0001), 0, 1);
+    return center + half * flat + t * (1 - center - half * flat);
+  }
+
+  const outer = center - half;
+  const t = clamp((-d - half) / Math.max(outer, 0.0001), 0, 1);
+  return center - half * flat - t * (center - half * flat);
+}
+
+export type DepthPose = {
+  x: number;
+  y: number;
+  z: number;
+  scale: number;
+  rot: number;
+  opacity: number;
+  blur: number;
+};
+
+/**
+ * Map 0→0.5→1 depth progress into a liquid multi-axis pose (bezier-sampled).
+ * 0 = void (approaching camera), 0.5 = rest, 1 = receded into background.
+ */
+export function poseFromProgress(
+  progress: number,
+  opts?: { voidZ?: number; recedeZ?: number; sway?: number },
+): DepthPose {
+  const voidZ = opts?.voidZ ?? DEPTH.voidZ;
+  const recedeZ = opts?.recedeZ ?? DEPTH.recedeZ;
+  const sway = opts?.sway ?? 1;
+  const p = softPlateau(progress);
+
+  const approachPath: BezierPath = {
+    p0: { x: -5 * sway, y: 10, z: voidZ, scale: DEPTH.voidScale, rot: -2.5 * sway },
+    p1: { x: 3 * sway, y: 4, z: voidZ * 0.55, scale: DEPTH.voidScale + 0.04, rot: 1.5 * sway },
+    p2: { x: -2 * sway, y: 1, z: voidZ * 0.18, scale: 0.98, rot: -0.8 * sway },
+    p3: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
+  };
+
+  const recedePath: BezierPath = {
+    p0: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
+    p1: { x: 2 * sway, y: -2, z: recedeZ * 0.25, scale: 0.99, rot: 1 * sway },
+    p2: { x: -4 * sway, y: -5, z: recedeZ * 0.65, scale: DEPTH.recedeScale + 0.02, rot: -2 * sway },
+    p3: { x: 3 * sway, y: -8, z: recedeZ, scale: DEPTH.recedeScale, rot: 1.5 * sway },
+  };
+
+  if (p <= 0.5) {
+    const t = easeOutCubic(p / 0.5);
+    const pose = sampleBezierPath(t, approachPath);
+    return {
+      ...pose,
+      opacity: 0.42 + 0.58 * t,
+      blur: DEPTH.voidBlur * (1 - t),
+    };
+  }
+
+  const t = easeInCubic((p - 0.5) / 0.5);
+  const pose = sampleBezierPath(t, recedePath);
+  return {
+    ...pose,
+    opacity: 1 - 0.38 * t,
+    blur: DEPTH.recedeBlur * t,
+  };
+}
+
+/**
+ * Convert a panel's layout box into raw depth progress (pre-plateau).
+ * About Me starts near focus; lower sections begin in the void.
+ */
+export function rawProgressForPanel(el: HTMLElement, viewH: number) {
+  const rect = el.getBoundingClientRect();
+  const center = rect.top + rect.height / 2;
+  const focusY = viewH * DEPTH.focusYRatio;
+  // Positive when panel is still below the focus line (in the void / approaching).
+  const dist = (center - focusY) / Math.max(viewH, 1);
+  return clamp(0.5 - dist * 0.95, 0, 1);
+}

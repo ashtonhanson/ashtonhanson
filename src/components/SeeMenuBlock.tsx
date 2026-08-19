@@ -58,7 +58,7 @@ function lineMotion(progress: number, index: number, reduced: boolean): LineMoti
   return { y, blur, opacity };
 }
 
-export function SeeMenuBlock() {
+export function SeeMenuBlock({ cinematic = false }: { cinematic?: boolean }) {
   const sectionRef = useRef<HTMLElement>(null);
   const [progress, setProgress] = useState(0.5);
   const [reduced, setReduced] = useState(false);
@@ -72,7 +72,7 @@ export function SeeMenuBlock() {
   }, []);
 
   useEffect(() => {
-    if (reduced) {
+    if (reduced || cinematic) {
       setProgress(0.5);
       return;
     }
@@ -102,12 +102,13 @@ export function SeeMenuBlock() {
       window.removeEventListener("resize", onScroll);
       if (frame) window.cancelAnimationFrame(frame);
     };
-  }, [reduced]);
+  }, [reduced, cinematic]);
 
-  const linksFocus = reduced
-    ? 1
-    : easeInOut(clamp((progress - 0.32) / 0.2, 0, 1)) *
-      (1 - easeInOut(clamp((progress - 0.72) / 0.22, 0, 1)));
+  const linksFocus =
+    reduced || cinematic
+      ? 1
+      : easeInOut(clamp((progress - 0.32) / 0.2, 0, 1)) *
+        (1 - easeInOut(clamp((progress - 0.72) / 0.22, 0, 1)));
 
   return (
     <section
@@ -117,7 +118,11 @@ export function SeeMenuBlock() {
       <div className="relative mx-auto flex min-h-[clamp(10rem,28vh,16rem)] max-w-3xl flex-col items-center justify-center text-center xl:min-h-[clamp(12rem,26vh,20rem)] xl:max-w-4xl">
         <div className="relative flex w-full flex-col items-center">
           {home.seeMenuLines.map((line, index) => {
-            const motion = lineMotion(progress, index, reduced);
+            const motion = lineMotion(
+              progress,
+              index,
+              reduced || cinematic,
+            );
             return (
               <div
                 key={line}

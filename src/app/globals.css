@@ -55,25 +55,7 @@ body {
   color: #dddddd;
 }
 
-/* Body paragraphs — soft fade at left/right edges (floors at ~20%) */
-.body-copy {
-  -webkit-mask-image: linear-gradient(
-    90deg,
-    rgb(0 0 0 / 0.2) 0%,
-    #000 14%,
-    #000 86%,
-    rgb(0 0 0 / 0.2) 100%
-  );
-  mask-image: linear-gradient(
-    90deg,
-    rgb(0 0 0 / 0.2) 0%,
-    #000 14%,
-    #000 86%,
-    rgb(0 0 0 / 0.2) 100%
-  );
-}
-
-/* Titles — velvet fill + thin metallic edge shine / rim */
+/* Titles — velvet fill + FIXED viewport stage-light beam (no solid outline) */
 .title-shine {
   position: relative;
   display: inline-block;
@@ -81,108 +63,81 @@ body {
   color: transparent;
 }
 
-/* Outer thin shine border (rim) */
 .title-shine::before {
-  content: attr(data-text);
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  transform: scale(1.012);
-  transform-origin: center;
-  background-image: linear-gradient(
-    115deg,
-    #6a6864 0%,
-    #c8c4ba 28%,
-    #f7f4ea 46%,
-    #a8a49c 62%,
-    #f7f4ea 78%,
-    #6a6864 100%
-  );
-  background-size: 260% 100%;
-  background-position: 0% 50%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  opacity: 0.9;
+  content: none;
 }
 
-/* Inner metallic edge (between rim and velvet fill) */
 .title-shine::after {
-  content: attr(data-text);
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  transform: scale(1.005);
-  transform-origin: center;
-  background-image: linear-gradient(
-    115deg,
-    #4a4844 0%,
-    #9a968c 22%,
-    #efebe0 42%,
-    #7a766e 58%,
-    #efebe0 78%,
-    #4a4844 100%
-  );
-  background-size: 260% 100%;
-  background-position: 0% 50%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
+  content: none;
 }
 
-/* Velvet nap interior — no traveling metallic through the fill */
+/* Solid title fill (no velvet texture) */
 .title-shine-fill {
   position: relative;
+  z-index: 1;
+  color: #2a1a1c;
+  -webkit-text-fill-color: #2a1a1c;
+}
+
+/*
+ * Soft stage-light highlight — FIXED in viewport space.
+ * Letters catch this beam as they scroll through; the light does not travel
+ * with the text. Larger soft falloff = cinematic, not a harsh strip.
+ */
+.title-shine-beam {
+  position: absolute;
+  inset: 0;
   z-index: 2;
-  background-color: #160a0e;
-  background-image:
-    radial-gradient(
-      ellipse 80% 55% at 28% 22%,
-      rgb(74 36 42 / 0.85) 0%,
-      transparent 58%
-    ),
-    radial-gradient(
-      ellipse 70% 60% at 78% 78%,
-      rgb(28 12 16 / 0.9) 0%,
-      transparent 55%
-    ),
-    repeating-linear-gradient(
-      0deg,
-      rgb(255 255 255 / 0.02) 0 1px,
-      transparent 1px 3px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      rgb(0 0 0 / 0.08) 0 1px,
-      transparent 1px 4px
-    ),
-    linear-gradient(
-      165deg,
-      #2a1418 0%,
-      #14080c 38%,
-      #3a1c22 62%,
-      #100608 100%
-    );
-  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  pointer-events: none;
+  background-image: radial-gradient(
+    ellipse 72vw 52vh at 38vw 14vh,
+    rgb(255 252 240 / 0.7) 0%,
+    rgb(255 245 220 / 0.32) 26%,
+    rgb(255 240 210 / 0.1) 46%,
+    transparent 68%
+  );
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
+  mix-blend-mode: soft-light;
+  opacity: 0.95;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .title-shine::before,
-  .title-shine::after {
-    animation: logo-edge-shine 16s ease-in-out infinite;
+@media (prefers-reduced-motion: reduce) {
+  .title-shine-beam {
+    opacity: 0.55;
   }
+}
 
-  .title-shine::after {
-    animation-delay: -4s;
-  }
+/* Home cinematic Z-scroll panels */
+.home-depth-scene {
+  position: relative;
+  overflow: visible;
+}
+
+.home-depth-panel {
+  transform-style: preserve-3d;
+  transform-origin: 50% 40%;
+  will-change: transform, opacity, filter;
+  backface-visibility: hidden;
+}
+
+.about-intro-pin {
+  position: relative;
+  /* Don’t trap stage z-index — stage must compete with .home-depth-rest. */
+  z-index: auto;
+}
+
+.about-intro-stage {
+  background: transparent;
+}
+
+.home-depth-rest {
+  position: relative;
+  z-index: 15;
 }
 
 /* Logo plates — soft glowing frame + smooth traveling edge shine */
@@ -276,20 +231,9 @@ body {
     filter: drop-shadow(0 0 4px rgb(232 223 196 / 0.2));
   }
 
-  .title-shine::before,
-  .title-shine::after {
-    animation: none;
-    background-image: linear-gradient(
-      115deg,
-      #6a6864 0%,
-      #d0ccc2 50%,
-      #6a6864 100%
-    );
-    background-size: 100% 100%;
-  }
-
-  .title-shine-fill {
-    -webkit-text-fill-color: transparent;
+  .title-shine-beam {
+    opacity: 0.5;
+    mix-blend-mode: soft-light;
   }
 }
 
@@ -633,48 +577,48 @@ body {
   position: absolute;
   left: 50%;
   top: 42%;
-  width: min(140vw, 1600px);
-  height: min(140vw, 1600px);
+  width: min(220vw, 3200px);
+  height: min(220vw, 3200px);
   border-radius: 50%;
   transform: translate(-50%, -50%);
   background: radial-gradient(
     circle at 42% 36%,
-    rgb(255 246 230 / 0.34) 0%,
-    rgb(232 214 180 / 0.22) 12%,
-    rgb(180 150 120 / 0.14) 28%,
-    rgb(90 60 55 / 0.08) 46%,
-    transparent 68%
+    rgb(255 246 230 / 0.4) 0%,
+    rgb(232 214 180 / 0.28) 14%,
+    rgb(180 150 120 / 0.16) 32%,
+    rgb(90 60 55 / 0.09) 50%,
+    transparent 70%
   );
   box-shadow:
-    0 0 60px rgb(232 214 180 / 0.12),
-    0 0 140px rgb(180 120 100 / 0.1),
-    0 0 220px rgb(60 30 35 / 0.15);
-  filter: blur(40px);
-  opacity: 0.72;
+    0 0 60px rgb(232 214 180 / 0.14),
+    0 0 140px rgb(180 120 100 / 0.12),
+    0 0 220px rgb(60 30 35 / 0.18);
+  filter: blur(48px);
+  opacity: 0.8;
   will-change: transform;
 }
 
 @media (min-width: 1280px) {
   .spotlight {
-    width: min(120vw, 1800px);
-    height: min(120vw, 1800px);
-    filter: blur(48px);
+    width: min(190vw, 3800px);
+    height: min(190vw, 3800px);
+    filter: blur(56px);
   }
 }
 
 @media (min-width: 1536px) {
   .spotlight {
-    width: min(110vw, 2000px);
-    height: min(110vw, 2000px);
+    width: min(175vw, 4200px);
+    height: min(175vw, 4200px);
   }
 }
 
 @media (max-width: 767px) {
   .spotlight {
-    width: 180vw;
-    height: 180vw;
-    filter: blur(36px);
-    opacity: 0.78;
+    width: 280vw;
+    height: 280vw;
+    filter: blur(44px);
+    opacity: 0.85;
   }
 
   .velvet-field {

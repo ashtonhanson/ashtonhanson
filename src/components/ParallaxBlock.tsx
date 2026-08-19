@@ -18,6 +18,8 @@ export function ParallaxBlock({
   as = "h2",
   children,
   className = "",
+  /** When false, skip Y-parallax / blur (used under home Z-depth scene). */
+  motion = true,
 }: {
   title: string;
   subtitle?: string;
@@ -28,6 +30,7 @@ export function ParallaxBlock({
   as?: "h1" | "h2";
   children: ReactNode;
   className?: string;
+  motion?: boolean;
 }) {
   const anchorRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLElement>(null);
@@ -61,7 +64,7 @@ export function ParallaxBlock({
       }
     };
 
-    if (reduced) {
+    if (reduced || !motion) {
       apply(0, 0, 1);
       return;
     }
@@ -126,7 +129,7 @@ export function ParallaxBlock({
       window.removeEventListener("resize", onScroll);
       if (frame) window.cancelAnimationFrame(frame);
     };
-  }, [reduced, subtitle]);
+  }, [reduced, subtitle, motion]);
 
   return (
     <div className={`relative mx-auto max-w-3xl text-center xl:max-w-4xl 2xl:max-w-5xl ${className}`}>
@@ -144,7 +147,7 @@ export function ParallaxBlock({
               ref={titleRef}
               className="pointer-events-none select-none text-center font-display text-[clamp(2.6rem,10.5vw,6rem)] font-black uppercase leading-[0.9] tracking-[0.04em] xl:text-[clamp(3.4rem,6.2vw,7.75rem)]"
               style={
-                reduced
+                reduced || !motion
                   ? undefined
                   : { willChange: "transform, filter, opacity" }
               }
@@ -158,7 +161,7 @@ export function ParallaxBlock({
               ref={subtitleRef}
               className="pointer-events-none absolute left-1/2 top-[calc(100%+0.35rem)] w-max max-w-none -translate-x-1/2 select-none text-center font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-tight tracking-[0.18em] text-foreground xl:text-[clamp(1.35rem,1.55vw,1.7rem)]"
               style={
-                reduced
+                reduced || !motion
                   ? undefined
                   : { willChange: "transform, filter, opacity" }
               }
