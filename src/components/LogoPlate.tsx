@@ -79,7 +79,7 @@ export function LogoPlate({ src, alt }: LogoPlateProps) {
   return (
     <figure
       ref={ref}
-      className="logo-plate relative z-20 mx-auto mt-10 w-full max-w-[min(100%,21rem)] md:max-w-[min(100%,24rem)]"
+      className="logo-plate relative z-20 mx-auto mt-10 w-full max-w-[min(100%,21rem)] md:max-w-[min(100%,24rem)] xl:mt-12 xl:max-w-[min(100%,28rem)] 2xl:max-w-[min(100%,32rem)]"
       style={{
         transform: reduced ? undefined : `translate3d(0, ${offset.toFixed(2)}px, 0)`,
         willChange: reduced ? undefined : "transform",

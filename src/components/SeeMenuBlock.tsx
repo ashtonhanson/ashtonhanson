@@ -112,9 +112,9 @@ export function SeeMenuBlock() {
   return (
     <section
       ref={sectionRef}
-      className="relative overflow-hidden border-t border-line px-5 pb-[clamp(10rem,32vh,18rem)] pt-[clamp(5rem,16vh,10rem)] md:px-8"
+      className="relative overflow-hidden border-t border-line px-5 pb-[clamp(10rem,32vh,18rem)] pt-[clamp(5rem,16vh,10rem)] md:px-8 xl:px-12 xl:pb-[clamp(12rem,30vh,22rem)] xl:pt-[clamp(6rem,15vh,12rem)] 2xl:px-16"
     >
-      <div className="relative mx-auto flex min-h-[clamp(10rem,28vh,16rem)] max-w-3xl flex-col items-center justify-center text-center">
+      <div className="relative mx-auto flex min-h-[clamp(10rem,28vh,16rem)] max-w-3xl flex-col items-center justify-center text-center xl:min-h-[clamp(12rem,26vh,20rem)] xl:max-w-4xl">
         <div className="relative flex w-full flex-col items-center">
           {home.seeMenuLines.map((line, index) => {
             const motion = lineMotion(progress, index, reduced);
@@ -131,7 +131,7 @@ export function SeeMenuBlock() {
               >
                 <TitleShine
                   as="p"
-                  className="font-display text-[clamp(1.6rem,5.5vw,3.15rem)] font-black uppercase leading-[0.95] tracking-[0.05em]"
+                  className="font-display text-[clamp(1.6rem,5.5vw,3.15rem)] font-black uppercase leading-[0.95] tracking-[0.05em] xl:text-[clamp(2.25rem,3.4vw,4.25rem)]"
                 >
                   {line}
                 </TitleShine>

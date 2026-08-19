@@ -105,7 +105,7 @@ export function TravelSubtitle({
     <span ref={anchorRef} className="relative inline-block">
       <Tag
         ref={ref}
-        className={`inline-block w-max max-w-none text-center font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-tight tracking-[0.18em] text-foreground ${className}`.trim()}
+        className={`inline-block w-max max-w-none text-center font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-tight tracking-[0.18em] text-foreground xl:text-[clamp(1.35rem,1.55vw,1.7rem)] ${className}`.trim()}
       >
         <MobileBreakText text={children} />
       </Tag>

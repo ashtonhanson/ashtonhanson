@@ -13,8 +13,8 @@ export default function AdsPage() {
     <>
       <PageIntro title="AD DESIGN" body={adsIntro} />
 
-      <section className="border-t border-line px-5 py-14 md:px-8">
-        <div className="mx-auto flex max-w-3xl flex-wrap justify-center gap-x-10 gap-y-4">
+      <section className="border-t border-line px-5 py-14 md:px-8 xl:px-12 xl:py-16 2xl:px-16">
+        <div className="mx-auto flex max-w-3xl flex-wrap justify-center gap-x-10 gap-y-4 xl:max-w-5xl xl:gap-x-14">
           {adCategories.map((category) => (
             <p
               key={category}

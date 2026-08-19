@@ -58,7 +58,7 @@ export function MediaLightbox({ item, onClose }: MediaLightboxProps) {
         onClick={onClose}
       />
 
-      <div className="media-lightbox-frame relative z-10 w-full max-w-5xl outline-none">
+      <div className="media-lightbox-frame relative z-10 w-full max-w-5xl outline-none xl:max-w-6xl 2xl:max-w-7xl">
         <p id={titleId} className="sr-only">
           {item.alt}
         </p>

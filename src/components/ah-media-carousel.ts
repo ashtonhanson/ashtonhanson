@@ -93,6 +93,28 @@ const STYLES = /* css */ `
   }
 }
 
+@media (min-width: 1280px) {
+  .track {
+    padding: 2.75rem 14%;
+  }
+
+  .slide {
+    width: 62%;
+    max-width: 52rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  .track {
+    padding: 3rem 12%;
+  }
+
+  .slide {
+    width: 58%;
+    max-width: 58rem;
+  }
+}
+
 .frame {
   position: relative;
   width: 100%;
@@ -749,15 +771,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v9": AhMediaCarousel;
+    "ah-media-gallery-v10": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v9")
+    !customElements.get("ah-media-gallery-v10")
   ) {
-    customElements.define("ah-media-gallery-v9", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v10", AhMediaCarousel);
   }
 }

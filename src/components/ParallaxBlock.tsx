@@ -82,13 +82,20 @@ export function ParallaxBlock({
       const pastIdeal = idealY - naturalCenter;
       const next = Math.max(-24, Math.min(132, pastIdeal * 0.55));
 
-      const blurStart = 22;
-      const blurRange = 70;
+      // Blur only in the top exit band (scrolling out), not merely for
+      // sitting above the ideal reading line — tall viewports used to
+      // leave home titles soft on load.
       const blurMax = 9;
+      const exitEnd = Math.max(88, viewH * 0.11);
+      const exitStart = Math.max(20, viewH * 0.02);
       const nextBlur =
-        next <= blurStart
+        naturalCenter >= exitEnd
           ? 0
-          : Math.min(blurMax, ((next - blurStart) / blurRange) * blurMax);
+          : Math.min(
+              blurMax,
+              ((exitEnd - naturalCenter) / Math.max(1, exitEnd - exitStart)) *
+                blurMax,
+            );
       const nextOpacity =
         nextBlur > 0.05 ? Math.max(0.42, 1 - nextBlur / 14) : 1;
 
@@ -122,20 +129,20 @@ export function ParallaxBlock({
   }, [reduced, subtitle]);
 
   return (
-    <div className={`relative mx-auto max-w-3xl text-center ${className}`}>
+    <div className={`relative mx-auto max-w-3xl text-center xl:max-w-4xl 2xl:max-w-5xl ${className}`}>
       <div
         className={`relative z-0 flex justify-center ${
           subtitle
-            ? "min-h-[clamp(6.5rem,20vh,11rem)] items-end pb-[clamp(3.5rem,9vh,5.25rem)] pt-[clamp(0.25rem,1.5vh,1rem)]"
-            : "min-h-[clamp(4.75rem,17vh,9rem)] items-end pb-[clamp(2.25rem,6.5vh,3.75rem)] pt-[clamp(0.25rem,1.5vh,1rem)]"
+            ? "min-h-[clamp(6.5rem,20vh,11rem)] items-end pb-[clamp(3.5rem,9vh,5.25rem)] pt-[clamp(0.25rem,1.5vh,1rem)] xl:min-h-[clamp(7.5rem,22vh,13rem)] xl:pb-[clamp(4rem,10vh,6.5rem)]"
+            : "min-h-[clamp(4.75rem,17vh,9rem)] items-end pb-[clamp(2.25rem,6.5vh,3.75rem)] pt-[clamp(0.25rem,1.5vh,1rem)] xl:min-h-[clamp(5.75rem,18vh,11rem)] xl:pb-[clamp(2.75rem,7.5vh,4.75rem)]"
         }`}
       >
-        <div className="relative left-1/2 flex w-screen max-w-[100vw] -translate-x-1/2 flex-col items-center overflow-x-clip px-5">
+        <div className="relative left-1/2 flex w-screen max-w-[100vw] -translate-x-1/2 flex-col items-center overflow-x-clip px-5 xl:px-10">
           <div ref={anchorRef} className="relative">
             <TitleShine
               as={as}
               ref={titleRef}
-              className="pointer-events-none select-none text-center font-display text-[clamp(2.6rem,10.5vw,6rem)] font-black uppercase leading-[0.9] tracking-[0.04em]"
+              className="pointer-events-none select-none text-center font-display text-[clamp(2.6rem,10.5vw,6rem)] font-black uppercase leading-[0.9] tracking-[0.04em] xl:text-[clamp(3.4rem,6.2vw,7.75rem)]"
               style={
                 reduced
                   ? undefined
@@ -149,7 +156,7 @@ export function ParallaxBlock({
           {subtitle ? (
             <h3
               ref={subtitleRef}
-              className="pointer-events-none absolute left-1/2 top-[calc(100%+0.35rem)] w-max max-w-none -translate-x-1/2 select-none text-center font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-tight tracking-[0.18em] text-foreground"
+              className="pointer-events-none absolute left-1/2 top-[calc(100%+0.35rem)] w-max max-w-none -translate-x-1/2 select-none text-center font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-tight tracking-[0.18em] text-foreground xl:text-[clamp(1.35rem,1.55vw,1.7rem)]"
               style={
                 reduced
                   ? undefined

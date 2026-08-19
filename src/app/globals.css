@@ -506,6 +506,21 @@ body {
   animation-delay: var(--orb-delay, 0s);
 }
 
+@media (min-width: 1280px) {
+  .ambient-orb {
+    width: min(72vw, 1280px);
+    height: min(72vw, 1280px);
+    filter: blur(56px);
+  }
+}
+
+@media (min-width: 1536px) {
+  .ambient-orb {
+    width: min(68vw, 1480px);
+    height: min(68vw, 1480px);
+  }
+}
+
 @media (max-width: 767px) {
   .ambient-orb {
     width: 160vw;
