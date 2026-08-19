@@ -14,18 +14,15 @@ type TitleShineProps = {
   style?: CSSProperties;
 };
 
-/** Solid title with an extremely thin shiny outline. */
+/** Title with a metallic shine traveling through the letter fill. */
 export const TitleShine = forwardRef<HTMLElement, TitleShineProps>(
   function TitleShine(
     { as: Tag = "span", className = "", children, style },
     ref,
   ) {
-    const label = typeof children === "string" ? children : undefined;
-
     return (
       <Tag
         ref={ref}
-        data-text={label}
         className={`title-shine ${className}`.trim()}
         style={style}
       >
