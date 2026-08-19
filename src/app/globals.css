@@ -36,7 +36,7 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   color-scheme: dark;
 }
 
@@ -133,6 +133,16 @@ body {
 
 .about-intro-stage {
   background: transparent;
+}
+
+.about-intro-stage .intro-layer {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.about-intro-stage .intro-layer.is-about {
+  opacity: 1;
+  visibility: visible;
 }
 
 .home-depth-rest {

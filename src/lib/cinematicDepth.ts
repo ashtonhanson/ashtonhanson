@@ -43,32 +43,28 @@ export const DEPTH = {
  * Units: x = vw, y = vh, z = px, scale = multiplier, rot = deg.
  */
 export const ABOUT_INTRO = {
-  /**
-   * Pin height — enough scroll for sharp holds, still tight into RECENT WORK.
-   */
-  pinHeightVh: "175vh",
-  /** Whole sticky stage fades out as the sequence ends. */
-  stageFadeStart: 0.88,
+  /** Tall pin so Z-scale has real scroll room and never feels rushed. */
+  pinHeightVh: "520vh",
+  stageFadeStart: 0.9,
   stageFadeEnd: 1,
 
-  /** Blur (px) at fully hidden — enter/exit only, never during peak zoom. */
-  enterExitBlurPx: 4,
-  /** Fraction of each beat used for the blur handoff overlap. */
-  handoffRatio: 0.22,
-  /** Sequence fills nearly the whole pin — no long empty gap after body text. */
-  sequenceEnd: 0.9,
+  /** Blur (px) on enter/exit — hold stays sharp. */
+  enterExitBlurPx: 10,
+  /** Longer overlap so the previous line is already fading as the next arrives. */
+  handoffRatio: 0.42,
+  sequenceEnd: 0.92,
 
   /**
-   * Shared / per-role peak zoom.
-   * Body starts smaller and surges past ABOUT’s peak before exit.
+   * Zoom t when opacity begins falling. Keep this < 1 so nothing sits at max scale.
    */
-  peakScale: 3.2,
-  peakZ: 450,
-  /** Body line zoom: starts small, ends much larger than ABOUT. */
-  bodyStartScale: 0.42,
-  bodyPeakScale: 8.5,
-  bodyStartZ: -180,
-  bodyPeakZ: 560,
+  fadeZoomT: 0.72,
+
+  peakScale: 2.8,
+  peakZ: 260,
+  bodyStartScale: 0.38,
+  bodyPeakScale: 3.4,
+  bodyStartZ: -90,
+  bodyPeakZ: 160,
 } as const;
 
 export type PathPose = {
@@ -179,22 +175,31 @@ export function handoffVisibility(
 
   return {
     opacity: visibility,
-    /** No CSS blur on intro handoffs — it left body/ME soft at peak size. */
-    blur: 0,
-    /**
-     * Zoom during the sharp hold only; hit peak early and hold it
-     * so max size is actually visible while fully opaque.
-     */
+    blur: (1 - visibility) * blurPx,
     zoomT: zoomProgress(progress, win),
   };
 }
 
-/** Reach peak scale ~65% into the hold, then stay at peak until exit. */
+/**
+ * Slow climb through the visible life. Fade starts at fadeZoomT so the
+ * element is already dissolving before theoretical max scale — no peak park.
+ */
 function zoomProgress(progress: number, win: IntroHandoff) {
-  if (progress <= win.appearEnd) return 0;
-  const span = Math.max(win.exitStart - win.appearEnd, 0.0001);
-  const t = (progress - win.appearEnd) / span;
-  return clamp(t / 0.65, 0, 1);
+  const start = win.appearStart;
+  const fadeAt = win.exitStart;
+  const gone = win.exitEnd;
+  const fadeZ = ABOUT_INTRO.fadeZoomT;
+
+  if (progress <= start) return 0;
+  if (progress >= gone) return 1;
+
+  if (progress <= fadeAt) {
+    const t = (progress - start) / Math.max(fadeAt - start, 0.0001);
+    return fadeZ * easeInOutCubic(t);
+  }
+
+  const t = (progress - fadeAt) / Math.max(gone - fadeAt, 0.0001);
+  return fadeZ + (1 - fadeZ) * t;
 }
 
 /**
@@ -203,12 +208,10 @@ function zoomProgress(progress: number, win: IntroHandoff) {
 export function aboutZoomPath(): BezierPath {
   const peakS = ABOUT_INTRO.peakScale;
   const peakZ = ABOUT_INTRO.peakZ;
-  const midS = 1 + (peakS - 1) * 0.55;
-  const midZ = peakZ * 0.63;
   return {
     p0: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
-    p1: { x: 0, y: 0, z: 80, scale: 1.22, rot: 0 },
-    p2: { x: 0, y: 0, z: midZ, scale: midS, rot: 0 },
+    p1: { x: 0, y: 0, z: peakZ * 0.22, scale: 1 + (peakS - 1) * 0.22, rot: 0 },
+    p2: { x: 0, y: 0, z: peakZ * 0.55, scale: 1 + (peakS - 1) * 0.55, rot: 0 },
     p3: { x: 0, y: 0, z: peakZ, scale: peakS, rot: 0 },
   };
 }
@@ -223,8 +226,8 @@ export function bodyZoomPath(): BezierPath {
   const z3 = ABOUT_INTRO.bodyPeakZ;
   return {
     p0: { x: 0, y: 0, z: z0, scale: s0, rot: 0 },
-    p1: { x: 0, y: 0, z: z0 * 0.35, scale: s0 + (s3 - s0) * 0.18, rot: 0 },
-    p2: { x: 0, y: 0, z: z3 * 0.55, scale: s0 + (s3 - s0) * 0.62, rot: 0 },
+    p1: { x: 0, y: 0, z: z0 * 0.55, scale: s0 + (s3 - s0) * 0.28, rot: 0 },
+    p2: { x: 0, y: 0, z: z3 * 0.48, scale: s0 + (s3 - s0) * 0.62, rot: 0 },
     p3: { x: 0, y: 0, z: z3, scale: s3, rot: 0 },
   };
 }
@@ -277,11 +280,12 @@ export function introElementPath(index: number): BezierPath {
 
 /** Pose: ABOUT/ME share zoom; body uses the small→huge body zoom. */
 export function sampleIntroPose(index: number, zoomT: number): PathPose {
-  const lateral = sampleBezierPathEased(zoomT, introElementPath(index));
+  // Linear sample — eased sampling flattened into a peak-scale pause.
+  const lateral = sampleBezierPath(zoomT, introElementPath(index));
   const zoom =
     index >= 2
-      ? sampleBezierPathEased(zoomT, bodyZoomPath())
-      : sampleBezierPathEased(zoomT, aboutZoomPath());
+      ? sampleBezierPath(zoomT, bodyZoomPath())
+      : sampleBezierPath(zoomT, aboutZoomPath());
   return {
     x: lateral.x,
     y: lateral.y,

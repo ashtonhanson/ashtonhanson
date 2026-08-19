@@ -27,11 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      data-scroll-behavior="smooth"
-      className={`${display.variable} h-full`}
-    >
+    <html lang="en" className={`${display.variable} min-h-full`}>
       <body className="relative flex min-h-full flex-col bg-background font-display text-foreground antialiased">
         <AmbientOrbs />
         <div className="relative z-10 flex min-h-full flex-1 flex-col">
