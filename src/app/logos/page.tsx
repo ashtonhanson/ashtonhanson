@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { BrandingScene } from "@/components/BrandingScene";
+import { CinematicChapter } from "@/components/CinematicChapter";
 import { SeeMenuBlock } from "@/components/SeeMenuBlock";
 import { logoCases, logosIntroLines } from "@/lib/content";
+import { HOME_CHAPTER } from "@/lib/homeMotion";
 
 export const metadata: Metadata = {
   title: "Logos",
@@ -16,9 +18,17 @@ export default function LogosPage() {
         introLines={logosIntroLines}
         cases={logoCases}
         mediaVariant="plate"
-        finale
       />
-      <SeeMenuBlock overlap />
+      <CinematicChapter
+        pinHeight={HOME_CHAPTER.menuPinVh}
+        overlap={HOME_CHAPTER.overlapGallery}
+        angleOffset={4}
+        exitMode="shrink"
+        zIndex={14}
+        aria-label="See menu"
+      >
+        <SeeMenuBlock cinematic />
+      </CinematicChapter>
     </>
   );
 }
