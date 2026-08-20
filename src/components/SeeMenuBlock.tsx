@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState, type CSSProperties, type HTMLAttributes } from "react";
 import { TitleShine } from "@/components/TitleShine";
 import { home } from "@/lib/content";
 
@@ -12,6 +13,12 @@ function clamp(n: number, min: number, max: number) {
 function easeInOut(t: number) {
   return t * t * (3 - 2 * t);
 }
+
+const WORK_LINKS = [
+  { href: "/branding", label: "BRANDING" },
+  { href: "/ads", label: "ADS" },
+  { href: "/logos", label: "LOGOS" },
+] as const;
 
 type LineMotion = {
   y: number;
@@ -53,6 +60,32 @@ function lineMotion(progress: number, index: number, reduced: boolean): LineMoti
   const opacity = 0.35 + focus * 0.65;
 
   return { y, blur, opacity };
+}
+
+function WorkLinks({
+  className = "",
+  style,
+  ...rest
+}: {
+  className?: string;
+  style?: CSSProperties;
+} & HTMLAttributes<HTMLDivElement>) {
+  const pathname = usePathname();
+  const links = WORK_LINKS.filter((link) => link.href !== pathname);
+
+  return (
+    <div className={className} style={style} {...rest}>
+      {links.map((link) => (
+        <Link
+          key={link.href}
+          href={link.href}
+          className="font-display text-[0.78rem] font-medium tracking-[0.2em] text-ink transition-opacity hover:opacity-55"
+        >
+          {link.label}
+        </Link>
+      ))}
+    </div>
+  );
 }
 
 export function SeeMenuBlock({ cinematic = false }: { cinematic?: boolean }) {
@@ -133,7 +166,7 @@ export function SeeMenuBlock({ cinematic = false }: { cinematic?: boolean }) {
           ))}
         </div>
 
-        <div
+        <WorkLinks
           data-home-arrive
           data-kind="copy"
           data-index={home.seeMenuLines.length}
@@ -143,21 +176,7 @@ export function SeeMenuBlock({ cinematic = false }: { cinematic?: boolean }) {
             visibility: "hidden",
             transformOrigin: "50% 50%",
           }}
-        >
-          {[
-            { href: "/branding", label: "BRANDING" },
-            { href: "/ads", label: "ADS" },
-            { href: "/logos", label: "LOGOS" },
-          ].map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="font-display text-[0.78rem] font-medium tracking-[0.2em] text-ink transition-opacity hover:opacity-55"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
+        />
       </div>
     );
   }
@@ -193,27 +212,13 @@ export function SeeMenuBlock({ cinematic = false }: { cinematic?: boolean }) {
           })}
         </div>
 
-        <div
+        <WorkLinks
           className="mt-12 flex flex-wrap justify-center gap-x-10 gap-y-3 will-change-transform"
           style={{
             opacity: 0.25 + linksFocus * 0.75,
             transform: `translate3d(0, ${(1 - linksFocus) * 18}px, 0)`,
           }}
-        >
-          {[
-            { href: "/branding", label: "BRANDING" },
-            { href: "/ads", label: "ADS" },
-            { href: "/logos", label: "LOGOS" },
-          ].map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="font-display text-[0.78rem] font-medium tracking-[0.2em] text-ink transition-opacity hover:opacity-55"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
+        />
       </div>
     </section>
   );

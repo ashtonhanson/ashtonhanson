@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { BrandingScene } from "@/components/BrandingScene";
+import { SeeMenuBlock } from "@/components/SeeMenuBlock";
 import { adCases, adCategories, adsIntroLines } from "@/lib/content";
 
 export const metadata: Metadata = {
@@ -9,12 +10,15 @@ export const metadata: Metadata = {
 
 export default function AdsPage() {
   return (
-    <BrandingScene
-      introTitle="ADS"
-      introLines={adsIntroLines}
-      introTags={adCategories}
-      cases={adCases}
-      finale
-    />
+    <>
+      <BrandingScene
+        introTitle="ADS"
+        introLines={adsIntroLines}
+        introTags={adCategories}
+        cases={adCases}
+        finale
+      />
+      <SeeMenuBlock />
+    </>
   );
 }
