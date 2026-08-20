@@ -4,7 +4,7 @@ import {
   CONTACT_HANDOFF,
   CONTACT_INTRO,
 } from "@/lib/brandingMotion";
-import { contact, contactCases, contactIntroLines } from "@/lib/content";
+import { contact, contactCases } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -16,7 +16,7 @@ export default function ContactPage() {
     <BrandingScene
       introTitle={contact.title}
       introSubtitle={contact.subtitle}
-      introLines={contactIntroLines}
+      introLines={[]}
       intro={CONTACT_INTRO}
       handoff={CONTACT_HANDOFF}
       cases={contactCases}

@@ -27,12 +27,12 @@ export const home = {
   aboutTitle: "ABOUT ME",
   aboutWord: "ABOUT",
   meWord: "ME",
-  /** One complete straight line per entry (nowrap in the intro stage). */
+  /** One complete line per entry; `\n` wraps to two lines on mobile only. */
   aboutLines: [
-    "As a graphic designer of 10+ years",
-    "with a strong focus on Illustration, Adobe Creative Suite,",
-    "AI-assisted visual storytelling and Music Production,",
-    "blending traditional design principles with emerging tools.",
+    "As a graphic designer\nof 10+ years",
+    "with a strong focus on\nIllustration, Adobe Creative Suite,",
+    "AI-assisted visual storytelling\nand Music Production,",
+    "blending traditional design principles\nwith emerging tools.",
   ],
   recentWorkTitle: "RECENT WORK",
   seeMenuLines: ["SEE MENU", "FOR OTHER", "WORK."] as const,
@@ -431,11 +431,6 @@ export const contact = {
   body: "Have a branding, logo, or advertising project in mind?\nReach out and let’s talk.",
   email: "Design@ashtonhanson.com",
 };
-
-export const contactIntroLines = [
-  "Have a branding, logo, or advertising project in mind?",
-  "Reach out and let’s talk.",
-] as const;
 
 export const contactCases: CaseStudy[] = [
   {
