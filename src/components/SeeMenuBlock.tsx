@@ -88,7 +88,14 @@ function WorkLinks({
   );
 }
 
-export function SeeMenuBlock({ cinematic = false }: { cinematic?: boolean }) {
+export function SeeMenuBlock({
+  cinematic = false,
+  overlap = false,
+}: {
+  cinematic?: boolean;
+  /** Pull up under the previous sticky chapter so the last lockup can scale out. */
+  overlap?: boolean;
+}) {
   const sectionRef = useRef<HTMLElement>(null);
   const [progress, setProgress] = useState(0.5);
   const [reduced, setReduced] = useState(false);
@@ -184,7 +191,8 @@ export function SeeMenuBlock({ cinematic = false }: { cinematic?: boolean }) {
   return (
     <section
       ref={sectionRef}
-      className="relative overflow-hidden border-t border-line px-5 pb-[clamp(10rem,32vh,18rem)] pt-[clamp(5rem,16vh,10rem)] md:px-8 xl:px-12 xl:pb-[clamp(12rem,30vh,22rem)] xl:pt-[clamp(6rem,15vh,12rem)] 2xl:px-16"
+      className="relative z-[14] overflow-hidden border-t border-line px-5 pb-[clamp(10rem,32vh,18rem)] pt-[clamp(5rem,16vh,10rem)] md:px-8 xl:px-12 xl:pb-[clamp(12rem,30vh,22rem)] xl:pt-[clamp(6rem,15vh,12rem)] 2xl:px-16"
+      style={overlap ? { marginTop: "calc(-100dvh - 12vh)" } : undefined}
     >
       <div className="relative mx-auto flex min-h-[clamp(10rem,28vh,16rem)] max-w-3xl flex-col items-center justify-center text-center xl:min-h-[clamp(12rem,26vh,20rem)] xl:max-w-4xl">
         <div className="relative flex w-full flex-col items-center">

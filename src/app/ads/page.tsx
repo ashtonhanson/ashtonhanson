@@ -18,7 +18,7 @@ export default function AdsPage() {
         cases={adCases}
         finale
       />
-      <SeeMenuBlock />
+      <SeeMenuBlock overlap />
     </>
   );
 }

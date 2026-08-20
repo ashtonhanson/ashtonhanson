@@ -6,6 +6,7 @@ import {
   arriveAngle,
   arriveTransform,
   clamp,
+  finaleExitPose,
   shrinkOutPose,
   type ArriveKind,
 } from "@/lib/brandingMotion";
@@ -137,6 +138,7 @@ export function HomeDepthScene({
       angleOffset: number,
       now: number,
       dt: number,
+      exitMode: "shrink" | "scale" = "shrink",
     ) => {
       if (!pin) return;
       const progress = pinProgress(pin);
@@ -160,7 +162,11 @@ export function HomeDepthScene({
           kind === "media" ? "gallery" : kind === "title" ? "title" : "subtitle";
 
         if (progress >= out.start) {
-          const pose = shrinkOutPose(windowT(progress, out), angle);
+          const exitT = windowT(progress, out);
+          const pose =
+            exitMode === "scale"
+              ? finaleExitPose(exitT, angle, kind)
+              : shrinkOutPose(exitT, angle);
           el.style.transformOrigin = pose.origin;
           paintItem(
             el,
@@ -200,8 +206,8 @@ export function HomeDepthScene({
       const dt = Math.min(48, now - lastNow);
       lastNow = now;
       if (document.hidden) return;
-      paintChapter(galleryPinRef.current, 0, now, dt);
-      paintChapter(menuPinRef.current, 4, now, dt);
+      paintChapter(galleryPinRef.current, 0, now, dt, "scale");
+      paintChapter(menuPinRef.current, 4, now, dt, "shrink");
     };
 
     frame = window.requestAnimationFrame(loop);
@@ -230,7 +236,12 @@ export function HomeDepthScene({
         }}
         aria-label="Recent work"
       >
-        <div className={stageClass}>{gallery}</div>
+        <div
+          className={stageClass}
+          style={{ perspective: "1400px", perspectiveOrigin: "50% 42%" }}
+        >
+          {gallery}
+        </div>
       </section>
 
       <section

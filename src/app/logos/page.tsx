@@ -18,7 +18,7 @@ export default function LogosPage() {
         mediaVariant="plate"
         finale
       />
-      <SeeMenuBlock />
+      <SeeMenuBlock overlap />
     </>
   );
 }

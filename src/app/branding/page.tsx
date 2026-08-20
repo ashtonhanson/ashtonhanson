@@ -17,7 +17,7 @@ export default function BrandingPage() {
         cases={brandingCases}
         finale
       />
-      <SeeMenuBlock />
+      <SeeMenuBlock overlap />
     </>
   );
 }
