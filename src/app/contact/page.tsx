@@ -15,7 +15,6 @@ export default function ContactPage() {
   return (
     <BrandingScene
       introTitle={contact.title}
-      introSubtitle={contact.subtitle}
       introLines={[]}
       intro={CONTACT_INTRO}
       handoff={CONTACT_HANDOFF}
