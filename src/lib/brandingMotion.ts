@@ -91,9 +91,9 @@ export const HUB_HANDOFF: HandoffTiming = {
 } as const;
 
 export const CONTACT_HANDOFF = {
-  lead: 0.01,
-  span: 0.13,
-  finish: 0.78,
+  lead: 0,
+  span: 0.1,
+  finish: 0.24,
 } as const;
 
 /**
