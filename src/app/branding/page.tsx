@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import { CaseStudy, withTravelOrders } from "@/components/CaseStudy";
-import { PageIntro } from "@/components/PageIntro";
-import { brandingCases, brandingIntro } from "@/lib/content";
+import { BrandingScene } from "@/components/BrandingScene";
+import { brandingCases, brandingIntroLines } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "Branding",
@@ -10,13 +9,11 @@ export const metadata: Metadata = {
 
 export default function BrandingPage() {
   return (
-    <>
-      <PageIntro title="BRANDING" body={brandingIntro} />
-      <div className="divide-y divide-line border-t border-line">
-        {withTravelOrders(brandingCases).map(({ study, travelOrder }) => (
-          <CaseStudy key={study.id} study={study} travelOrder={travelOrder} />
-        ))}
-      </div>
-    </>
+    <BrandingScene
+      introTitle="BRANDING"
+      introLines={brandingIntroLines}
+      cases={brandingCases}
+      finale
+    />
   );
 }

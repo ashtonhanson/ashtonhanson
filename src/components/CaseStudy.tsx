@@ -34,7 +34,7 @@ export function CaseStudy({ study, travelOrder = 0 }: CaseStudyProps) {
       className="relative px-5 py-[clamp(4.5rem,12vh,8rem)] md:px-8 xl:px-12 xl:py-[clamp(5.5rem,13vh,11rem)] 2xl:px-16"
     >
       <ParallaxBlock title={study.title} subtitle={study.subtitle}>
-        <BodyCopy className="mx-auto max-w-2xl font-display text-[clamp(1.125rem,2.15vw,1.275rem)] font-normal leading-[1.75] tracking-[0.01em] text-foreground xl:max-w-3xl xl:text-[clamp(1.2rem,1.35vw,1.4rem)]">
+        <BodyCopy className="mx-auto max-w-3xl font-display text-[clamp(1.125rem,2.15vw,1.275rem)] font-normal leading-[1.75] tracking-[0.01em] text-foreground xl:max-w-4xl xl:text-[clamp(1.2rem,1.35vw,1.4rem)]">
           {study.body}
         </BodyCopy>
 

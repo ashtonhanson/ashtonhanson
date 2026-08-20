@@ -2,6 +2,11 @@
 
 import { useEffect, useRef, useState, type ElementType } from "react";
 import { MobileBreakText } from "@/components/MobileBreakText";
+import {
+  createIdleHoverState,
+  composeIdleTransform,
+} from "@/lib/idleHover";
+import { createMousePullState, stepMousePull } from "@/lib/mousePull";
 
 type TravelSubtitleProps = {
   children: string;
@@ -34,25 +39,52 @@ export function TravelSubtitle({
 
   useEffect(() => {
     const el = ref.current;
+    const idle = createIdleHoverState();
+    const pull = createMousePullState();
 
-    const apply = (y: number, blur: number, opacity: number) => {
+    const paint = (
+      y: number,
+      blur: number,
+      opacity: number,
+      now: number,
+      dt: number,
+    ) => {
       if (!el) return;
-      el.style.transform = `translate3d(0, ${y.toFixed(2)}px, 0)`;
-      el.style.filter = `blur(${blur.toFixed(2)}px)`;
+      const transform = `translate3d(0, ${y.toFixed(2)}px, 0)`;
+      const travelT = Math.min(1, blur / 9);
+      const pulled = reduced
+        ? undefined
+        : stepMousePull(pull, el, now, dt, "subtitle", 1 - travelT);
+      el.style.transform = composeIdleTransform(
+        idle,
+        transform,
+        now,
+        dt,
+        19,
+        travelT < 0.08 && opacity > 0.9,
+        travelT,
+        1,
+        pulled,
+      );
+      el.style.transformStyle = "preserve-3d";
+      el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none";
       el.style.opacity = String(opacity);
     };
 
-    if (reduced) {
-      apply(0, 0, 1);
-      return;
-    }
-
     let frame = 0;
-    let lastY = 0;
-    let lastBlur = 0;
+    let lastNow = performance.now();
 
-    const update = () => {
-      frame = 0;
+    const loop = (now: number) => {
+      frame = window.requestAnimationFrame(loop);
+      const dt = Math.min(48, now - lastNow);
+      lastNow = now;
+      if (document.hidden) return;
+
+      if (reduced) {
+        paint(0, 0, 1, now, dt);
+        return;
+      }
+
       const anchor = anchorRef.current;
       if (!anchor) return;
 
@@ -61,43 +93,23 @@ export function TravelSubtitle({
       const naturalCenter = rect.top + rect.height / 2;
       const idealY = viewH * 0.25;
       const pastIdeal = idealY - naturalCenter;
-      const next = Math.max(-24, Math.min(132, pastIdeal * 0.55));
+      const y = Math.max(-24, Math.min(132, pastIdeal * 0.55));
 
       const blurStart = 22;
       const blurRange = 70;
       const blurMax = 9;
-      const nextBlur =
-        next <= blurStart
+      const blur =
+        y <= blurStart
           ? 0
-          : Math.min(blurMax, ((next - blurStart) / blurRange) * blurMax);
-      const nextOpacity =
-        nextBlur > 0.05 ? Math.max(0.42, 1 - nextBlur / 14) : 1;
-
-      if (
-        Math.abs(next - lastY) < 0.15 &&
-        Math.abs(nextBlur - lastBlur) < 0.05
-      ) {
-        return;
-      }
-      lastY = next;
-      lastBlur = nextBlur;
-      apply(next, nextBlur, nextOpacity);
-    };
-
-    const onScroll = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(update);
+          : Math.min(blurMax, ((y - blurStart) / blurRange) * blurMax);
+      const opacity = blur > 0.05 ? Math.max(0.42, 1 - blur / 14) : 1;
+      paint(y, blur, opacity, now, dt);
     };
 
     if (el) el.style.willChange = "transform, filter, opacity";
-    apply(0, 0, 1);
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
+    frame = window.requestAnimationFrame(loop);
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-      if (frame) window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(frame);
     };
   }, [reduced]);
 

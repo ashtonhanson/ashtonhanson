@@ -11,6 +11,21 @@ import {
   poseToTransform,
   sampleIntroPose,
 } from "@/lib/cinematicDepth";
+import {
+  createIdleHoverState,
+  composeIdleTransform,
+  type IdleHoverState,
+} from "@/lib/idleHover";
+import {
+  createMousePullState,
+  stepMousePull,
+} from "@/lib/mousePull";
+import {
+  createLoadClearState,
+  LOAD_CLEAR_BLUR_PX,
+  pageHasScrolled,
+  stepLoadClear,
+} from "@/lib/loadClear";
 
 type AboutIntroStageProps = {
   aboutWord: string;
@@ -29,12 +44,14 @@ function applyHandoffStyle(
 ) {
   el.style.opacity = opacity.toFixed(3);
   el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none";
+  el.style.transformStyle = "preserve-3d";
   el.style.transform = transform;
   el.style.visibility = opacity < 0.02 ? "hidden" : "visible";
 }
 
 /**
- * Sticky ABOUT chapter — ABOUT sharp on load, then one-at-a-time handoffs.
+ * Sticky ABOUT chapter — ABOUT blurred on load, clears on first scroll,
+ * then one-at-a-time handoffs.
  * Each element rides a distinct Z-scale path, blurs out as the next blurs in.
  */
 export function AboutIntroStage({
@@ -51,21 +68,50 @@ export function AboutIntroStage({
 
   useEffect(() => {
     let frame = 0;
+    let lastNow = performance.now();
     const handoffs = introHandoffs(bodyLines.length);
+    const idleMap = new WeakMap<HTMLElement, IdleHoverState>();
+    const pullMap = new WeakMap<HTMLElement, ReturnType<typeof createMousePullState>>();
+    const loadClear = createLoadClearState();
 
-    const update = () => {
-      frame = 0;
+    const idleFor = (el: HTMLElement) => {
+      let state = idleMap.get(el);
+      if (!state) {
+        state = createIdleHoverState();
+        idleMap.set(el, state);
+      }
+      return state;
+    };
+
+    const pullFor = (el: HTMLElement) => {
+      let state = pullMap.get(el);
+      if (!state) {
+        state = createMousePullState();
+        pullMap.set(el, state);
+      }
+      return state;
+    };
+
+    let lastProgress = Number.NaN;
+
+    const loop = (now: number) => {
+      frame = window.requestAnimationFrame(loop);
+      const dt = Math.min(48, now - lastNow);
+      lastNow = now;
+      if (document.hidden) return;
+
       const pin = pinRef.current;
       if (!pin) return;
 
       const rect = pin.getBoundingClientRect();
       const viewH = window.innerHeight || 1;
       const range = pin.offsetHeight - viewH;
-      // If the pin isn't actually taller than the viewport (iframe / h-full trap),
-      // do not fast-forward to 1 — that stacked ABOUT + ME + every body line.
       const progress =
         range < 64 ? 0 : clamp(-rect.top / Math.max(range, 1), 0, 1);
-      onProgress?.(progress);
+      if (progress !== lastProgress) {
+        lastProgress = progress;
+        onProgress?.(progress);
+      }
 
       const { stageFadeStart, stageFadeEnd, enterExitBlurPx } = ABOUT_INTRO;
 
@@ -81,7 +127,6 @@ export function AboutIntroStage({
         stageRef.current.style.opacity = (1 - stageFade).toFixed(3);
         stageRef.current.style.pointerEvents =
           stageFade > 0.4 ? "none" : "auto";
-        // Drop under RECENT WORK as soon as the sequence starts clearing
         stageRef.current.style.zIndex = stageFade > 0.15 ? "1" : "20";
       }
 
@@ -102,7 +147,42 @@ export function AboutIntroStage({
           enterExitBlurPx * blurScale,
         );
         const pose = sampleIntroPose(handoffIndex, vis.zoomT);
-        applyHandoffStyle(el, vis.opacity, vis.blur, poseToTransform(pose));
+        const transform = poseToTransform(pose);
+        const loadBlend =
+          handoffIndex === 0
+            ? stepLoadClear(
+                loadClear,
+                dt,
+                pageHasScrolled() || progress > 0.002,
+              )
+            : 0;
+        const blur = vis.blur + loadBlend * LOAD_CLEAR_BLUR_PX;
+        const atRest = vis.opacity >= 0.98 && blur < 0.4;
+        const travelT = 1 - vis.opacity;
+        const pull = stepMousePull(
+          pullFor(el),
+          el,
+          now,
+          dt,
+          handoffIndex < 2 ? "title" : "body",
+          1 - travelT,
+        );
+        applyHandoffStyle(
+          el,
+          vis.opacity,
+          blur,
+          composeIdleTransform(
+            idleFor(el),
+            transform,
+            now,
+            dt,
+            handoffIndex + 3,
+            atRest,
+            travelT,
+            1,
+            pull,
+          ),
+        );
       };
 
       applyElement(aboutRef.current, 0);
@@ -112,18 +192,9 @@ export function AboutIntroStage({
       });
     };
 
-    const onScroll = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(update);
-    };
-
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
+    frame = window.requestAnimationFrame(loop);
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-      if (frame) window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(frame);
     };
   }, [bodyLines, onProgress, aboutWord, meWord]);
 
@@ -136,7 +207,7 @@ export function AboutIntroStage({
     >
       <div
         ref={stageRef}
-        className="about-intro-stage sticky top-0 flex h-dvh items-center justify-center px-5 md:px-8 xl:px-12"
+        className="about-intro-stage sticky top-[3.6rem] flex h-[calc(100dvh-3.6rem)] items-center justify-center px-5 md:px-8 xl:px-12"
         style={{
           perspective: "1400px",
           perspectiveOrigin: "50% 50%",
@@ -155,6 +226,7 @@ export function AboutIntroStage({
               className="intro-layer is-about will-change-transform"
               style={{
                 opacity: 1,
+                filter: `blur(${LOAD_CLEAR_BLUR_PX}px)`,
                 transformOrigin: "50% 50%",
                 transformStyle: "preserve-3d",
               }}

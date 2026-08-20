@@ -11,6 +11,8 @@ export type CaseStudy = {
   body: string;
   media?: MediaItem[];
   sections?: { heading: string; media?: MediaItem[] }[];
+  /** Render the contact form in place of a gallery. */
+  form?: boolean;
 };
 
 export const navLinks = [
@@ -66,6 +68,12 @@ export const home = {
 
 export const brandingIntro =
   "The essence of branding in graphic design lies in crafting a visual identity that resonates with your audience and stands out in the marketplace. It’s about consistently using a distinctive logo, typography, color palette, graphic elements, and imagery to convey your brand’s personality and values.";
+
+/** Sentence-length segments so the intro can wrap like a normal paragraph. */
+export const brandingIntroLines = [
+  "The essence of branding in graphic design lies in crafting a visual identity that resonates with your audience and stands out in the marketplace.",
+  "It’s about consistently using a distinctive logo, typography, color palette, graphic elements, and imagery to convey your brand’s personality and values.",
+] as const;
 
 export const brandingCases: CaseStudy[] = [
   {
@@ -186,6 +194,12 @@ export const brandingCases: CaseStudy[] = [
 export const adsIntro =
   "The art of ad design is about crafting compelling visuals that capture attention, drive engagement, and inspire action. With over 10 years of experience, I bring a strategic blend of creativity and purpose to every project—leveraging powerful imagery, thoughtful layouts, and persuasive messaging to ensure your advertisements make a lasting impression and achieve tangible results.";
 
+/** Sentence-length segments so the intro can wrap like a normal paragraph. */
+export const adsIntroLines = [
+  "The art of ad design is about crafting compelling visuals that capture attention, drive engagement, and inspire action.",
+  "With over 10 years of experience, I bring a strategic blend of creativity and purpose to every project—leveraging powerful imagery, thoughtful layouts, and persuasive messaging to ensure your advertisements make a lasting impression and achieve tangible results.",
+] as const;
+
 export const adCategories = ["DIRECT MAIL", "PRINT", "SOCIAL MEDIA"] as const;
 
 export const adCases: CaseStudy[] = [
@@ -292,7 +306,13 @@ export const adCases: CaseStudy[] = [
 ];
 
 export const logosIntro =
-  "A logo is the cornerstone of any brand’s identity—a visual symbol that embodies its essence and makes a memorable impact. With over 20 years of experience, I specialize in designing logos that are not only visually striking but also deeply meaningful. By combining thoughtful typography, unique design elements, and a strategic approach, I create logos that capture the heart of your brand and leave a lasting impression on your audience.";
+  "A logo is the cornerstone of any brand’s identity—a visual symbol that embodies its essence and makes a memorable impact. I specialize in designing logos that are not only visually striking but also deeply meaningful. By combining thoughtful typography, unique design elements, and a strategic approach, I create logos that capture the heart of your brand and leave a lasting impression on your audience.";
+
+/** Sentence-length segments so the intro can wrap like a normal paragraph. */
+export const logosIntroLines = [
+  "A logo is the cornerstone of any brand’s identity—a visual symbol that embodies its essence and makes a memorable impact.",
+  "I specialize in designing logos that are not only visually striking but also deeply meaningful. By combining thoughtful typography, unique design elements, and a strategic approach, I create logos that capture the heart of your brand and leave a lasting impression on your audience.",
+] as const;
 
 export const logoCases: CaseStudy[] = [
   {
@@ -407,7 +427,22 @@ export const logoCases: CaseStudy[] = [
 
 export const contact = {
   title: "CONTACT",
-  subtitle: "LET’S WORK TOGETHER",
+  subtitle: "LET’S WORK\nTOGETHER",
   body: "Have a branding, logo, or advertising project in mind?\nReach out and let’s talk.",
   email: "Design@ashtonhanson.com",
 };
+
+export const contactIntroLines = [
+  "Have a branding, logo, or advertising project in mind?",
+  "Reach out and let’s talk.",
+] as const;
+
+export const contactCases: CaseStudy[] = [
+  {
+    id: "inquiry",
+    title: "LET’S WORK\nTOGETHER",
+    subtitle: "",
+    body: "",
+    form: true,
+  },
+];

@@ -3,6 +3,18 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MobileBreakText } from "@/components/MobileBreakText";
 import { TitleShine } from "@/components/TitleShine";
+import {
+  createIdleHoverState,
+  composeIdleTransform,
+  type IdleHoverState,
+} from "@/lib/idleHover";
+import { createMousePullState, stepMousePull } from "@/lib/mousePull";
+import {
+  createLoadClearState,
+  LOAD_CLEAR_BLUR_PX,
+  pageHasScrolled,
+  stepLoadClear,
+} from "@/lib/loadClear";
 
 /**
  * Shared parallax title + copy stack used on every page section.
@@ -49,87 +61,125 @@ export function ParallaxBlock({
     const titleEl = titleRef.current;
     const subtitleEl = subtitleRef.current;
     const hasSubtitle = Boolean(subtitle);
+    const titleIdle = createIdleHoverState();
+    const subtitleIdle = createIdleHoverState();
+    const titlePull = createMousePullState();
+    const subtitlePull = createMousePullState();
+    const loadClear = createLoadClearState();
+    const revealOnScroll = as === "h1";
 
-    const apply = (y: number, blur: number, opacity: number) => {
+    let frame = 0;
+    let lastNow = performance.now();
+
+    const paint = (
+      el: HTMLElement,
+      state: IdleHoverState,
+      pull: ReturnType<typeof createMousePullState>,
+      opacity: number,
+      blur: number,
+      transform: string,
+      now: number,
+      dt: number,
+      seed: number,
+      kind: "title" | "subtitle",
+    ) => {
+      const travelT = Math.min(1, blur / 9);
+      const pulled = reduced
+        ? undefined
+        : stepMousePull(pull, el, now, dt, kind, 1 - travelT);
+      el.style.transform = composeIdleTransform(
+        state,
+        transform,
+        now,
+        dt,
+        seed,
+        travelT < 0.08 && opacity > 0.9,
+        travelT,
+        1,
+        pulled,
+      );
+      el.style.transformStyle = "preserve-3d";
+      el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none";
+      el.style.opacity = String(opacity);
+    };
+
+    const loop = (now: number) => {
+      frame = window.requestAnimationFrame(loop);
+      const dt = Math.min(48, now - lastNow);
+      lastNow = now;
+      if (document.hidden) return;
+
+      let y = 0;
+      let blur = 0;
+      let opacity = 1;
+
+      if (motion && !reduced) {
+        const anchor = anchorRef.current;
+        if (anchor) {
+          const viewH = window.innerHeight || 1;
+          const rect = anchor.getBoundingClientRect();
+          const naturalCenter = rect.top + rect.height / 2;
+          const idealY = viewH * 0.25;
+          const pastIdeal = idealY - naturalCenter;
+          y = Math.max(-24, Math.min(132, pastIdeal * 0.55));
+
+          const blurMax = 9;
+          const exitEnd = Math.max(88, viewH * 0.11);
+          const exitStart = Math.max(20, viewH * 0.02);
+          blur =
+            naturalCenter >= exitEnd
+              ? 0
+              : Math.min(
+                  blurMax,
+                  ((exitEnd - naturalCenter) /
+                    Math.max(1, exitEnd - exitStart)) *
+                    blurMax,
+                );
+          opacity = blur > 0.05 ? Math.max(0.42, 1 - blur / 14) : 1;
+        }
+      }
+
+      const loadBlend = revealOnScroll
+        ? stepLoadClear(loadClear, dt, pageHasScrolled())
+        : 0;
+      const loadBlur = loadBlend * LOAD_CLEAR_BLUR_PX;
+
       if (titleEl) {
-        titleEl.style.transform = `translate3d(0, ${y.toFixed(2)}px, 0)`;
-        titleEl.style.filter = `blur(${blur.toFixed(2)}px)`;
-        titleEl.style.opacity = String(opacity);
+        paint(
+          titleEl,
+          titleIdle,
+          titlePull,
+          opacity,
+          blur + loadBlur,
+          `translate3d(0, ${y.toFixed(2)}px, 0)`,
+          now,
+          dt,
+          7,
+          "title",
+        );
       }
       if (subtitleEl) {
         const followY = y + (hasSubtitle ? 10 : 0);
-        subtitleEl.style.transform = `translate3d(0, ${followY.toFixed(2)}px, 0)`;
-        subtitleEl.style.filter = `blur(${(blur * 0.85).toFixed(2)}px)`;
-        subtitleEl.style.opacity = String(opacity);
+        paint(
+          subtitleEl,
+          subtitleIdle,
+          subtitlePull,
+          opacity,
+          blur * 0.85 + loadBlur * 0.85,
+          `translate3d(-50%, ${followY.toFixed(2)}px, 0)`,
+          now,
+          dt,
+          12,
+          "subtitle",
+        );
       }
     };
 
-    if (reduced || !motion) {
-      apply(0, 0, 1);
-      return;
-    }
-
-    let frame = 0;
-    let lastY = 0;
-    let lastBlur = 0;
-
-    const update = () => {
-      frame = 0;
-      const anchor = anchorRef.current;
-      if (!anchor) return;
-
-      const viewH = window.innerHeight || 1;
-      const rect = anchor.getBoundingClientRect();
-      const naturalCenter = rect.top + rect.height / 2;
-      const idealY = viewH * 0.25;
-      const pastIdeal = idealY - naturalCenter;
-      const next = Math.max(-24, Math.min(132, pastIdeal * 0.55));
-
-      // Blur only in the top exit band (scrolling out), not merely for
-      // sitting above the ideal reading line — tall viewports used to
-      // leave home titles soft on load.
-      const blurMax = 9;
-      const exitEnd = Math.max(88, viewH * 0.11);
-      const exitStart = Math.max(20, viewH * 0.02);
-      const nextBlur =
-        naturalCenter >= exitEnd
-          ? 0
-          : Math.min(
-              blurMax,
-              ((exitEnd - naturalCenter) / Math.max(1, exitEnd - exitStart)) *
-                blurMax,
-            );
-      const nextOpacity =
-        nextBlur > 0.05 ? Math.max(0.42, 1 - nextBlur / 14) : 1;
-
-      if (
-        Math.abs(next - lastY) < 0.15 &&
-        Math.abs(nextBlur - lastBlur) < 0.05
-      ) {
-        return;
-      }
-      lastY = next;
-      lastBlur = nextBlur;
-      apply(next, nextBlur, nextOpacity);
-    };
-
-    const onScroll = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(update);
-    };
-
-    apply(0, 0, 1);
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true, capture: true });
-    window.addEventListener("resize", onScroll);
+    frame = window.requestAnimationFrame(loop);
     return () => {
-      window.removeEventListener("scroll", onScroll, {
-        capture: true,
-      } as EventListenerOptions);
-      window.removeEventListener("resize", onScroll);
-      if (frame) window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(frame);
     };
-  }, [reduced, subtitle, motion]);
+  }, [reduced, subtitle, motion, as]);
 
   return (
     <div className={`relative mx-auto max-w-3xl text-center xl:max-w-4xl 2xl:max-w-5xl ${className}`}>
@@ -145,12 +195,13 @@ export function ParallaxBlock({
             <TitleShine
               as={as}
               ref={titleRef}
-              className="pointer-events-none select-none text-center font-display text-[clamp(2.6rem,10.5vw,6rem)] font-black uppercase leading-[0.9] tracking-[0.04em] xl:text-[clamp(3.4rem,6.2vw,7.75rem)]"
-              style={
-                reduced || !motion
-                  ? undefined
-                  : { willChange: "transform, filter, opacity" }
-              }
+              className="pointer-events-none select-none whitespace-pre-line text-center font-display text-[clamp(2.6rem,10.5vw,6rem)] font-black uppercase leading-[0.9] tracking-[0.04em] xl:text-[clamp(3.4rem,6.2vw,7.75rem)]"
+              style={{
+                willChange: "transform, filter, opacity",
+                ...(as === "h1"
+                  ? { filter: `blur(${LOAD_CLEAR_BLUR_PX}px)` }
+                  : {}),
+              }}
             >
               {title}
             </TitleShine>
@@ -160,11 +211,12 @@ export function ParallaxBlock({
             <h3
               ref={subtitleRef}
               className="pointer-events-none absolute left-1/2 top-[calc(100%+0.35rem)] w-max max-w-none -translate-x-1/2 select-none text-center font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-tight tracking-[0.18em] text-foreground xl:text-[clamp(1.35rem,1.55vw,1.7rem)]"
-              style={
-                reduced || !motion
-                  ? undefined
-                  : { willChange: "transform, filter, opacity" }
-              }
+              style={{
+                willChange: "transform, filter, opacity",
+                ...(as === "h1"
+                  ? { filter: `blur(${LOAD_CLEAR_BLUR_PX * 0.85}px)` }
+                  : {}),
+              }}
             >
               <MobileBreakText text={subtitle} />
             </h3>

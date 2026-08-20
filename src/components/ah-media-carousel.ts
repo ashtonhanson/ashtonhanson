@@ -1,3 +1,10 @@
+import {
+  createMousePullState,
+  stepMousePull,
+  type MousePullState,
+} from "@/lib/mousePull";
+import { withIdleHover } from "@/lib/idleHover";
+
 export type CarouselMediaItem = {
   src: string;
   alt: string;
@@ -20,6 +27,8 @@ const STYLES = /* css */ `
   width: 100%;
   color: #d2d2d2;
   font-family: var(--font-display, "Montserrat", system-ui, sans-serif);
+  transform-style: preserve-3d;
+  perspective: 920px;
 }
 
 * {
@@ -28,20 +37,30 @@ const STYLES = /* css */ `
 
 .wrap {
   width: 100%;
+  perspective: 920px;
+  transform-style: preserve-3d;
 }
 
 .viewport {
   width: 100%;
+  transform-style: preserve-3d;
+  border: 1.5px solid rgb(214 208 186 / 0.42);
+  border-radius: 1.35rem;
+  box-shadow:
+    0 0 14px rgb(232 223 196 / 0.2),
+    inset 0 0 0 1px rgb(255 255 255 / 0.08);
 }
 
 .track {
   display: flex;
   gap: 0.75rem;
   overflow-x: auto;
+  overflow-y: visible;
   padding: 2rem 12%;
   scroll-behavior: auto;
   -ms-overflow-style: none;
   scrollbar-width: none;
+  transform-style: preserve-3d;
 }
 
 .track::-webkit-scrollbar {
@@ -50,9 +69,7 @@ const STYLES = /* css */ `
 
 @media (min-width: 768px) {
   .viewport {
-    overflow: hidden;
-    border: 1px solid #000;
-    border-radius: 1.35rem;
+    overflow: visible;
     background: transparent;
   }
 
@@ -80,11 +97,24 @@ const STYLES = /* css */ `
   max-width: 42rem;
   flex-shrink: 0;
   cursor: pointer;
+  overflow: visible;
+  transform-origin: 50% 50%;
+  transform-style: preserve-3d;
+  will-change: transform, opacity, filter;
+}
+
+.frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
   border-radius: 1.25rem;
-  border: 1px solid #1f1f20;
+  border: 1.5px solid rgb(214 208 186 / 0.38);
   background: #080809;
-  will-change: transform, opacity, filter;
+  box-shadow:
+    0 0 16px rgb(232 223 196 / 0.18),
+    inset 0 0 0 1px rgb(255 255 255 / 0.08);
+  transform-style: preserve-3d;
 }
 
 @media (min-width: 768px) {
@@ -113,14 +143,6 @@ const STYLES = /* css */ `
     width: 58%;
     max-width: 58rem;
   }
-}
-
-.frame {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  background: #080809;
 }
 
 .media {
@@ -246,6 +268,9 @@ export class AhMediaCarousel extends ElementBase {
   #dots!: HTMLDivElement;
   #prevBtn!: HTMLButtonElement;
   #nextBtn!: HTMLButtonElement;
+  #pullMap = new WeakMap<HTMLElement, MousePullState>();
+  #motionRaf: number | null = null;
+  #lastMotionNow = 0;
 
   constructor() {
     super();
@@ -284,6 +309,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#render();
     this.#scheduleFocus(true);
     this.#restartAutoplay();
+    this.#startMotion();
   }
 
   disconnectedCallback() {
@@ -291,6 +317,7 @@ export class AhMediaCarousel extends ElementBase {
     window.removeEventListener("resize", this.#onResize);
     this.#track?.removeEventListener("scroll", this.#onScroll);
     this.#stopAutoplay();
+    this.#stopMotion();
     if (this.#hoverTimer) window.clearTimeout(this.#hoverTimer);
     if (this.#userPauseTimer) window.clearTimeout(this.#userPauseTimer);
     if (this.#scrollRaf) window.cancelAnimationFrame(this.#scrollRaf);
@@ -400,6 +427,33 @@ export class AhMediaCarousel extends ElementBase {
       window.cancelAnimationFrame(this.#autoRaf);
       this.#autoRaf = null;
     }
+  }
+
+  #pullFor(el: HTMLElement) {
+    let state = this.#pullMap.get(el);
+    if (!state) {
+      state = createMousePullState();
+      this.#pullMap.set(el, state);
+    }
+    return state;
+  }
+
+  #stopMotion() {
+    if (this.#motionRaf) {
+      window.cancelAnimationFrame(this.#motionRaf);
+      this.#motionRaf = null;
+    }
+  }
+
+  #startMotion() {
+    this.#stopMotion();
+    this.#lastMotionNow = performance.now();
+    const tick = (now: number) => {
+      this.#motionRaf = window.requestAnimationFrame(tick);
+      if (document.hidden) return;
+      this.#syncFocus(now);
+    };
+    this.#motionRaf = window.requestAnimationFrame(tick);
   }
 
   #restartAutoplay() {
@@ -624,11 +678,14 @@ export class AhMediaCarousel extends ElementBase {
     }
   }
 
-  #syncFocus() {
+  #syncFocus(now = performance.now()) {
     const slides = Array.from(
       this.#track.querySelectorAll<HTMLElement>("[data-slide]"),
     );
     if (!slides.length) return;
+
+    const dt = Math.min(48, now - (this.#lastMotionNow || now));
+    this.#lastMotionNow = now;
 
     const trackRect = this.#track.getBoundingClientRect();
     const rootMid = trackRect.left + trackRect.width / 2;
@@ -638,8 +695,10 @@ export class AhMediaCarousel extends ElementBase {
     let bestAmount = -1;
 
     slides.forEach((slide, index) => {
-      const rect = slide.getBoundingClientRect();
-      const mid = rect.left + rect.width / 2;
+      const mid =
+        trackRect.left +
+        (slide.offsetLeft - this.#track.scrollLeft) +
+        slide.offsetWidth / 2;
       const dist = Math.abs(mid - rootMid);
       const amount = Math.max(0, Math.min(1, 1 - dist / falloff));
       const focus = 1 - (1 - amount) * (1 - amount);
@@ -647,8 +706,29 @@ export class AhMediaCarousel extends ElementBase {
       const scale = SCALE_MIN + focus * (SCALE_MAX - SCALE_MIN);
       const opacity = OPACITY_MIN + focus * (OPACITY_MAX - OPACITY_MIN);
       const blur = BLUR_MAX * (1 - focus);
-
-      slide.style.transform = `scale(${scale.toFixed(4)})`;
+      const pose = `scale(${scale.toFixed(4)})`;
+      slide.style.transformOrigin = "50% 50%";
+      slide.style.transformStyle = "preserve-3d";
+      if (this.#reduced) {
+        slide.style.transform = pose;
+      } else {
+        const pull = stepMousePull(
+          this.#pullFor(slide),
+          slide,
+          now,
+          dt,
+          "gallery",
+          0.5,
+        );
+        slide.style.transform = withIdleHover(pose, {
+          x: pull.x,
+          y: pull.y,
+          z: pull.z,
+          rot: 0,
+          rotX: pull.rotX,
+          rotY: pull.rotY,
+        });
+      }
       slide.style.opacity = String(opacity);
       slide.style.filter = `blur(${blur.toFixed(2)}px)`;
 

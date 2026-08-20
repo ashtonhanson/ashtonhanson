@@ -71,12 +71,20 @@ body {
   content: none;
 }
 
-/* Solid title fill (no velvet texture) */
+/* Title fill — light blue fading to white */
 .title-shine-fill {
   position: relative;
   z-index: 1;
-  color: #2a1a1c;
-  -webkit-text-fill-color: #2a1a1c;
+  background-image: linear-gradient(
+    165deg,
+    #9ec4ea 0%,
+    #d4e6f7 42%,
+    #ffffff 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 
 /*
@@ -91,9 +99,9 @@ body {
   pointer-events: none;
   background-image: radial-gradient(
     ellipse 72vw 52vh at 38vw 14vh,
-    rgb(255 252 240 / 0.7) 0%,
-    rgb(255 245 220 / 0.32) 26%,
-    rgb(255 240 210 / 0.1) 46%,
+    rgb(255 255 255 / 0.78) 0%,
+    rgb(210 230 252 / 0.34) 26%,
+    rgb(180 214 245 / 0.12) 46%,
     transparent 68%
   );
   background-attachment: fixed;
@@ -150,95 +158,60 @@ body {
   z-index: 15;
 }
 
-/* Logo plates — soft glowing frame + smooth traveling edge shine */
+/* Logo plates — holographic frame + living halo */
 .logo-plate {
   --logo-radius: 1.15rem;
+  --shine-x: 50%;
+  --shine-y: 42%;
   position: relative;
+  overflow: visible;
   border-radius: var(--logo-radius);
-  isolation: isolate;
-  box-shadow:
-    0 0 18px rgb(232 223 196 / 0.1),
-    0 0 42px rgb(255 255 255 / 0.06),
-    0 0 72px rgb(232 223 196 / 0.04);
+  transition: none;
+}
+
+.logo-plate-pose {
+  position: relative;
+  overflow: visible;
+  border-radius: var(--logo-radius);
+  transition: none;
+}
+
+.logo-plate-window {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: var(--logo-radius);
+}
+
+.logo-plate-art {
+  position: relative;
+  transform-origin: 50% 50%;
+  will-change: transform;
 }
 
 .logo-plate-image {
-  position: relative;
-  z-index: 0;
+  display: block;
+  width: 100%;
+  height: auto;
   border-radius: var(--logo-radius);
 }
 
-.logo-plate::before {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  z-index: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  box-shadow:
-    inset 0 0 0 1px rgb(232 223 196 / 0.12),
-    0 0 28px rgb(232 223 196 / 0.14);
-  opacity: 0.85;
-}
-
-.logo-plate::after {
-  content: "";
+.logo-plate-bezel {
   position: absolute;
   inset: 0;
-  z-index: 1;
-  border-radius: inherit;
-  padding: 1.5px;
+  z-index: 3;
+  border-radius: var(--logo-radius);
   pointer-events: none;
-  background-image: linear-gradient(
-    115deg,
-    rgb(90 90 88 / 0.35) 0%,
-    rgb(160 160 156 / 0.55) 22%,
-    rgb(245 245 240 / 0.95) 42%,
-    rgb(170 170 166 / 0.5) 58%,
-    rgb(245 245 240 / 0.95) 78%,
-    rgb(90 90 88 / 0.35) 100%
-  );
-  background-size: 260% 100%;
-  background-position: 0% 50%;
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  filter: drop-shadow(0 0 6px rgb(232 223 196 / 0.35));
-}
-
-@keyframes logo-edge-shine {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .logo-plate::after {
-    animation: logo-edge-shine 16s ease-in-out infinite;
-  }
+  transform-origin: 50% 50%;
+  will-change: transform;
+  background: transparent;
+  border: 1.5px solid rgb(214 208 186 / 0.72);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .logo-plate::after {
-    animation: none;
-    background-image: linear-gradient(
-      115deg,
-      rgb(90 90 88 / 0.45) 0%,
-      rgb(180 180 176 / 0.55) 50%,
-      rgb(90 90 88 / 0.45) 100%
-    );
-    filter: drop-shadow(0 0 4px rgb(232 223 196 / 0.2));
+  .logo-plate-bezel {
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
   }
 
   .title-shine-beam {
@@ -398,6 +371,140 @@ body {
   .email-shine-glint {
     display: none;
   }
+}
+
+/* Contact form */
+.contact-form {
+  position: relative;
+  margin: 0 auto;
+  width: min(100%, 28rem);
+  text-align: left;
+}
+
+.contact-form-row {
+  display: grid;
+  gap: 0.9rem;
+}
+
+@media (min-width: 640px) {
+  .contact-form-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+}
+
+.contact-field-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-bottom: 0.95rem;
+}
+
+.contact-label {
+  font-family: var(--font-display), "Montserrat", sans-serif;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.contact-field {
+  width: 100%;
+  appearance: none;
+  background: rgb(214 208 186 / 0.04);
+  border: 1px solid rgb(214 208 186 / 0.28);
+  border-radius: 0.35rem;
+  color: var(--ink);
+  font-family: var(--font-display), "Montserrat", sans-serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  padding: 0.72rem 0.85rem;
+  transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.contact-field-area {
+  min-height: 8.5rem;
+  resize: vertical;
+}
+
+.contact-field:focus {
+  outline: none;
+  background: rgb(214 208 186 / 0.07);
+  border-color: rgb(214 208 186 / 0.72);
+}
+
+.contact-field:disabled {
+  opacity: 0.55;
+}
+
+.contact-field option {
+  background: #12090b;
+  color: var(--ink);
+}
+
+.contact-honey {
+  position: absolute;
+  left: -9999px;
+  height: 0;
+  overflow: hidden;
+}
+
+.contact-form-error,
+.contact-form-thanks {
+  margin: 0 0 0.85rem;
+  font-family: var(--font-display), "Montserrat", sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
+
+.contact-form-error {
+  color: #e8c4c8;
+}
+
+.contact-form-thanks {
+  margin: 0 auto;
+  max-width: 28rem;
+  text-align: center;
+  color: rgb(214 208 186 / 0.88);
+  font-size: 0.95rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.contact-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.35rem;
+  min-height: 2.7rem;
+  padding: 0.7rem 1.4rem;
+  border: 1px solid rgb(214 208 186 / 0.55);
+  border-radius: 0.35rem;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-display), "Montserrat", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    opacity 0.25s ease;
+}
+
+.contact-submit:hover:not(:disabled) {
+  background: rgb(214 208 186 / 0.1);
+  border-color: rgb(214 208 186 / 0.85);
+}
+
+.contact-submit:disabled {
+  opacity: 0.55;
+  cursor: wait;
 }
 
 /* Nav links — living uneven glow on active + hover */

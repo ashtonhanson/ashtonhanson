@@ -1,26 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { withIdleHover } from "@/lib/idleHover";
+import { createMousePullState, mousePullIsResting, stepMousePull } from "@/lib/mousePull";
+import { preventOrphan } from "@/lib/text";
 
 type BodyCopyProps = {
   children: ReactNode;
   className?: string;
 };
-
-/**
- * Join only the final two words with a non-breaking space so a single
- * trailing word can't wrap alone — without forcing an early line break.
- */
-function bindLastTwoWords(text: string): string {
-  const lines = text.split("\n");
-  const lastIndex = lines.length - 1;
-  const last = lines[lastIndex] ?? "";
-  const lastSpace = last.lastIndexOf(" ");
-  if (lastSpace === -1) return text;
-  lines[lastIndex] =
-    last.slice(0, lastSpace) + "\u00A0" + last.slice(lastSpace + 1);
-  return lines.join("\n");
-}
 
 /**
  * Body paragraph with scroll-linked fade + blur
@@ -44,12 +32,16 @@ export function BodyCopy({ children, className = "" }: BodyCopyProps) {
     if (reduced) {
       edgeRef.current = 1;
       setEdge(1);
+      const el = ref.current;
+      if (el) el.style.transform = "none";
       return;
     }
 
     let frame = 0;
-    const update = () => {
-      frame = 0;
+    let lastNow = performance.now();
+    const pull = createMousePullState();
+
+    const updateEdge = () => {
       const el = ref.current;
       if (!el) return;
 
@@ -57,7 +49,6 @@ export function BodyCopy({ children, className = "" }: BodyCopyProps) {
       const rect = el.getBoundingClientRect();
       const center = rect.top + rect.height / 2;
       const distFromEdge = Math.min(center, viewH - center);
-      // Fully clear once past ~32% of the viewport from either edge
       const fadeZone = viewH * 0.32;
       const next = Math.max(0, Math.min(1, distFromEdge / fadeZone));
 
@@ -66,42 +57,58 @@ export function BodyCopy({ children, className = "" }: BodyCopyProps) {
       setEdge(next);
     };
 
-    const onScroll = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(update);
+    const loop = (now: number) => {
+      frame = window.requestAnimationFrame(loop);
+      const dt = Math.min(48, now - lastNow);
+      lastNow = now;
+      if (document.hidden) return;
+      const el = ref.current;
+      if (!el) return;
+      const pulled = stepMousePull(pull, el, now, dt, "body");
+      el.style.transformStyle = "preserve-3d";
+      el.style.transform = mousePullIsResting(pulled)
+        ? "none"
+        : withIdleHover("none", {
+            x: pulled.x,
+            y: pulled.y,
+            z: pulled.z,
+            rot: 0,
+            rotX: pulled.rotX,
+            rotY: pulled.rotY,
+          });
     };
 
-    update();
+    const onScroll = () => {
+      updateEdge();
+    };
+
+    updateEdge();
+    frame = window.requestAnimationFrame(loop);
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
-      if (frame) window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(frame);
     };
   }, [reduced]);
 
-  // edge 1 = mid-screen (clear); edge 0 = at top/bottom (faded + blurred)
   const fade = 1 - edge;
   const blur = reduced ? 0 : fade * fade * 10;
-  // Don't go fully invisible — leave a soft floor near the edges
   const opacity = reduced ? 1 : 0.18 + edge * edge * 0.82;
-
-  const content =
-    typeof children === "string" ? bindLastTwoWords(children) : children;
 
   return (
     <p
       ref={ref}
-      className={`body-copy ${className}`.trim()}
+      className={`body-copy [text-wrap:pretty] ${className}`.trim()}
       style={{
         filter: blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : undefined,
         opacity,
-        willChange: reduced ? undefined : "filter, opacity",
+        willChange: reduced ? undefined : "filter, opacity, transform",
         transition: "filter 100ms linear, opacity 100ms linear",
       }}
     >
-      {content}
+      {typeof children === "string" ? preventOrphan(children) : children}
     </p>
   );
 }

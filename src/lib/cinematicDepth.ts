@@ -45,6 +45,7 @@ export const DEPTH = {
 export const ABOUT_INTRO = {
   /** Tall pin so Z-scale has real scroll room and never feels rushed. */
   pinHeightVh: "520vh",
+  /** Fade with the last body line so ABOUT doesn’t sit empty before RECENT WORK. */
   stageFadeStart: 0.9,
   stageFadeEnd: 1,
 
@@ -52,7 +53,7 @@ export const ABOUT_INTRO = {
   enterExitBlurPx: 10,
   /** Longer overlap so the previous line is already fading as the next arrives. */
   handoffRatio: 0.42,
-  sequenceEnd: 0.92,
+  sequenceEnd: 0.94,
 
   /**
    * Zoom t when opacity begins falling. Keep this < 1 so nothing sits at max scale.
@@ -125,7 +126,7 @@ export function introHandoffs(lineCount: number): IntroHandoff[] {
     const appearStart = i === 0 ? 0 : i * beat;
     const appearEnd = i === 0 ? 0 : appearStart + handoff;
     const exitStart = i === n - 1 ? end : (i + 1) * beat;
-    const exitEnd = Math.min(0.95, exitStart + handoff);
+    const exitEnd = Math.min(i === n - 1 ? 1 : 0.98, exitStart + handoff);
     return { appearStart, appearEnd, exitStart, exitEnd };
   });
 }
@@ -237,13 +238,19 @@ export function bodyZoomPath(): BezierPath {
  */
 export function introElementPath(index: number): BezierPath {
   switch (index) {
-    case 0: // ABOUT — straight
-    case 1: // ME — identical motion to ABOUT
+    case 0: // ABOUT — rises, leans left, scales toward camera
       return {
         p0: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
-        p1: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
-        p2: { x: 1.5, y: -3, z: 0, scale: 1, rot: 0.4 },
-        p3: { x: -1.5, y: -52, z: 0, scale: 1, rot: -0.6 },
+        p1: { x: -2.5, y: -7, z: 0, scale: 1, rot: -3.2 },
+        p2: { x: -6, y: -18, z: 0, scale: 1, rot: -8.5 },
+        p3: { x: -10, y: -32, z: 0, scale: 1, rot: -14 },
+      };
+    case 1: // ME — rises, leans right, scales toward camera
+      return {
+        p0: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
+        p1: { x: 3.5, y: -8, z: 0, scale: 1, rot: 3.8 },
+        p2: { x: 9, y: -19, z: 0, scale: 1, rot: 10 },
+        p3: { x: 15, y: -34, z: 0, scale: 1, rot: 16 },
       };
     case 2: // line 0 — from below-right
       return {
@@ -278,9 +285,8 @@ export function introElementPath(index: number): BezierPath {
   }
 }
 
-/** Pose: ABOUT/ME share zoom; body uses the small→huge body zoom. */
+/** Pose: ABOUT/ME share zoom and now travel up at an angle; body uses the small→huge body zoom. */
 export function sampleIntroPose(index: number, zoomT: number): PathPose {
-  // Linear sample — eased sampling flattened into a peak-scale pause.
   const lateral = sampleBezierPath(zoomT, introElementPath(index));
   const zoom =
     index >= 2
