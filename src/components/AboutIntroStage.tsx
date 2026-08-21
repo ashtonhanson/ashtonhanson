@@ -200,7 +200,7 @@ export function AboutIntroStage({
             handoffIndex + 3,
             atRest,
             travelT,
-            handoffIndex === 0 ? (arriving ? 0 : 6.8) : 1,
+            handoffIndex === 0 ? (arriving ? 0 : 2.2) : 1,
             pull,
           ),
         );

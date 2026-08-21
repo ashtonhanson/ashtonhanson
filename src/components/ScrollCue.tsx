@@ -39,10 +39,9 @@ export const ScrollCue = forwardRef<HTMLDivElement>(function ScrollCue(
               </clipPath>
               <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="0">
                 <stop offset="0%" stopColor="#5c5c5a" />
-                <stop offset="38%" stopColor="#5c5c5a" />
-                <stop offset="47%" stopColor="#ffffff" />
-                <stop offset="53%" stopColor="#ffffff" />
-                <stop offset="62%" stopColor="#5c5c5a" />
+                <stop offset="44%" stopColor="#5c5c5a" />
+                <stop offset="50%" stopColor="#c4c4c0" stopOpacity="0.42" />
+                <stop offset="56%" stopColor="#5c5c5a" />
                 <stop offset="100%" stopColor="#5c5c5a" />
               </linearGradient>
             </defs>

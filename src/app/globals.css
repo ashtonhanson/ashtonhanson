@@ -700,8 +700,8 @@ body {
   width: clamp(14.5rem, 52.8vw, 27.2rem);
   height: auto;
   overflow: visible;
-  filter: drop-shadow(0 0 8px rgb(255 255 255 / 0.28))
-    drop-shadow(0 0 18px rgb(220 220 210 / 0.18));
+  filter: drop-shadow(0 0 5px rgb(255 255 255 / 0.12))
+    drop-shadow(0 0 10px rgb(220 220 210 / 0.08));
 }
 
 .scroll-cue-shine {
@@ -711,15 +711,15 @@ body {
 
 @media (prefers-reduced-motion: no-preference) {
   .scroll-cue-hover {
-    animation: scroll-cue-hover 2.35s ease-in-out 1.7s infinite;
+    animation: scroll-cue-hover 3.4s ease-in-out 1.7s infinite;
   }
 
   .scroll-cue-icon {
-    animation: scroll-cue-flash 2.35s ease-in-out infinite;
+    animation: scroll-cue-flash 3.4s ease-in-out infinite;
   }
 
   .scroll-cue-shine {
-    animation: scroll-cue-shine 1.65s linear infinite;
+    animation: scroll-cue-shine 3.2s linear infinite;
   }
 }
 
@@ -729,13 +729,13 @@ body {
     transform: translate3d(0, 0, 0);
   }
   20% {
-    transform: translate3d(0, -1.15rem, 0);
+    transform: translate3d(0, -0.42rem, 0);
   }
   50% {
-    transform: translate3d(0, 1.4rem, 0);
+    transform: translate3d(0, 0.5rem, 0);
   }
   80% {
-    transform: translate3d(0, -1.15rem, 0);
+    transform: translate3d(0, -0.42rem, 0);
   }
 }
 
@@ -751,13 +751,13 @@ body {
 @keyframes scroll-cue-flash {
   0%,
   100% {
-    filter: drop-shadow(0 0 4px rgb(255 255 255 / 0.16))
-      drop-shadow(0 0 10px rgb(200 200 190 / 0.1));
+    filter: drop-shadow(0 0 3px rgb(255 255 255 / 0.08))
+      drop-shadow(0 0 7px rgb(200 200 190 / 0.05));
     opacity: 1;
   }
   48% {
-    filter: drop-shadow(0 0 12px rgb(255 255 255 / 0.55))
-      drop-shadow(0 0 24px rgb(230 230 220 / 0.3));
+    filter: drop-shadow(0 0 6px rgb(255 255 255 / 0.2))
+      drop-shadow(0 0 12px rgb(230 230 220 / 0.1));
     opacity: 1;
   }
 }
