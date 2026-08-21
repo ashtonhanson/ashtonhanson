@@ -132,6 +132,12 @@ export function easeInOutCubic(t: number) {
   return x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2;
 }
 
+/** C2-smoothstep: zero velocity at both ends, no kinks. */
+export function smootherstep(t: number) {
+  const x = clamp(t, 0, 1);
+  return x * x * x * (x * (x * 6 - 15) + 10);
+}
+
 /**
  * Sequential handoff windows: each element exits as the next enters.
  * Index 0 = scroll cue (on stage at load), 1 = ABOUT/title, 2 = ME, 3… = body.
@@ -255,8 +261,8 @@ export function cueZoomPath(): BezierPath {
   const peakZ = ABOUT_INTRO.cuePeakZ;
   return {
     p0: { x: 0, y: 0, z: 0, scale: s0, rot: 0 },
-    p1: { x: 0, y: 0, z: peakZ * 0.12, scale: s0 + (s3 - s0) * 0.14, rot: 0 },
-    p2: { x: 0, y: 0, z: peakZ * 0.5, scale: s0 + (s3 - s0) * 0.55, rot: 0 },
+    p1: { x: 0, y: 0, z: peakZ * 0.32, scale: s0 + (s3 - s0) * 0.32, rot: 0 },
+    p2: { x: 0, y: 0, z: peakZ * 0.68, scale: s0 + (s3 - s0) * 0.68, rot: 0 },
     p3: { x: 0, y: 0, z: peakZ, scale: s3, rot: 0 },
   };
 }
@@ -333,26 +339,22 @@ export function cueLifeT(progress: number, win: IntroHandoff) {
   return clamp(progress / Math.max(win.exitEnd, 0.0001), 0, 1);
 }
 
-/** vh: from above the screen to a high rest, with one smooth overshoot. */
+/** vh: from above the screen to a high rest, no bounce. */
 export function cueArriveY(elapsedMs: number) {
-  const t = clamp(elapsedMs / ABOUT_INTRO.cueArriveMs, 0, 1);
-  const x = t - 1;
-  const c = 1.55;
-  const back = 1 + x * x * ((c + 1) * x + c);
+  const t = smootherstep(elapsedMs / ABOUT_INTRO.cueArriveMs);
   const start = ABOUT_INTRO.cueArriveVh;
   const rest = ABOUT_INTRO.cueRestY;
-  return start + (rest - start) * back;
+  return start + (rest - start) * t;
 }
 
-/** Shaft passes under center shortly after Z scale begins. */
+/** Tilt rides the same smoothed Z so the shaft never kicks. */
 export function cueTiltAmount(scaleT: number) {
-  return easeOutCubic(clamp((scaleT - 0.14) / 0.4, 0, 1));
+  return clamp(scaleT, 0, 1);
 }
 
-/** Stay solid while the mark drops, then fade near the bottom of the screen. */
+/** Stay solid while the mark drops, then fade with the exit. */
 export function cueHoldOpacity(lifeT: number) {
-  const t = clamp((lifeT - 0.7) / 0.3, 0, 1);
-  return 1 - easeInOutCubic(t);
+  return 1 - smootherstep((lifeT - 0.6) / 0.4);
 }
 
 /**
@@ -365,21 +367,19 @@ export function sampleIntroPose(
   lifeT = zoomT,
 ): PathPose {
   if (index === 0) {
-    const dropGate = 0.1;
-    const dropT = clamp(lifeT / 0.36, 0, 1);
-    const rawScale = clamp((lifeT - dropGate) / (1 - dropGate), 0, 1);
-    const scaleT = easeInOutCubic(rawScale);
+    const dropT = smootherstep(lifeT / 0.48);
+    const scaleT = smootherstep((lifeT - 0.04) / 0.96);
     const zoom = sampleBezierPath(scaleT, cueZoomPath());
-    const dropY = 10 * dropT + 32 * dropT * dropT;
-    const toCenter = -ABOUT_INTRO.cueRestY;
-    const y = dropY + (toCenter - dropY) * scaleT;
+    const dropY = 8 * dropT + 26 * dropT * dropT;
+    const exitY = -ABOUT_INTRO.cueRestY + 14;
+    const y = dropY + (exitY - dropY) * scaleT;
     return {
       x: 0,
       y,
       z: zoom.z,
       scale: zoom.scale,
       rot: 0,
-      rotX: 10 + 102 * cueTiltAmount(scaleT),
+      rotX: 8 + 100 * cueTiltAmount(scaleT),
     };
   }
   const content = index - 1;
