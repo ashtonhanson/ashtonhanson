@@ -227,17 +227,7 @@ export function AboutIntroStage({
           style={{ transformStyle: "preserve-3d" }}
         >
           <div className="absolute inset-0 flex items-center justify-center">
-            <div
-              ref={cueRef}
-              className="intro-layer will-change-transform"
-              style={{
-                opacity: 1,
-                transformOrigin: "50% 12%",
-                transformStyle: "preserve-3d",
-              }}
-            >
-              <ScrollCue />
-            </div>
+            <ScrollCue ref={cueRef} />
           </div>
 
           <div className="absolute inset-0 flex items-center justify-center">

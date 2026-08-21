@@ -61,7 +61,12 @@ export const ABOUT_INTRO = {
    */
   cueExitStart: 0.034,
   cueExitEnd: 0.11,
-  cuePeakScale: 6.6,
+  /**
+   * SVG is drawn this many times the on-screen rest size so scale() never
+   * upsamples a tiny bitmap. Rest scale is 1 / cueLayoutScale.
+   */
+  cueLayoutScale: 6.6,
+  cuePeakScale: 1,
   cuePeakZ: 520,
 
   /**
@@ -237,15 +242,16 @@ export function aboutZoomPath(): BezierPath {
   };
 }
 
-/** Load cue — same Z language as ABOUT, much larger peak so it blows past the camera. */
+/** Load cue — drawn large, starts scaled down so the surge stays sharp. */
 export function cueZoomPath(): BezierPath {
-  const peakS = ABOUT_INTRO.cuePeakScale;
+  const s0 = 1 / ABOUT_INTRO.cueLayoutScale;
+  const s3 = ABOUT_INTRO.cuePeakScale;
   const peakZ = ABOUT_INTRO.cuePeakZ;
   return {
-    p0: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
-    p1: { x: 0, y: 0, z: peakZ * 0.16, scale: 1 + (peakS - 1) * 0.2, rot: 0 },
-    p2: { x: 0, y: 0, z: peakZ * 0.48, scale: 1 + (peakS - 1) * 0.55, rot: 0 },
-    p3: { x: 0, y: 0, z: peakZ, scale: peakS, rot: 0 },
+    p0: { x: 0, y: 0, z: 0, scale: s0, rot: 0 },
+    p1: { x: 0, y: 0, z: peakZ * 0.16, scale: s0 + (s3 - s0) * 0.2, rot: 0 },
+    p2: { x: 0, y: 0, z: peakZ * 0.48, scale: s0 + (s3 - s0) * 0.55, rot: 0 },
+    p3: { x: 0, y: 0, z: peakZ, scale: s3, rot: 0 },
   };
 }
 

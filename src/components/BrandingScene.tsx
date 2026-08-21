@@ -497,16 +497,7 @@ export function BrandingScene({
             style={{ transformStyle: "preserve-3d" }}
           >
             <div className="absolute inset-0 flex items-center justify-center px-2">
-              <div
-                ref={cueRef}
-                className="will-change-transform"
-                style={{
-                  transformOrigin: "50% 12%",
-                  transformStyle: "preserve-3d",
-                }}
-              >
-                <ScrollCue />
-              </div>
+              <ScrollCue ref={cueRef} />
             </div>
 
             <div className="absolute inset-0 flex items-center justify-center px-2">
