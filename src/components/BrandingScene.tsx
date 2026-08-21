@@ -270,7 +270,9 @@ export function BrandingScene({
         const blur =
           (handoffIndex === 0 ? (1 - opacity) * enterExitBlurPx : vis.blur) +
           loadBlend * LOAD_CLEAR_BLUR_PX;
-        const atRest = opacity >= 0.98 && blur < 0.4;
+        const arriving =
+          handoffIndex === 0 && now - born < ABOUT_INTRO.cueArriveMs;
+        const atRest = !arriving && opacity >= 0.98 && blur < 0.4;
         const travelT = 1 - opacity;
         const pull = stepMousePull(
           pullFor(el),
@@ -292,7 +294,7 @@ export function BrandingScene({
             handoffIndex + 3,
             atRest,
             travelT,
-            handoffIndex === 0 ? 6.8 : 1,
+            handoffIndex === 0 ? (arriving ? 0 : 6.8) : 1,
             pull,
           ),
         );

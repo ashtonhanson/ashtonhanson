@@ -711,7 +711,7 @@ body {
 
 @media (prefers-reduced-motion: no-preference) {
   .scroll-cue-hover {
-    animation: scroll-cue-hover 2.35s ease-in-out infinite;
+    animation: scroll-cue-hover 2.35s ease-in-out 1.7s infinite;
   }
 
   .scroll-cue-icon {
