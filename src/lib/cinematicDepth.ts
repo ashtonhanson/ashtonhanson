@@ -365,7 +365,7 @@ export function sampleIntroPose(
   lifeT = zoomT,
 ): PathPose {
   if (index === 0) {
-    const dropGate = 0.4;
+    const dropGate = 0.28;
     const dropT = clamp(lifeT / dropGate, 0, 1);
     const scaleT = clamp((lifeT - dropGate) / (1 - dropGate), 0, 1);
     const zoom = sampleBezierPath(scaleT, cueZoomPath());
