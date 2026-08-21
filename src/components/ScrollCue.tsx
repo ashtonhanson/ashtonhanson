@@ -24,7 +24,7 @@ export const ScrollCue = forwardRef<HTMLDivElement>(function ScrollCue(
           className="scroll-cue-pose will-change-transform"
           style={{
             transform: `scale(${startScale})`,
-            transformOrigin: "50% 50%",
+            transformOrigin: "50% 88%",
             transformStyle: "preserve-3d",
           }}
         >

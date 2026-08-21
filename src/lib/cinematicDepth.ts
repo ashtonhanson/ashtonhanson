@@ -327,6 +327,20 @@ export function cueLifeT(progress: number, win: IntroHandoff) {
   return clamp(progress / Math.max(win.exitEnd, 0.0001), 0, 1);
 }
 
+/** Peak tilt before scale finishes so the tail swings past the tip. */
+export function cueTiltAmount(zoomT: number) {
+  const t = clamp(zoomT, 0, 1);
+  const peakAt = 0.48;
+  if (t <= peakAt) {
+    return easeOutCubic(t / peakAt);
+  }
+  return (
+    1 -
+    0.78 *
+      easeInOutCubic((t - peakAt) / Math.max(1 - peakAt, 0.0001))
+  );
+}
+
 /** Stay solid while the mark drops, then fade near the bottom of the screen. */
 export function cueHoldOpacity(lifeT: number) {
   const t = clamp((lifeT - 0.58) / 0.42, 0, 1);
@@ -351,7 +365,7 @@ export function sampleIntroPose(
       z: zoom.z,
       scale: zoom.scale,
       rot: 0,
-      rotX: 10 + 68 * Math.sin(Math.PI * drop),
+      rotX: 8 + 130 * cueTiltAmount(zoomT),
     };
   }
   const content = index - 1;
