@@ -255,8 +255,8 @@ export function cueZoomPath(): BezierPath {
   const peakZ = ABOUT_INTRO.cuePeakZ;
   return {
     p0: { x: 0, y: 0, z: 0, scale: s0, rot: 0 },
-    p1: { x: 0, y: 0, z: peakZ * 0.33, scale: s0 + (s3 - s0) * 0.33, rot: 0 },
-    p2: { x: 0, y: 0, z: peakZ * 0.67, scale: s0 + (s3 - s0) * 0.67, rot: 0 },
+    p1: { x: 0, y: 0, z: peakZ * 0.22, scale: s0 + (s3 - s0) * 0.24, rot: 0 },
+    p2: { x: 0, y: 0, z: peakZ * 0.58, scale: s0 + (s3 - s0) * 0.64, rot: 0 },
     p3: { x: 0, y: 0, z: peakZ, scale: s3, rot: 0 },
   };
 }
@@ -344,9 +344,9 @@ export function cueArriveY(elapsedMs: number) {
   return start + (rest - start) * back;
 }
 
-/** Climb through the exit so the shaft passes the arrow’s center as it leaves. */
-export function cueTiltAmount(zoomT: number) {
-  return easeOutCubic(clamp(zoomT, 0, 1));
+/** Shaft passes under center early in the Z scale. */
+export function cueTiltAmount(scaleT: number) {
+  return easeOutCubic(clamp(scaleT / 0.4, 0, 1));
 }
 
 /** Stay solid while the mark drops, then fade near the bottom of the screen. */
@@ -365,9 +365,10 @@ export function sampleIntroPose(
   lifeT = zoomT,
 ): PathPose {
   if (index === 0) {
-    const dropGate = 0.28;
-    const dropT = clamp(lifeT / dropGate, 0, 1);
-    const scaleT = clamp((lifeT - dropGate) / (1 - dropGate), 0, 1);
+    const dropGate = 0.1;
+    const dropT = clamp(lifeT / 0.36, 0, 1);
+    const rawScale = clamp((lifeT - dropGate) / (1 - dropGate), 0, 1);
+    const scaleT = 1 - (1 - rawScale) ** 2;
     const zoom = sampleBezierPath(scaleT, cueZoomPath());
     return {
       x: 0,
@@ -375,7 +376,7 @@ export function sampleIntroPose(
       z: zoom.z,
       scale: zoom.scale,
       rot: 0,
-      rotX: 10 + 96 * cueTiltAmount(scaleT),
+      rotX: 10 + 102 * cueTiltAmount(scaleT),
     };
   }
   const content = index - 1;
