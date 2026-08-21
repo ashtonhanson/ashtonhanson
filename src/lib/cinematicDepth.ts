@@ -221,7 +221,8 @@ function zoomProgress(progress: number, win: IntroHandoff) {
 
   if (progress <= fadeAt) {
     const t = (progress - start) / Math.max(fadeAt - start, 0.0001);
-    return fadeZ * easeInOutCubic(t);
+    const shaped = win.appearEnd <= win.appearStart ? t : easeInOutCubic(t);
+    return fadeZ * shaped;
   }
 
   const t = (progress - fadeAt) / Math.max(gone - fadeAt, 0.0001);
@@ -249,8 +250,8 @@ export function cueZoomPath(): BezierPath {
   const peakZ = ABOUT_INTRO.cuePeakZ;
   return {
     p0: { x: 0, y: 0, z: 0, scale: s0, rot: 0 },
-    p1: { x: 0, y: 0, z: peakZ * 0.16, scale: s0 + (s3 - s0) * 0.2, rot: 0 },
-    p2: { x: 0, y: 0, z: peakZ * 0.48, scale: s0 + (s3 - s0) * 0.55, rot: 0 },
+    p1: { x: 0, y: 0, z: peakZ * 0.33, scale: s0 + (s3 - s0) * 0.33, rot: 0 },
+    p2: { x: 0, y: 0, z: peakZ * 0.67, scale: s0 + (s3 - s0) * 0.67, rot: 0 },
     p3: { x: 0, y: 0, z: peakZ, scale: s3, rot: 0 },
   };
 }
@@ -332,7 +333,7 @@ export function cueTiltAmount(zoomT: number) {
   const t = clamp(zoomT, 0, 1);
   const peakAt = 0.48;
   if (t <= peakAt) {
-    return easeOutCubic(t / peakAt);
+    return t / peakAt;
   }
   return (
     1 -
