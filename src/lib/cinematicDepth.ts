@@ -83,6 +83,8 @@ export type PathPose = {
   z: number;
   scale: number;
   rot: number;
+  /** Pitch toward camera (deg). Omitted = 0. */
+  rotX?: number;
 };
 
 export type BezierPath = {
@@ -321,7 +323,14 @@ export function introElementPath(index: number): BezierPath {
 export function sampleIntroPose(index: number, zoomT: number): PathPose {
   if (index === 0) {
     const zoom = sampleBezierPath(zoomT, cueZoomPath());
-    return { x: 0, y: 0, z: zoom.z, scale: zoom.scale, rot: 0 };
+    return {
+      x: 0,
+      y: 0,
+      z: zoom.z,
+      scale: zoom.scale,
+      rot: 0,
+      rotX: -12 - 58 * zoomT,
+    };
   }
   const content = index - 1;
   const lateral = sampleBezierPath(zoomT, introElementPath(content));
@@ -373,7 +382,8 @@ export function sampleBezierPathEased(t: number, path: BezierPath): PathPose {
 }
 
 export function poseToTransform(pose: PathPose) {
-  return `translate3d(${pose.x.toFixed(2)}vw, ${pose.y.toFixed(2)}vh, ${pose.z.toFixed(1)}px) rotateZ(${pose.rot.toFixed(2)}deg) scale(${pose.scale.toFixed(4)})`;
+  const rotX = pose.rotX ?? 0;
+  return `translate3d(${pose.x.toFixed(2)}vw, ${pose.y.toFixed(2)}vh, ${pose.z.toFixed(1)}px) rotateX(${rotX.toFixed(2)}deg) rotateZ(${pose.rot.toFixed(2)}deg) scale(${pose.scale.toFixed(4)})`;
 }
 
 /** Fixed stage-light beam in viewport coordinates (for title shine). */
