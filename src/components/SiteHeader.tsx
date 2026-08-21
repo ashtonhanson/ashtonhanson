@@ -97,12 +97,17 @@ export function SiteHeader() {
 
         <button
           type="button"
-          className="font-display text-[0.72rem] tracking-[0.18em] text-muted md:hidden"
+          className={`nav-burger md:hidden ${open ? "is-open" : ""}`.trim()}
           aria-expanded={open}
           aria-controls="mobile-nav"
+          aria-label={open ? "Close menu" : "Open menu"}
           onClick={() => setOpen((v) => !v)}
         >
-          {open ? "CLOSE" : "MENU"}
+          <span className="nav-burger-bars" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </span>
         </button>
       </div>
 

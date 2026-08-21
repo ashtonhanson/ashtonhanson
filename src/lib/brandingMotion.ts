@@ -76,7 +76,7 @@ export const BRANDING_INTRO: IntroTiming = {
 /** CONTACT intro — still a cinematic pin, then the form lockup. */
 export const CONTACT_INTRO = {
   ...BRANDING_INTRO,
-  pinHeightVh: "280vh",
+  pinHeightVh: "360vh",
   linesStart: 0.03,
   lineSpan: 0.05,
   holdAfter: 0.02,
@@ -91,9 +91,9 @@ export const HUB_HANDOFF: HandoffTiming = {
 } as const;
 
 export const CONTACT_HANDOFF = {
-  lead: 0,
-  span: 0.1,
-  finish: 0.24,
+  lead: 0.2,
+  span: 0.18,
+  finish: 0.7,
 } as const;
 
 /**

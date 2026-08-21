@@ -54,7 +54,10 @@ import type { CaseStudy as CaseStudyType, MediaItem } from "@/lib/content";
 import { preventOrphan } from "@/lib/text";
 
 const TITLE_CLASS =
-  "pointer-events-none select-none max-w-full whitespace-pre-line text-center font-display text-[clamp(2.2rem,16vw,6rem)] font-black uppercase leading-[0.88] tracking-[0.04em] xl:text-[clamp(3.4rem,6.2vw,7.75rem)]";
+  "pointer-events-none select-none max-w-full whitespace-pre-line text-center font-display text-[clamp(1.65rem,10.5vw,6rem)] font-black uppercase leading-[0.88] tracking-[0.04em] xl:text-[clamp(3.4rem,6.2vw,7.75rem)]";
+
+const FORM_TITLE_CLASS =
+  "pointer-events-none select-none max-w-full whitespace-pre-line text-center font-display text-[clamp(1.45rem,8.2vw,3.4rem)] font-black uppercase leading-[0.92] tracking-[0.04em] xl:text-[clamp(2.4rem,4.2vw,4.25rem)]";
 
 const SECTION_TITLE_CLASS =
   "pointer-events-none select-none whitespace-pre-line text-center font-display text-[clamp(1.35rem,4.2vw,2.35rem)] font-black uppercase leading-[0.92] tracking-[0.06em] xl:text-[clamp(1.7rem,2.6vw,2.75rem)]";
@@ -512,7 +515,7 @@ export function BrandingScene({
               <div className="absolute inset-0 flex items-center justify-center px-3">
                 <div
                   ref={tagsRef}
-                  className="flex flex-wrap justify-center gap-x-8 gap-y-3 will-change-transform"
+                  className="flex flex-col items-center gap-y-4 will-change-transform md:flex-row md:flex-wrap md:justify-center md:gap-x-8 md:gap-y-3"
                   style={{
                     opacity: 0,
                     visibility: "hidden",
@@ -577,7 +580,9 @@ export function BrandingScene({
               className={
                 isFinale
                   ? "relative overflow-visible"
-                  : "relative overflow-x-clip px-5 py-[clamp(4.5rem,12vh,8rem)] md:px-8 xl:px-12 xl:py-[clamp(5.5rem,13vh,11rem)] 2xl:px-16"
+                  : study.form
+                    ? "relative overflow-x-clip px-5 pb-[clamp(4.5rem,12vh,8rem)] pt-[clamp(7rem,24vh,12rem)] md:px-8 xl:px-12 xl:pb-[clamp(5.5rem,13vh,11rem)] xl:pt-[clamp(8rem,20vh,14rem)] 2xl:px-16"
+                    : "relative overflow-x-clip px-5 py-[clamp(4.5rem,12vh,8rem)] md:px-8 xl:px-12 xl:py-[clamp(5.5rem,13vh,11rem)] 2xl:px-16"
               }
               style={isFinale ? { height: PAGE_FINALE.pinHeightVh } : undefined}
             >
@@ -605,7 +610,7 @@ export function BrandingScene({
                     transformOrigin: "50% 50%",
                   }}
                 >
-                  <TitleShine as="h2" className={TITLE_CLASS}>
+                  <TitleShine as="h2" className={study.form ? FORM_TITLE_CLASS : TITLE_CLASS}>
                     {study.title}
                   </TitleShine>
                 </div>
@@ -659,7 +664,7 @@ export function BrandingScene({
                     data-kind="copy"
                     data-angle={formAngle}
                     data-lag={36}
-                    className="mt-12 w-full max-w-lg will-change-transform xl:mt-14"
+                    className="mt-10 w-full max-w-lg will-change-transform xl:mt-12"
                     style={{ opacity: 0, transformOrigin: "50% 40%" }}
                   >
                     <ContactForm />
