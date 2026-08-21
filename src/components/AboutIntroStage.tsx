@@ -26,6 +26,7 @@ import {
   LOAD_CLEAR_BLUR_PX,
   pageHasScrolled,
   stepLoadClear,
+  viewHeight,
 } from "@/lib/loadClear";
 
 type AboutIntroStageProps = {
@@ -105,7 +106,7 @@ export function AboutIntroStage({
       if (!pin) return;
 
       const rect = pin.getBoundingClientRect();
-      const viewH = window.innerHeight || 1;
+      const viewH = viewHeight();
       const range = pin.offsetHeight - viewH;
       const progress =
         range < 64 ? 0 : clamp(-rect.top / Math.max(range, 1), 0, 1);
@@ -208,11 +209,10 @@ export function AboutIntroStage({
     >
       <div
         ref={stageRef}
-        className="about-intro-stage sticky top-[3.6rem] flex h-[calc(100dvh-3.6rem)] items-center justify-center px-5 md:px-8 xl:px-12"
+        className="about-intro-stage sticky top-[3.6rem] flex h-[calc(100dvh-3.6rem)] items-center justify-center overflow-x-clip px-5 md:px-8 xl:px-12"
         style={{
           perspective: "1400px",
           perspectiveOrigin: "50% 50%",
-          overflow: "visible",
           zIndex: 20,
         }}
       >

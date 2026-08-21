@@ -40,7 +40,6 @@ html {
   color-scheme: dark;
   width: 100%;
   max-width: 100%;
-  overflow-x: clip;
   overscroll-behavior: none;
 }
 

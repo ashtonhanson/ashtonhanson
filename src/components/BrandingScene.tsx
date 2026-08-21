@@ -42,6 +42,7 @@ import {
   LOAD_CLEAR_BLUR_PX,
   pageHasScrolled,
   stepLoadClear,
+  viewHeight,
 } from "@/lib/loadClear";
 import type { CaseStudy as CaseStudyType, MediaItem } from "@/lib/content";
 import { preventOrphan } from "@/lib/text";
@@ -461,7 +462,7 @@ export function BrandingScene({
     ) => {
       const root = sceneRef.current;
       if (!root) return;
-      const viewH = window.innerHeight || 1;
+      const viewH = viewHeight();
       const nodes = root.querySelectorAll<HTMLElement>("[data-arrive]");
       const finalePin = root.querySelector<HTMLElement>("[data-finale]");
       const finaleStage = root.querySelector<HTMLElement>("[data-finale-stage]");
@@ -581,7 +582,7 @@ export function BrandingScene({
       if (document.hidden) return;
       const pin = pinRef.current;
       if (!pin) return;
-      const viewH = window.innerHeight || 1;
+      const viewH = viewHeight();
       const range = pin.offsetHeight - viewH;
       const rect = pin.getBoundingClientRect();
       const progress =
@@ -613,7 +614,7 @@ export function BrandingScene({
       >
         <div
           ref={stageRef}
-          className="sticky top-[3.6rem] flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center px-5 md:px-8 xl:px-12"
+          className="sticky top-[3.6rem] flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-x-clip px-5 md:px-8 xl:px-12"
         >
           <div
             ref={titleRef}

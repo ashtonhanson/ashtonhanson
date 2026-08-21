@@ -10,6 +10,7 @@ import {
   type ArriveKind,
 } from "@/lib/brandingMotion";
 import { chapterWindows, windowT } from "@/lib/homeMotion";
+import { viewHeight } from "@/lib/loadClear";
 import {
   createIdleHoverState,
   composeIdleTransform,
@@ -48,7 +49,7 @@ function paint(
 }
 
 function pinProgress(pin: HTMLElement) {
-  const viewH = window.innerHeight || 1;
+  const viewH = viewHeight();
   const range = pin.offsetHeight - viewH;
   const rect = pin.getBoundingClientRect();
   return range < 64 ? 0 : clamp(-rect.top / Math.max(range, 1), 0, 1);
@@ -203,7 +204,7 @@ export function CinematicChapter({
       aria-label={ariaLabel}
     >
       <div
-        className="sticky top-[3.6rem] flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-visible px-5 md:px-8 xl:px-12 2xl:px-16"
+        className="sticky top-[3.6rem] flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-x-clip px-5 md:px-8 xl:px-12 2xl:px-16"
         style={
           perspective
             ? { perspective: "1400px", perspectiveOrigin: "50% 42%" }

@@ -28,11 +28,20 @@ export function stepLoadClear(
 }
 
 export function pageHasScrolled() {
+  const visualTop = window.visualViewport?.pageTop ?? 0;
   const y =
     window.scrollY ||
     window.pageYOffset ||
     document.documentElement.scrollTop ||
     document.body.scrollTop ||
+    visualTop ||
     0;
   return y > 1;
+}
+
+/** Layout viewport height — visualViewport is accurate in device emulation. */
+export function viewHeight() {
+  const visual = window.visualViewport?.height;
+  if (visual && visual > 1) return visual;
+  return window.innerHeight || 1;
 }
