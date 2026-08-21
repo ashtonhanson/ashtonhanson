@@ -202,8 +202,9 @@ export function BrandingScene({
       (introTags.length ? 1 : 0) +
       (introEmail ? 1 : 0);
     const handoffs = introHandoffs(Math.max(extraCount - 1, 0));
+    const lastReal = extraCount;
     const packedExitGate =
-      handoffs[handoffs.length - 1]?.exitStart ?? ABOUT_INTRO.sequenceEnd;
+      handoffs[lastReal]?.exitStart ?? ABOUT_INTRO.sequenceEnd;
 
     const updateIntro = (progress: number, now: number, dt: number) => {
       const { stageFadeStart, stageFadeEnd, enterExitBlurPx } = ABOUT_INTRO;
@@ -218,8 +219,9 @@ export function BrandingScene({
       if (stageRef.current) {
         stageRef.current.style.opacity = (1 - stageFade).toFixed(3);
         stageRef.current.style.pointerEvents =
-          stageFade > 0.4 ? "none" : "auto";
-        stageRef.current.style.zIndex = stageFade > 0.15 ? "1" : "20";
+          stageFade > 0.4 || progress >= packedExitGate ? "none" : "auto";
+        stageRef.current.style.zIndex =
+          stageFade > 0.15 || progress >= packedExitGate ? "1" : "20";
       }
 
       const applyElement = (

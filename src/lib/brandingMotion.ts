@@ -76,12 +76,12 @@ export const BRANDING_INTRO: IntroTiming = {
 /** CONTACT intro — still a cinematic pin, then the form lockup. */
 export const CONTACT_INTRO = {
   ...BRANDING_INTRO,
-  pinHeightVh: "360vh",
+  pinHeightVh: "320vh",
   linesStart: 0.03,
   lineSpan: 0.05,
   holdAfter: 0.02,
   exitSpan: 0.045,
-  overlapCases: "calc(-100dvh - 16vh)",
+  overlapCases: "calc(-100dvh - 140vh)",
 } as const;
 
 export const HUB_HANDOFF: HandoffTiming = {
@@ -91,9 +91,9 @@ export const HUB_HANDOFF: HandoffTiming = {
 } as const;
 
 export const CONTACT_HANDOFF = {
-  lead: 0.2,
-  span: 0.18,
-  finish: 0.7,
+  lead: 0.08,
+  span: 0.2,
+  finish: 0.86,
 } as const;
 
 /**
