@@ -28,5 +28,11 @@ export function stepLoadClear(
 }
 
 export function pageHasScrolled() {
-  return window.scrollY > 1;
+  const y =
+    window.scrollY ||
+    window.pageYOffset ||
+    document.documentElement.scrollTop ||
+    document.body.scrollTop ||
+    0;
+  return y > 1;
 }

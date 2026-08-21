@@ -28,11 +28,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${display.variable} min-h-full`}>
-      <body className="relative flex min-h-full flex-col bg-background font-display text-foreground antialiased">
+      <body className="relative flex min-h-full w-full max-w-full flex-col bg-background font-display text-foreground antialiased">
         <AmbientOrbs />
-        <div className="relative z-10 flex min-h-full flex-1 flex-col">
+        <div className="relative z-10 flex min-h-full w-full max-w-full flex-1 flex-col">
           <SiteHeader />
-          <main className="flex-1">{children}</main>
+          <main className="w-full max-w-full flex-1">{children}</main>
           <SiteFooter />
         </div>
       </body>
