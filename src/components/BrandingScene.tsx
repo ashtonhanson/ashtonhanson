@@ -21,15 +21,11 @@ import {
   HUB_HANDOFF,
   hubHandoffT,
   PAGE_FINALE,
+  shrinkOutPose,
   type ArriveKind,
   type HandoffTiming,
   type IntroTiming,
 } from "@/lib/brandingMotion";
-import {
-  ABOUT_INTRO,
-  poseToTransform,
-  sampleIntroPose,
-} from "@/lib/cinematicDepth";
 import {
   createIdleHoverState,
   composeIdleTransform,
@@ -239,11 +235,13 @@ export function BrandingScene({
         const outEnd = (exitGate + segmentIndex * exitSpan + exitSpan) * pack;
         if (progress >= outStart) {
           const exitT = (progress - outStart) / Math.max(outEnd - outStart, 0.0001);
-          const pose = finaleExitPose(
-            exitT,
-            arriveAngle(segmentIndex),
-            pullKind === "title" ? "title" : "copy",
-          );
+          const pose = scaleUpExit
+            ? finaleExitPose(
+                exitT,
+                arriveAngle(segmentIndex),
+                pullKind === "title" ? "title" : "copy",
+              )
+            : shrinkOutPose(exitT, arriveAngle(segmentIndex));
           el.style.transformOrigin = pose.origin;
           paintIdle(
             el,
@@ -275,22 +273,16 @@ export function BrandingScene({
             dt,
             pageHasScrolled() || progress > 0.002,
           );
-          const zoomT =
-            ABOUT_INTRO.fadeZoomT *
-            easeInOutCubic(
-              clamp(progress / Math.max(exitGate * pack, 0.0001), 0, 1),
-            );
-          const pose = sampleIntroPose(0, zoomT);
           paintIdle(
             el,
             1,
             loadBlend * LOAD_CLEAR_BLUR_PX,
-            poseToTransform(pose),
+            "none",
             0,
             now,
             dt,
-            loadBlend < 0.08 && zoomT < 0.04,
-            zoomT,
+            loadBlend < 0.08,
+            0,
             LOCKUP_IDLE,
             "title",
           );
@@ -624,12 +616,7 @@ export function BrandingScene({
       >
         <div
           ref={stageRef}
-          className="absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-visible px-5 md:px-8 xl:px-12"
-          style={{
-            perspective: "1400px",
-            perspectiveOrigin: "50% 42%",
-            transformStyle: "preserve-3d",
-          }}
+          className="absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-clip px-5 md:px-8 xl:px-12"
         >
           <div
             ref={titleRef}
