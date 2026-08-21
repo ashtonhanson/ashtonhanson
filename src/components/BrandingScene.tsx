@@ -46,6 +46,9 @@ import {
 } from "@/lib/loadClear";
 import {
   ABOUT_INTRO,
+  cueHoldOpacity,
+  cueLifeT,
+  cueShaftDip,
   handoffVisibility,
   introHandoffs,
   poseToTransform,
@@ -247,7 +250,15 @@ export function BrandingScene({
           win,
           enterExitBlurPx * blurScale,
         );
-        const pose = sampleIntroPose(handoffIndex, vis.zoomT);
+        const lifeT =
+          handoffIndex === 0 ? cueLifeT(progress, win) : vis.zoomT;
+        const pose = sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
+        if (handoffIndex === 0) {
+          el.style.setProperty(
+            "--cue-shaft",
+            (cueShaftDip(lifeT) * 56).toFixed(2),
+          );
+        }
         const loadBlend =
           handoffIndex === 1
             ? stepLoadClear(
@@ -256,9 +267,13 @@ export function BrandingScene({
                 pageHasScrolled() || progress > 0.002,
               )
             : 0;
-        const blur = vis.blur + loadBlend * LOAD_CLEAR_BLUR_PX;
-        const atRest = vis.opacity >= 0.98 && blur < 0.4;
-        const travelT = 1 - vis.opacity;
+        const opacity =
+          handoffIndex === 0 ? cueHoldOpacity(lifeT) : vis.opacity;
+        const blur =
+          (handoffIndex === 0 ? (1 - opacity) * enterExitBlurPx : vis.blur) +
+          loadBlend * LOAD_CLEAR_BLUR_PX;
+        const atRest = opacity >= 0.98 && blur < 0.4;
+        const travelT = 1 - opacity;
         const pull = stepMousePull(
           pullFor(el),
           el,
@@ -269,7 +284,7 @@ export function BrandingScene({
         );
         paint(
           el,
-          vis.opacity,
+          opacity,
           blur,
           composeIdleTransform(
             idleFor(el),

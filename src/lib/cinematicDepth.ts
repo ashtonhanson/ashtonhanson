@@ -59,8 +59,8 @@ export const ABOUT_INTRO = {
    * Opening down-arrow cue — short beat, then ABOUT/title takes the stage.
    * Units are 0→1 through the pin.
    */
-  cueExitStart: 0.034,
-  cueExitEnd: 0.11,
+  cueExitStart: 0.072,
+  cueExitEnd: 0.168,
   /**
    * SVG is drawn this many times the on-screen rest size so scale() never
    * upsamples a tiny bitmap. Rest scale is 1 / cueLayoutScale.
@@ -323,15 +323,36 @@ export function introElementPath(index: number): BezierPath {
   }
 }
 
+export function cueLifeT(progress: number, win: IntroHandoff) {
+  return clamp(progress / Math.max(win.exitEnd, 0.0001), 0, 1);
+}
+
+/** 0 at rest, 1 when the shaft top has crossed the arrow’s center. */
+export function cueShaftDip(lifeT: number) {
+  return Math.sin(Math.PI * clamp(lifeT, 0, 1));
+}
+
+/** Stay solid while the mark drops, then fade near the bottom of the screen. */
+export function cueHoldOpacity(lifeT: number) {
+  const t = clamp((lifeT - 0.58) / 0.42, 0, 1);
+  return 1 - easeInOutCubic(t);
+}
+
 /**
  * Pose: cue uses a bigger Z-exit; ABOUT/ME arrive small then surge; body uses the small→huge zoom.
+ * `lifeT` is 0→1 through the cue’s on-screen life (shaft dip + drop).
  */
-export function sampleIntroPose(index: number, zoomT: number): PathPose {
+export function sampleIntroPose(
+  index: number,
+  zoomT: number,
+  lifeT = zoomT,
+): PathPose {
   if (index === 0) {
     const zoom = sampleBezierPath(zoomT, cueZoomPath());
+    const drop = clamp(lifeT, 0, 1);
     return {
       x: 0,
-      y: 0,
+      y: 6 * drop + 36 * drop * drop,
       z: zoom.z,
       scale: zoom.scale,
       rot: 0,
