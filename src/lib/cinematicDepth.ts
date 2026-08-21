@@ -70,7 +70,7 @@ export const ABOUT_INTRO = {
   cuePeakZ: 520,
   /** Start above the viewport so the load-in is a real descent. */
   cueArriveVh: -78,
-  cueArriveMs: 1550,
+  cueArriveMs: 1850,
 
   /**
    * Zoom t when opacity begins falling. Keep this < 1 so nothing sits at max scale.
@@ -331,11 +331,19 @@ export function cueLifeT(progress: number, win: IntroHandoff) {
   return clamp(progress / Math.max(win.exitEnd, 0.0001), 0, 1);
 }
 
-/** vh offset from above the screen → 0. Nearly even speed so it doesn’t crawl in. */
+/** vh: from above the screen to center, then an exaggerated landing recoil. */
 export function cueArriveY(elapsedMs: number) {
   const t = clamp(elapsedMs / ABOUT_INTRO.cueArriveMs, 0, 1);
-  const u = 1 - (1 - t) ** 1.12;
-  return ABOUT_INTRO.cueArriveVh * (1 - u);
+  const start = ABOUT_INTRO.cueArriveVh;
+  const landAt = 0.6;
+  if (t <= landAt) {
+    const u = t / landAt;
+    const eased = 1 - (1 - u) ** 1.18;
+    return start * (1 - eased);
+  }
+  const u = (t - landAt) / (1 - landAt);
+  const damp = Math.exp(-3.2 * u);
+  return Math.sin(u * Math.PI * 3.15) * 17 * damp;
 }
 
 /** Peak tilt before scale finishes so the tail swings past the tip. */
