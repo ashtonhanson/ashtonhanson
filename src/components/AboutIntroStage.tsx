@@ -232,7 +232,7 @@ export function AboutIntroStage({
               className="intro-layer will-change-transform"
               style={{
                 opacity: 1,
-                transformOrigin: "50% 50%",
+                transformOrigin: "50% 12%",
                 transformStyle: "preserve-3d",
               }}
             >

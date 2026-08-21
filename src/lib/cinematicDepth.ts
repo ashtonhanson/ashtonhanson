@@ -329,7 +329,7 @@ export function sampleIntroPose(index: number, zoomT: number): PathPose {
       z: zoom.z,
       scale: zoom.scale,
       rot: 0,
-      rotX: -12 - 58 * zoomT,
+      rotX: 12 + 58 * zoomT,
     };
   }
   const content = index - 1;
