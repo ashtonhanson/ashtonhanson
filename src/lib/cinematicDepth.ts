@@ -344,9 +344,9 @@ export function cueArriveY(elapsedMs: number) {
   return start + (rest - start) * back;
 }
 
-/** Shaft passes under center early in the Z scale. */
+/** Shaft passes under center shortly after Z scale begins. */
 export function cueTiltAmount(scaleT: number) {
-  return easeOutCubic(clamp(scaleT / 0.4, 0, 1));
+  return easeOutCubic(clamp((scaleT - 0.14) / 0.4, 0, 1));
 }
 
 /** Stay solid while the mark drops, then fade near the bottom of the screen. */
