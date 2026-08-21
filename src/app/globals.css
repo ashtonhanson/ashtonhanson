@@ -697,7 +697,7 @@ body {
 
 .scroll-cue-icon {
   display: block;
-  width: clamp(4.4rem, 16vw, 8.25rem);
+  width: clamp(2.2rem, 8vw, 4.125rem);
   height: auto;
   overflow: visible;
   filter: drop-shadow(0 0 8px rgb(255 255 255 / 0.28))
@@ -711,7 +711,7 @@ body {
   }
 
   .scroll-cue-hover {
-    animation: scroll-cue-hover 2.6s ease-in-out 1.2s infinite;
+    animation: scroll-cue-hover 2.35s ease-in-out 1.2s infinite;
   }
 
   .scroll-cue-icon {
@@ -733,10 +733,10 @@ body {
 @keyframes scroll-cue-hover {
   0%,
   100% {
-    transform: translate3d(0, -0.55rem, 0);
+    transform: translate3d(0, -1.65rem, 0);
   }
   50% {
-    transform: translate3d(0, 0.7rem, 0);
+    transform: translate3d(0, 2rem, 0);
   }
 }
 
