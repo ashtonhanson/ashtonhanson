@@ -207,7 +207,7 @@ export function CinematicChapter({
     >
       <div
         ref={stageRef}
-        className="absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-clip px-5 md:px-8 xl:px-12 2xl:px-16"
+        className="absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-visible px-5 md:px-8 xl:px-12 2xl:px-16"
         style={
           perspective
             ? { perspective: "1400px", perspectiveOrigin: "50% 42%" }

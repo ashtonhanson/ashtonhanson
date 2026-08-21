@@ -58,35 +58,48 @@ export function headerOffsetPx() {
 
 /**
  * Hold a lockup on screen for the life of its pin.
- * Chrome device frames often break position:sticky; fixed-while-pinned does not.
+ * Size from visualViewport so Chrome device frames cannot pan off-site.
  */
 export function applyPinStage(pin: HTMLElement, stage: HTMLElement | null) {
   if (!stage) return;
+  const vv = window.visualViewport;
   const viewH = viewHeight();
-  const header = headerOffsetPx();
-  const stageH = Math.max(viewH - header, 120);
+  const viewW =
+    vv && vv.width > 1 ? vv.width : pin.clientWidth || window.innerWidth || 1;
+  const offsetLeft = vv?.offsetLeft ?? 0;
+  const headerEl = document.querySelector("header");
+  const headerBottom = headerEl
+    ? headerEl.getBoundingClientRect().bottom
+    : headerOffsetPx();
+  const stageH = Math.max(viewH - Math.max(headerBottom, 0), 120);
   const rect = pin.getBoundingClientRect();
 
   stage.style.height = `${stageH}px`;
-  stage.style.left = "0";
-  stage.style.width = "100%";
-  stage.style.right = "auto";
 
-  if (rect.top > header) {
+  const fillPin = () => {
+    stage.style.left = "0";
+    stage.style.width = "100%";
+  };
+
+  if (rect.top > headerBottom - 1) {
     stage.style.position = "absolute";
     stage.style.top = "0";
     stage.style.bottom = "auto";
+    fillPin();
     return;
   }
 
-  if (rect.bottom > header + stageH) {
+  if (rect.bottom > headerBottom + stageH) {
     stage.style.position = "fixed";
-    stage.style.top = `${header}px`;
+    stage.style.top = `${Math.max(headerBottom, 0)}px`;
     stage.style.bottom = "auto";
+    stage.style.left = `${offsetLeft}px`;
+    stage.style.width = `${viewW}px`;
     return;
   }
 
   stage.style.position = "absolute";
   stage.style.top = "auto";
   stage.style.bottom = "0";
+  fillPin();
 }
