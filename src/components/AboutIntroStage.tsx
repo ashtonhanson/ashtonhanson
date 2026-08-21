@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { MobileBreakText } from "@/components/MobileBreakText";
+import { ScrollCue } from "@/components/ScrollCue";
 import { TitleShine } from "@/components/TitleShine";
 import {
   ABOUT_INTRO,
@@ -53,8 +54,8 @@ function applyHandoffStyle(
 }
 
 /**
- * Sticky ABOUT chapter — ABOUT blurred on load, clears on first scroll,
- * then one-at-a-time handoffs.
+ * Sticky ABOUT chapter — metallic down-arrow on load, then ABOUT → ME → body.
+ * Cue and ABOUT ride the same Z-scale; ABOUT still load-blurs until first scroll.
  * Each element rides a distinct Z-scale path, blurs out as the next blurs in.
  */
 export function AboutIntroStage({
@@ -65,6 +66,7 @@ export function AboutIntroStage({
 }: AboutIntroStageProps) {
   const pinRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const cueRef = useRef<HTMLDivElement>(null);
   const aboutRef = useRef<HTMLDivElement>(null);
   const meRef = useRef<HTMLDivElement>(null);
   const lineRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -153,7 +155,7 @@ export function AboutIntroStage({
         const pose = sampleIntroPose(handoffIndex, vis.zoomT);
         const transform = poseToTransform(pose);
         const loadBlend =
-          handoffIndex === 0
+          handoffIndex === 1
             ? stepLoadClear(
                 loadClear,
                 dt,
@@ -168,7 +170,7 @@ export function AboutIntroStage({
           el,
           now,
           dt,
-          handoffIndex < 2 ? "title" : "body",
+          handoffIndex <= 2 ? "title" : "body",
           1 - travelT,
         );
         applyHandoffStyle(
@@ -183,16 +185,17 @@ export function AboutIntroStage({
             handoffIndex + 3,
             atRest,
             travelT,
-            1,
+            handoffIndex === 0 ? 0 : 1,
             pull,
           ),
         );
       };
 
-      applyElement(aboutRef.current, 0);
-      applyElement(meRef.current, 1);
+      applyElement(cueRef.current, 0);
+      applyElement(aboutRef.current, 1);
+      applyElement(meRef.current, 2);
       lineRefs.current.forEach((el, index) => {
-        applyElement(el, 2 + index, 0.85);
+        applyElement(el, 3 + index, 0.85);
       });
     };
 
@@ -225,10 +228,25 @@ export function AboutIntroStage({
         >
           <div className="absolute inset-0 flex items-center justify-center">
             <div
+              ref={cueRef}
+              className="intro-layer will-change-transform"
+              style={{
+                opacity: 1,
+                transformOrigin: "50% 50%",
+                transformStyle: "preserve-3d",
+              }}
+            >
+              <ScrollCue />
+            </div>
+          </div>
+
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div
               ref={aboutRef}
               className="intro-layer is-about will-change-transform"
               style={{
-                opacity: 1,
+                opacity: 0,
+                visibility: "hidden",
                 filter: `blur(${LOAD_CLEAR_BLUR_PX}px)`,
                 transformOrigin: "50% 50%",
                 transformStyle: "preserve-3d",

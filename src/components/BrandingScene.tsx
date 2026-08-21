@@ -6,6 +6,7 @@ import { EmailShineLink } from "@/components/EmailShineLink";
 import { LogoPlate } from "@/components/LogoPlate";
 import { MediaCarousel } from "@/components/MediaCarousel";
 import { MobileBreakText } from "@/components/MobileBreakText";
+import { ScrollCue } from "@/components/ScrollCue";
 import { TitleShine } from "@/components/TitleShine";
 import {
   arriveAngle,
@@ -122,6 +123,7 @@ export function BrandingScene({
 }: BrandingSceneProps) {
   const pinRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const cueRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const lineRefs = useRef<(HTMLDivElement | null)[]>([]);
   const tagsRef = useRef<HTMLDivElement>(null);
@@ -207,7 +209,7 @@ export function BrandingScene({
       (introEmail ? 1 : 0) +
       (introForm ? 1 : 0);
     const handoffs = introHandoffs(Math.max(extraCount - 1, 0));
-    const lastReal = extraCount;
+    const lastReal = extraCount + 1;
     const packedExitGate =
       handoffs[lastReal]?.exitStart ?? ABOUT_INTRO.sequenceEnd;
 
@@ -247,7 +249,7 @@ export function BrandingScene({
         );
         const pose = sampleIntroPose(handoffIndex, vis.zoomT);
         const loadBlend =
-          handoffIndex === 0
+          handoffIndex === 1
             ? stepLoadClear(
                 loadClear,
                 dt,
@@ -262,7 +264,7 @@ export function BrandingScene({
           el,
           now,
           dt,
-          handoffIndex < 2 ? "title" : "body",
+          handoffIndex <= 2 ? "title" : "body",
           1 - travelT,
         );
         paint(
@@ -277,13 +279,14 @@ export function BrandingScene({
             handoffIndex + 3,
             atRest,
             travelT,
-            1,
+            handoffIndex === 0 ? 0 : 1,
             pull,
           ),
         );
       };
 
       let handoffIndex = 0;
+      applyElement(cueRef.current, handoffIndex++);
       applyElement(titleRef.current, handoffIndex++);
       if (introSubtitle) applyElement(subtitleRef.current, handoffIndex++);
       if (introLines.length) applyElement(lineRefs.current[0] ?? null, handoffIndex++);
@@ -495,9 +498,24 @@ export function BrandingScene({
           >
             <div className="absolute inset-0 flex items-center justify-center px-2">
               <div
+                ref={cueRef}
+                className="will-change-transform"
+                style={{
+                  transformOrigin: "50% 50%",
+                  transformStyle: "preserve-3d",
+                }}
+              >
+                <ScrollCue />
+              </div>
+            </div>
+
+            <div className="absolute inset-0 flex items-center justify-center px-2">
+              <div
                 ref={titleRef}
                 className="will-change-transform"
                 style={{
+                  opacity: 0,
+                  visibility: "hidden",
                   transformOrigin: "50% 50%",
                   transformStyle: "preserve-3d",
                   filter: `blur(${LOAD_CLEAR_BLUR_PX}px)`,

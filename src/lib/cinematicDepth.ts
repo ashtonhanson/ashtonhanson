@@ -56,6 +56,13 @@ export const ABOUT_INTRO = {
   sequenceEnd: 0.94,
 
   /**
+   * Opening down-arrow cue — short beat, then ABOUT/title takes the stage.
+   * Units are 0→1 through the pin.
+   */
+  cueExitStart: 0.028,
+  cueExitEnd: 0.086,
+
+  /**
    * Zoom t when opacity begins falling. Keep this < 1 so nothing sits at max scale.
    */
   fadeZoomT: 0.72,
@@ -113,22 +120,31 @@ export function easeInOutCubic(t: number) {
 
 /**
  * Sequential handoff windows: each element exits as the next enters.
- * Index 0 = ABOUT (sharp on load), 1 = ME, 2… = body lines.
+ * Index 0 = scroll cue (on stage at load), 1 = ABOUT/title, 2 = ME, 3… = body.
  */
 export function introHandoffs(lineCount: number): IntroHandoff[] {
+  const cue: IntroHandoff = {
+    appearStart: 0,
+    appearEnd: 0,
+    exitStart: ABOUT_INTRO.cueExitStart,
+    exitEnd: ABOUT_INTRO.cueExitEnd,
+  };
+
   const n = 2 + Math.max(lineCount, 0);
+  const start = cue.exitStart;
   const end = ABOUT_INTRO.sequenceEnd;
-  const beat = end / n;
+  const beat = (end - start) / n;
   const handoff = beat * ABOUT_INTRO.handoffRatio;
 
-  return Array.from({ length: n }, (_, i) => {
-    // ABOUT is already on stage at load — no blur-in.
-    const appearStart = i === 0 ? 0 : i * beat;
-    const appearEnd = i === 0 ? 0 : appearStart + handoff;
-    const exitStart = i === n - 1 ? end : (i + 1) * beat;
+  const rest = Array.from({ length: n }, (_, i) => {
+    const appearStart = start + i * beat;
+    const appearEnd = appearStart + handoff;
+    const exitStart = i === n - 1 ? end : start + (i + 1) * beat;
     const exitEnd = Math.min(i === n - 1 ? 1 : 0.98, exitStart + handoff);
     return { appearStart, appearEnd, exitStart, exitEnd };
   });
+
+  return [cue, ...rest];
 }
 
 /**
@@ -145,7 +161,7 @@ export function handoffVisibility(
   if (progress < win.appearStart) {
     visibility = 0;
   } else if (win.appearEnd <= win.appearStart) {
-    // Already on stage (ABOUT) — sharp until exit
+    // Already on stage (scroll cue) — sharp until exit
     if (progress < win.exitStart) {
       visibility = 1;
     } else if (progress < win.exitEnd) {
@@ -285,11 +301,19 @@ export function introElementPath(index: number): BezierPath {
   }
 }
 
-/** Pose: ABOUT/ME share zoom and now travel up at an angle; body uses the small→huge body zoom. */
+/**
+ * Pose: cue/ABOUT/ME share the ABOUT Z-scale; body uses the small→huge zoom.
+ * Index 0 is the load cue (centered, same Z exit as ABOUT).
+ */
 export function sampleIntroPose(index: number, zoomT: number): PathPose {
-  const lateral = sampleBezierPath(zoomT, introElementPath(index));
+  if (index === 0) {
+    const zoom = sampleBezierPath(zoomT, aboutZoomPath());
+    return { x: 0, y: 0, z: zoom.z, scale: zoom.scale, rot: 0 };
+  }
+  const content = index - 1;
+  const lateral = sampleBezierPath(zoomT, introElementPath(content));
   const zoom =
-    index >= 2
+    content >= 2
       ? sampleBezierPath(zoomT, bodyZoomPath())
       : sampleBezierPath(zoomT, aboutZoomPath());
   return {
