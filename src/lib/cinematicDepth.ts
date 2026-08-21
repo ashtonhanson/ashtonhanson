@@ -66,8 +66,8 @@ export const ABOUT_INTRO = {
    * upsamples a tiny bitmap. Rest scale is 1 / cueLayoutScale.
    */
   cueLayoutScale: 6.6,
-  cuePeakScale: 1,
-  cuePeakZ: 520,
+  cuePeakScale: 1.38,
+  cuePeakZ: 640,
   /** Start above the viewport so the load-in is a real descent. */
   cueArriveVh: -78,
   /** Rest above true center so the exit still has downward travel. */
@@ -255,8 +255,8 @@ export function cueZoomPath(): BezierPath {
   const peakZ = ABOUT_INTRO.cuePeakZ;
   return {
     p0: { x: 0, y: 0, z: 0, scale: s0, rot: 0 },
-    p1: { x: 0, y: 0, z: peakZ * 0.22, scale: s0 + (s3 - s0) * 0.24, rot: 0 },
-    p2: { x: 0, y: 0, z: peakZ * 0.58, scale: s0 + (s3 - s0) * 0.64, rot: 0 },
+    p1: { x: 0, y: 0, z: peakZ * 0.12, scale: s0 + (s3 - s0) * 0.14, rot: 0 },
+    p2: { x: 0, y: 0, z: peakZ * 0.5, scale: s0 + (s3 - s0) * 0.55, rot: 0 },
     p3: { x: 0, y: 0, z: peakZ, scale: s3, rot: 0 },
   };
 }
@@ -337,7 +337,7 @@ export function cueLifeT(progress: number, win: IntroHandoff) {
 export function cueArriveY(elapsedMs: number) {
   const t = clamp(elapsedMs / ABOUT_INTRO.cueArriveMs, 0, 1);
   const x = t - 1;
-  const c = 2.55;
+  const c = 1.55;
   const back = 1 + x * x * ((c + 1) * x + c);
   const start = ABOUT_INTRO.cueArriveVh;
   const rest = ABOUT_INTRO.cueRestY;
@@ -368,11 +368,14 @@ export function sampleIntroPose(
     const dropGate = 0.1;
     const dropT = clamp(lifeT / 0.36, 0, 1);
     const rawScale = clamp((lifeT - dropGate) / (1 - dropGate), 0, 1);
-    const scaleT = 1 - (1 - rawScale) ** 2;
+    const scaleT = easeInOutCubic(rawScale);
     const zoom = sampleBezierPath(scaleT, cueZoomPath());
+    const dropY = 10 * dropT + 32 * dropT * dropT;
+    const toCenter = -ABOUT_INTRO.cueRestY;
+    const y = dropY + (toCenter - dropY) * scaleT;
     return {
       x: 0,
-      y: 12 * dropT + 38 * dropT * dropT + 10 * scaleT,
+      y,
       z: zoom.z,
       scale: zoom.scale,
       rot: 0,
