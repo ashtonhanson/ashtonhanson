@@ -327,11 +327,6 @@ export function cueLifeT(progress: number, win: IntroHandoff) {
   return clamp(progress / Math.max(win.exitEnd, 0.0001), 0, 1);
 }
 
-/** 0 at rest, 1 when the shaft top has crossed the arrow’s center. */
-export function cueShaftDip(lifeT: number) {
-  return Math.sin(Math.PI * clamp(lifeT, 0, 1));
-}
-
 /** Stay solid while the mark drops, then fade near the bottom of the screen. */
 export function cueHoldOpacity(lifeT: number) {
   const t = clamp((lifeT - 0.58) / 0.42, 0, 1);
@@ -340,7 +335,7 @@ export function cueHoldOpacity(lifeT: number) {
 
 /**
  * Pose: cue uses a bigger Z-exit; ABOUT/ME arrive small then surge; body uses the small→huge zoom.
- * `lifeT` is 0→1 through the cue’s on-screen life (shaft dip + drop).
+ * `lifeT` is 0→1 through the cue’s on-screen life (tilt recoil + drop).
  */
 export function sampleIntroPose(
   index: number,
@@ -356,7 +351,7 @@ export function sampleIntroPose(
       z: zoom.z,
       scale: zoom.scale,
       rot: 0,
-      rotX: 12 + 58 * zoomT,
+      rotX: 10 + 68 * Math.sin(Math.PI * drop),
     };
   }
   const content = index - 1;

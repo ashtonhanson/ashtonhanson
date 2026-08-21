@@ -704,12 +704,6 @@ body {
     drop-shadow(0 0 18px rgb(220 220 210 / 0.18));
 }
 
-.scroll-cue-shaft {
-  transform-box: view-box;
-  transform-origin: 50% 0%;
-  transform: translateY(calc(var(--cue-shaft, 0) * 1%));
-}
-
 .scroll-cue-shine {
   transform-box: fill-box;
   transform-origin: center;

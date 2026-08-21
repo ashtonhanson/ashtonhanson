@@ -9,7 +9,6 @@ import {
   clamp,
   cueHoldOpacity,
   cueLifeT,
-  cueShaftDip,
   easeInOutCubic,
   handoffVisibility,
   introHandoffs,
@@ -159,12 +158,6 @@ export function AboutIntroStage({
           handoffIndex === 0 ? cueLifeT(progress, win) : vis.zoomT;
         const pose = sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
         const transform = poseToTransform(pose);
-        if (handoffIndex === 0) {
-          el.style.setProperty(
-            "--cue-shaft",
-            (cueShaftDip(lifeT) * 56).toFixed(2),
-          );
-        }
         const loadBlend =
           handoffIndex === 1
             ? stepLoadClear(

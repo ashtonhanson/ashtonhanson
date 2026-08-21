@@ -48,7 +48,6 @@ import {
   ABOUT_INTRO,
   cueHoldOpacity,
   cueLifeT,
-  cueShaftDip,
   handoffVisibility,
   introHandoffs,
   poseToTransform,
@@ -253,12 +252,6 @@ export function BrandingScene({
         const lifeT =
           handoffIndex === 0 ? cueLifeT(progress, win) : vis.zoomT;
         const pose = sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
-        if (handoffIndex === 0) {
-          el.style.setProperty(
-            "--cue-shaft",
-            (cueShaftDip(lifeT) * 56).toFixed(2),
-          );
-        }
         const loadBlend =
           handoffIndex === 1
             ? stepLoadClear(
