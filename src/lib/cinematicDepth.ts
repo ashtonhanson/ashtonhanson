@@ -70,6 +70,8 @@ export const ABOUT_INTRO = {
   cuePeakZ: 520,
   /** Start above the viewport so the load-in is a real descent. */
   cueArriveVh: -78,
+  /** Rest above true center so the exit still has downward travel. */
+  cueRestY: -22,
   cueArriveMs: 1700,
 
   /**
@@ -331,32 +333,25 @@ export function cueLifeT(progress: number, win: IntroHandoff) {
   return clamp(progress / Math.max(win.exitEnd, 0.0001), 0, 1);
 }
 
-/** vh: from above the screen through center with one smooth overshoot. */
+/** vh: from above the screen to a high rest, with one smooth overshoot. */
 export function cueArriveY(elapsedMs: number) {
   const t = clamp(elapsedMs / ABOUT_INTRO.cueArriveMs, 0, 1);
   const x = t - 1;
   const c = 2.55;
   const back = 1 + x * x * ((c + 1) * x + c);
-  return ABOUT_INTRO.cueArriveVh * (1 - back);
+  const start = ABOUT_INTRO.cueArriveVh;
+  const rest = ABOUT_INTRO.cueRestY;
+  return start + (rest - start) * back;
 }
 
-/** Peak tilt before scale finishes so the tail swings past the tip. */
+/** Climb through the exit so the shaft passes the arrow’s center as it leaves. */
 export function cueTiltAmount(zoomT: number) {
-  const t = clamp(zoomT, 0, 1);
-  const peakAt = 0.48;
-  if (t <= peakAt) {
-    return t / peakAt;
-  }
-  return (
-    1 -
-    0.78 *
-      easeInOutCubic((t - peakAt) / Math.max(1 - peakAt, 0.0001))
-  );
+  return easeOutCubic(clamp(zoomT, 0, 1));
 }
 
 /** Stay solid while the mark drops, then fade near the bottom of the screen. */
 export function cueHoldOpacity(lifeT: number) {
-  const t = clamp((lifeT - 0.58) / 0.42, 0, 1);
+  const t = clamp((lifeT - 0.7) / 0.3, 0, 1);
   return 1 - easeInOutCubic(t);
 }
 
@@ -378,7 +373,7 @@ export function sampleIntroPose(
       z: zoom.z,
       scale: zoom.scale,
       rot: 0,
-      rotX: 7 + 52 * cueTiltAmount(zoomT),
+      rotX: 10 + 96 * cueTiltAmount(zoomT),
     };
   }
   const content = index - 1;
