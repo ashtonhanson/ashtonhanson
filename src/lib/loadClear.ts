@@ -45,3 +45,13 @@ export function viewHeight() {
   if (visual && visual > 1) return visual;
   return window.innerHeight || 1;
 }
+
+const STICKY_TOP_REM = 3.6;
+
+/** Keep sticky lockups the Fold / device-frame height, not a mismatched 100dvh. */
+export function applyStickyStageSize(el: HTMLElement | null) {
+  if (!el) return;
+  const root =
+    parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  el.style.height = `${Math.max(viewHeight() - STICKY_TOP_REM * root, 120)}px`;
+}
