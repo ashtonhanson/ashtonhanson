@@ -57,7 +57,7 @@ export type HandoffTiming = {
 };
 
 export const BRANDING_INTRO: IntroTiming = {
-  pinHeightVh: "320vh",
+  pinHeightVh: "520vh",
   /** BRANDING holds alone until here. */
   linesStart: 0.08,
   /** Each line’s shrink-in window. */
@@ -73,15 +73,15 @@ export const BRANDING_INTRO: IntroTiming = {
   overlapCases: "calc(-100dvh - 16vh)",
 } as const;
 
-/** Shorter CONTACT intro so the form lockup arrives sooner. */
+/** CONTACT intro — still a cinematic pin, then the form lockup. */
 export const CONTACT_INTRO = {
   ...BRANDING_INTRO,
-  pinHeightVh: "155vh",
+  pinHeightVh: "280vh",
   linesStart: 0.03,
   lineSpan: 0.05,
   holdAfter: 0.02,
   exitSpan: 0.045,
-  overlapCases: "calc(-100dvh - 28vh)",
+  overlapCases: "calc(-100dvh - 16vh)",
 } as const;
 
 export const HUB_HANDOFF: HandoffTiming = {

@@ -14,14 +14,12 @@ import {
   BRANDING_INTRO,
   clamp,
   easeInOutCubic,
-  easeOutCubic,
   finaleExitPose,
   finaleExitT,
   finaleWindows,
   HUB_HANDOFF,
   hubHandoffT,
   PAGE_FINALE,
-  shrinkOutPose,
   type ArriveKind,
   type HandoffTiming,
   type IntroTiming,
@@ -45,11 +43,18 @@ import {
   stepLoadClear,
   viewHeight,
 } from "@/lib/loadClear";
+import {
+  ABOUT_INTRO,
+  handoffVisibility,
+  introHandoffs,
+  poseToTransform,
+  sampleIntroPose,
+} from "@/lib/cinematicDepth";
 import type { CaseStudy as CaseStudyType, MediaItem } from "@/lib/content";
 import { preventOrphan } from "@/lib/text";
 
 const TITLE_CLASS =
-  "pointer-events-none select-none whitespace-pre-line text-center font-display text-[clamp(2.6rem,10.5vw,6rem)] font-black uppercase leading-[0.88] tracking-[0.04em] xl:text-[clamp(3.4rem,6.2vw,7.75rem)]";
+  "pointer-events-none select-none max-w-full whitespace-pre-line text-center font-display text-[clamp(2.2rem,16vw,6rem)] font-black uppercase leading-[0.88] tracking-[0.04em] xl:text-[clamp(3.4rem,6.2vw,7.75rem)]";
 
 const SECTION_TITLE_CLASS =
   "pointer-events-none select-none whitespace-pre-line text-center font-display text-[clamp(1.35rem,4.2vw,2.35rem)] font-black uppercase leading-[0.92] tracking-[0.06em] xl:text-[clamp(1.7rem,2.6vw,2.75rem)]";
@@ -123,14 +128,6 @@ export function BrandingScene({
   useEffect(() => {
     let frame = 0;
     let lastNow = performance.now();
-    const introBodyCount = introLines.length ? 1 : 0;
-    const lineCount =
-      introBodyCount +
-      (introSubtitle ? 1 : 0) +
-      (introTags.length ? 1 : 0) +
-      (introEmail ? 1 : 0);
-    const scaleUpExit = finale && cases.length === 0;
-    const { linesStart, lineSpan, holdAfter, exitSpan } = intro;
     const idleMap = new WeakMap<HTMLElement, IdleHoverState>();
     const pullMap = new WeakMap<HTMLElement, MousePullState>();
     const loadClear = createLoadClearState();
@@ -196,263 +193,92 @@ export function BrandingScene({
       );
     };
 
-    const introMetrics = () => {
-      const lastInEnd = linesStart + lineCount * lineSpan;
-      const exitGate = lastInEnd + holdAfter;
-      return { exitGate, pack: 1, packedExitGate: exitGate };
-    };
+    const extraCount =
+      (introSubtitle ? 1 : 0) +
+      (introLines.length ? 1 : 0) +
+      (introTags.length ? 1 : 0) +
+      (introEmail ? 1 : 0);
+    const handoffs = introHandoffs(Math.max(extraCount - 1, 0));
+    const packedExitGate =
+      handoffs[handoffs.length - 1]?.exitStart ?? ABOUT_INTRO.sequenceEnd;
 
-    const updateIntro = (
-      progress: number,
-      pack: number,
-      exitGate: number,
-      now: number,
-      dt: number,
-    ) => {
-      if (scaleUpExit && stageRef.current) {
-        stageRef.current.style.perspective = "1400px";
-        stageRef.current.style.perspectiveOrigin = "50% 42%";
-        const stageFade = easeInOutCubic(
-          clamp(
-            (progress - PAGE_FINALE.stageFadeStart) /
-              Math.max(PAGE_FINALE.stageFadeEnd - PAGE_FINALE.stageFadeStart, 0.0001),
-            0,
-            1,
-          ),
-        );
+    const updateIntro = (progress: number, now: number, dt: number) => {
+      const { stageFadeStart, stageFadeEnd, enterExitBlurPx } = ABOUT_INTRO;
+      const stageFade = easeInOutCubic(
+        clamp(
+          (progress - stageFadeStart) /
+            Math.max(stageFadeEnd - stageFadeStart, 0.0001),
+          0,
+          1,
+        ),
+      );
+      if (stageRef.current) {
         stageRef.current.style.opacity = (1 - stageFade).toFixed(3);
+        stageRef.current.style.pointerEvents =
+          stageFade > 0.4 ? "none" : "auto";
+        stageRef.current.style.zIndex = stageFade > 0.15 ? "1" : "20";
       }
 
-      const paintExitOrRest = (
+      const applyElement = (
         el: HTMLElement | null,
-        segmentIndex: number,
-        atRest: () => void,
-        idleAmount = 1,
-        pullKind: MousePullKind | null = "title",
+        handoffIndex: number,
+        blurScale = 1,
       ) => {
         if (!el) return;
-        const outStart = (exitGate + segmentIndex * exitSpan) * pack;
-        const outEnd = (exitGate + segmentIndex * exitSpan + exitSpan) * pack;
-        if (progress >= outStart) {
-          const exitT = (progress - outStart) / Math.max(outEnd - outStart, 0.0001);
-          const pose = scaleUpExit
-            ? finaleExitPose(
-                exitT,
-                arriveAngle(segmentIndex),
-                pullKind === "title" ? "title" : "copy",
-              )
-            : shrinkOutPose(exitT, arriveAngle(segmentIndex));
-          el.style.transformOrigin = pose.origin;
-          paintIdle(
-            el,
-            pose.opacity,
-            pose.blur,
-            pose.transform,
-            segmentIndex,
-            now,
-            dt,
-            false,
-            pose.travelT,
-            idleAmount,
-            pullKind,
-          );
+        const win = handoffs[handoffIndex];
+        if (!win) {
+          paint(el, 0, enterExitBlurPx, "none");
           return;
         }
-        atRest();
-      };
-
-      paintExitOrRest(
-        titleRef.current,
-        0,
-        () => {
-          const el = titleRef.current;
-          if (!el) return;
-          el.style.transformOrigin = "50% 50%";
-          const loadBlend = stepLoadClear(
-            loadClear,
-            dt,
-            pageHasScrolled() || progress > 0.002,
-          );
-          paintIdle(
-            el,
-            1,
-            loadBlend * LOAD_CLEAR_BLUR_PX,
-            "none",
-            0,
+        const vis = handoffVisibility(
+          progress,
+          win,
+          enterExitBlurPx * blurScale,
+        );
+        const pose = sampleIntroPose(handoffIndex, vis.zoomT);
+        const loadBlend =
+          handoffIndex === 0
+            ? stepLoadClear(
+                loadClear,
+                dt,
+                pageHasScrolled() || progress > 0.002,
+              )
+            : 0;
+        const blur = vis.blur + loadBlend * LOAD_CLEAR_BLUR_PX;
+        const atRest = vis.opacity >= 0.98 && blur < 0.4;
+        const travelT = 1 - vis.opacity;
+        const pull = stepMousePull(
+          pullFor(el),
+          el,
+          now,
+          dt,
+          handoffIndex < 2 ? "title" : "body",
+          1 - travelT,
+        );
+        paint(
+          el,
+          vis.opacity,
+          blur,
+          composeIdleTransform(
+            idleFor(el),
+            poseToTransform(pose),
             now,
             dt,
-            loadBlend < 0.08,
-            0,
-            LOCKUP_IDLE,
-            "title",
-          );
-        },
-        LOCKUP_IDLE,
-        "title",
-      );
-
-      const subOffset = introSubtitle ? 1 : 0;
-      if (introSubtitle) {
-        paintExitOrRest(
-          subtitleRef.current,
-          1,
-          () => {
-            const el = subtitleRef.current;
-            if (!el) return;
-            el.style.transformOrigin = "50% 50%";
-            const inStart = linesStart * pack;
-            const inEnd = (linesStart + lineSpan * 0.72) * pack;
-            const t = easeOutCubic(
-              clamp((progress - inStart) / Math.max(inEnd - inStart, 0.0001), 0, 1),
-            );
-            const angle = arriveAngle(1);
-            const u = 1 - t;
-            const scale = 1 + 1.5 * u;
-            const transform = `translate3d(${(angle.x * u).toFixed(2)}vw, ${(angle.y * u).toFixed(2)}vh, 0) rotateZ(${(angle.rot * u).toFixed(2)}deg) scale(${scale.toFixed(4)})`;
-            paintIdle(
-              el,
-              t,
-              12 * u,
-              transform,
-              1,
-              now,
-              dt,
-              t >= 0.985,
-              1 - t,
-              SUBTITLE_IDLE,
-              "subtitle",
-            );
-          },
-          SUBTITLE_IDLE,
-          "subtitle",
+            handoffIndex + 3,
+            atRest,
+            travelT,
+            1,
+            pull,
+          ),
         );
-      }
+      };
 
-      lineRefs.current.forEach((el, i) => {
-        if (!el) return;
-        paintExitOrRest(
-          el,
-          i + 1 + subOffset,
-          () => {
-            el.style.transformOrigin = "50% 50%";
-            const inStart = (linesStart + (i + subOffset) * lineSpan) * pack;
-            const inEnd =
-              (linesStart + (i + subOffset) * lineSpan + lineSpan * 0.72) *
-              pack;
-            const t = easeOutCubic(
-              clamp((progress - inStart) / Math.max(inEnd - inStart, 0.0001), 0, 1),
-            );
-            const angle = arriveAngle(i + 1 + subOffset);
-            const u = 1 - t;
-            const scale = 1 + 1.8 * u;
-            const transform = `translate3d(${(angle.x * u).toFixed(2)}vw, ${(angle.y * u).toFixed(2)}vh, 0) rotateZ(${(angle.rot * u).toFixed(2)}deg) scale(${scale.toFixed(4)})`;
-            paintIdle(
-              el,
-              t,
-              14 * u,
-              transform,
-              i + 1 + subOffset,
-              now,
-              dt,
-              t >= 0.985,
-              1 - t,
-              1,
-              "body",
-            );
-          },
-          1,
-          "body",
-        );
-      });
-
-      if (introTags.length) {
-        const tagIndex = introBodyCount + 1 + subOffset;
-        paintExitOrRest(
-          tagsRef.current,
-          tagIndex,
-          () => {
-            const el = tagsRef.current;
-            if (!el) return;
-            el.style.transformOrigin = "50% 50%";
-            const inStart =
-              (linesStart + (introBodyCount + subOffset) * lineSpan) * pack;
-            const inEnd =
-              (linesStart +
-                (introBodyCount + subOffset) * lineSpan +
-                lineSpan * 0.72) *
-              pack;
-            const t = easeOutCubic(
-              clamp((progress - inStart) / Math.max(inEnd - inStart, 0.0001), 0, 1),
-            );
-            const angle = arriveAngle(tagIndex);
-            const u = 1 - t;
-            const scale = 1 + 1.35 * u;
-            const transform = `translate3d(${(angle.x * u).toFixed(2)}vw, ${(angle.y * u).toFixed(2)}vh, 0) rotateZ(${(angle.rot * u).toFixed(2)}deg) scale(${scale.toFixed(4)})`;
-            paintIdle(
-              el,
-              t,
-              12 * u,
-              transform,
-              tagIndex,
-              now,
-              dt,
-              t >= 0.985,
-              1 - t,
-              SUBTITLE_IDLE,
-              "subtitle",
-            );
-          },
-          SUBTITLE_IDLE,
-          "subtitle",
-        );
-      }
-
-      if (introEmail) {
-        const emailIndex =
-          introBodyCount + subOffset + (introTags.length ? 1 : 0) + 1;
-        paintExitOrRest(
-          emailRef.current,
-          emailIndex,
-          () => {
-            const el = emailRef.current;
-            if (!el) return;
-            el.style.transformOrigin = "50% 50%";
-            const inStart =
-              (linesStart +
-                (introBodyCount + subOffset + (introTags.length ? 1 : 0)) *
-                  lineSpan) *
-              pack;
-            const inEnd =
-              (linesStart +
-                (introBodyCount + subOffset + (introTags.length ? 1 : 0)) *
-                  lineSpan +
-                lineSpan * 0.72) *
-              pack;
-            const t = easeOutCubic(
-              clamp((progress - inStart) / Math.max(inEnd - inStart, 0.0001), 0, 1),
-            );
-            const angle = arriveAngle(emailIndex);
-            const u = 1 - t;
-            const scale = 1 + 1.2 * u;
-            const transform = `translate3d(${(angle.x * u).toFixed(2)}vw, ${(angle.y * u).toFixed(2)}vh, 0) rotateZ(${(angle.rot * u).toFixed(2)}deg) scale(${scale.toFixed(4)})`;
-            paintIdle(
-              el,
-              t,
-              10 * u,
-              transform,
-              emailIndex,
-              now,
-              dt,
-              t >= 0.985,
-              1 - t,
-              SUBTITLE_IDLE,
-              "subtitle",
-            );
-          },
-          SUBTITLE_IDLE,
-          "subtitle",
-        );
-      }
+      let handoffIndex = 0;
+      applyElement(titleRef.current, handoffIndex++);
+      if (introSubtitle) applyElement(subtitleRef.current, handoffIndex++);
+      if (introLines.length) applyElement(lineRefs.current[0] ?? null, handoffIndex++);
+      if (introTags.length) applyElement(tagsRef.current, handoffIndex++);
+      if (introEmail) applyElement(emailRef.current, handoffIndex++);
     };
 
     const updateArrivals = (
@@ -589,8 +415,7 @@ export function BrandingScene({
       const rect = pin.getBoundingClientRect();
       const progress =
         range < 64 ? 0 : clamp(-rect.top / Math.max(range, 1), 0, 1);
-      const { pack, packedExitGate, exitGate } = introMetrics();
-      updateIntro(progress, pack, exitGate, now, dt);
+      updateIntro(progress, now, dt);
       updateArrivals(progress, packedExitGate, now, dt);
     };
 
@@ -616,86 +441,111 @@ export function BrandingScene({
       >
         <div
           ref={stageRef}
-          className="absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-clip px-5 md:px-8 xl:px-12"
+          className="absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] items-center justify-center overflow-clip px-5 md:px-8 xl:px-12"
+          style={{
+            perspective: "1400px",
+            perspectiveOrigin: "50% 50%",
+            zIndex: 20,
+          }}
         >
           <div
-            ref={titleRef}
-            className="will-change-transform"
-            style={{
-              transformOrigin: "50% 50%",
-              filter: `blur(${LOAD_CLEAR_BLUR_PX}px)`,
-            }}
+            className="relative z-10 h-full w-full max-w-full text-center"
+            style={{ transformStyle: "preserve-3d" }}
           >
-            <TitleShine as="h1" className={TITLE_CLASS}>
-              {introTitle}
-            </TitleShine>
-          </div>
-
-          {introSubtitle ? (
-            <div
-              ref={subtitleRef}
-              className="mt-8 will-change-transform xl:mt-10"
-              style={{
-                opacity: 0,
-                visibility: "hidden",
-                transformOrigin: "50% 50%",
-              }}
-            >
-              <p className={SUBTITLE_CLASS}>
-                <MobileBreakText text={introSubtitle} />
-              </p>
+            <div className="absolute inset-0 flex items-center justify-center px-2">
+              <div
+                ref={titleRef}
+                className="will-change-transform"
+                style={{
+                  transformOrigin: "50% 50%",
+                  transformStyle: "preserve-3d",
+                  filter: `blur(${LOAD_CLEAR_BLUR_PX}px)`,
+                }}
+              >
+                <TitleShine as="h1" className={TITLE_CLASS}>
+                  {introTitle}
+                </TitleShine>
+              </div>
             </div>
-          ) : null}
 
-          <div className="relative mx-auto mt-8 w-full max-w-3xl text-center xl:mt-10 xl:max-w-4xl">
-            {introLines.length ? (
-              <div
-                ref={(el) => {
-                  lineRefs.current[0] = el;
-                }}
-                className="will-change-transform"
-                style={{
-                  opacity: 0,
-                  visibility: "hidden",
-                  transformOrigin: "50% 50%",
-                }}
-              >
-                <p className={`${BODY_CLASS} mx-auto mb-0`}>
-                  {preventOrphan(introLines.join(" "))}
-                </p>
-              </div>
-            ) : null}
-            {introTags.length ? (
-              <div
-                ref={tagsRef}
-                className="mt-10 flex flex-wrap justify-center gap-x-10 gap-y-4 will-change-transform xl:mt-12 xl:gap-x-14"
-                style={{
-                  opacity: 0,
-                  visibility: "hidden",
-                  transformOrigin: "50% 50%",
-                }}
-              >
-                {introTags.map((tag) => (
-                  <p
-                    key={tag}
-                    className="font-display text-[0.78rem] font-semibold tracking-[0.22em] text-ink"
-                  >
-                    {tag}
+            {introSubtitle ? (
+              <div className="absolute inset-0 flex items-center justify-center px-2">
+                <div
+                  ref={subtitleRef}
+                  className="will-change-transform"
+                  style={{
+                    opacity: 0,
+                    visibility: "hidden",
+                    transformOrigin: "50% 50%",
+                    transformStyle: "preserve-3d",
+                  }}
+                >
+                  <p className={SUBTITLE_CLASS}>
+                    <MobileBreakText text={introSubtitle} />
                   </p>
-                ))}
+                </div>
               </div>
             ) : null}
+
+            {introLines.length ? (
+              <div className="absolute inset-0 flex items-center justify-center px-3">
+                <div
+                  ref={(el) => {
+                    lineRefs.current[0] = el;
+                  }}
+                  className="will-change-transform"
+                  style={{
+                    opacity: 0,
+                    visibility: "hidden",
+                    transformOrigin: "50% 50%",
+                    transformStyle: "preserve-3d",
+                  }}
+                >
+                  <p className={`${BODY_CLASS} mx-auto mb-0 max-w-xl`}>
+                    {preventOrphan(introLines.join(" "))}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
+            {introTags.length ? (
+              <div className="absolute inset-0 flex items-center justify-center px-3">
+                <div
+                  ref={tagsRef}
+                  className="flex flex-wrap justify-center gap-x-8 gap-y-3 will-change-transform"
+                  style={{
+                    opacity: 0,
+                    visibility: "hidden",
+                    transformOrigin: "50% 50%",
+                    transformStyle: "preserve-3d",
+                  }}
+                >
+                  {introTags.map((tag) => (
+                    <p
+                      key={tag}
+                      className="font-display text-[0.78rem] font-semibold tracking-[0.22em] text-ink"
+                    >
+                      {tag}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             {introEmail ? (
-              <div
-                ref={emailRef}
-                className="will-change-transform"
-                style={{
-                  opacity: 0,
-                  visibility: "hidden",
-                  transformOrigin: "50% 50%",
-                }}
-              >
-                <EmailShineLink email={introEmail} />
+              <div className="absolute inset-0 flex items-center justify-center px-2">
+                <div
+                  ref={emailRef}
+                  className="will-change-transform"
+                  style={{
+                    opacity: 0,
+                    visibility: "hidden",
+                    transformOrigin: "50% 50%",
+                    transformStyle: "preserve-3d",
+                  }}
+                >
+                  <EmailShineLink email={introEmail} />
+                </div>
               </div>
             ) : null}
           </div>
@@ -704,7 +554,7 @@ export function BrandingScene({
 
       {cases.length ? (
       <div
-        className="relative z-[12] divide-y divide-line"
+        className="relative z-[12] overflow-x-clip divide-y divide-line"
         style={{ marginTop: intro.overlapCases }}
       >
         {cases.map((study, studyIndex) => {
@@ -727,7 +577,7 @@ export function BrandingScene({
               className={
                 isFinale
                   ? "relative overflow-visible"
-                  : "relative overflow-visible px-5 py-[clamp(4.5rem,12vh,8rem)] md:px-8 xl:px-12 xl:py-[clamp(5.5rem,13vh,11rem)] 2xl:px-16"
+                  : "relative overflow-x-clip px-5 py-[clamp(4.5rem,12vh,8rem)] md:px-8 xl:px-12 xl:py-[clamp(5.5rem,13vh,11rem)] 2xl:px-16"
               }
               style={isFinale ? { height: PAGE_FINALE.pinHeightVh } : undefined}
             >
