@@ -501,7 +501,7 @@ export function BrandingScene({
                 ref={cueRef}
                 className="will-change-transform"
                 style={{
-                  transformOrigin: "50% 50%",
+                  transformOrigin: "50% 12%",
                   transformStyle: "preserve-3d",
                 }}
               >
