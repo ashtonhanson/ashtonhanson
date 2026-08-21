@@ -59,8 +59,10 @@ export const ABOUT_INTRO = {
    * Opening down-arrow cue — short beat, then ABOUT/title takes the stage.
    * Units are 0→1 through the pin.
    */
-  cueExitStart: 0.028,
-  cueExitEnd: 0.086,
+  cueExitStart: 0.034,
+  cueExitEnd: 0.11,
+  cuePeakScale: 6.6,
+  cuePeakZ: 520,
 
   /**
    * Zoom t when opacity begins falling. Keep this < 1 so nothing sits at max scale.
@@ -220,15 +222,27 @@ function zoomProgress(progress: number, win: IntroHandoff) {
 }
 
 /**
- * ABOUT / ME Z + scale envelope (identical so ME matches ABOUT’s surge).
+ * ABOUT / ME — arrive small and deep, then surge toward camera like the original exit.
  */
 export function aboutZoomPath(): BezierPath {
   const peakS = ABOUT_INTRO.peakScale;
   const peakZ = ABOUT_INTRO.peakZ;
   return {
+    p0: { x: 0, y: 0, z: -160, scale: 0.26, rot: 0 },
+    p1: { x: 0, y: 0, z: -18, scale: 0.88, rot: 0 },
+    p2: { x: 0, y: 0, z: peakZ * 0.42, scale: 1 + (peakS - 1) * 0.42, rot: 0 },
+    p3: { x: 0, y: 0, z: peakZ, scale: peakS, rot: 0 },
+  };
+}
+
+/** Load cue — same Z language as ABOUT, much larger peak so it blows past the camera. */
+export function cueZoomPath(): BezierPath {
+  const peakS = ABOUT_INTRO.cuePeakScale;
+  const peakZ = ABOUT_INTRO.cuePeakZ;
+  return {
     p0: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
-    p1: { x: 0, y: 0, z: peakZ * 0.22, scale: 1 + (peakS - 1) * 0.22, rot: 0 },
-    p2: { x: 0, y: 0, z: peakZ * 0.55, scale: 1 + (peakS - 1) * 0.55, rot: 0 },
+    p1: { x: 0, y: 0, z: peakZ * 0.16, scale: 1 + (peakS - 1) * 0.2, rot: 0 },
+    p2: { x: 0, y: 0, z: peakZ * 0.48, scale: 1 + (peakS - 1) * 0.55, rot: 0 },
     p3: { x: 0, y: 0, z: peakZ, scale: peakS, rot: 0 },
   };
 }
@@ -302,12 +316,11 @@ export function introElementPath(index: number): BezierPath {
 }
 
 /**
- * Pose: cue/ABOUT/ME share the ABOUT Z-scale; body uses the small→huge zoom.
- * Index 0 is the load cue (centered, same Z exit as ABOUT).
+ * Pose: cue uses a bigger Z-exit; ABOUT/ME arrive small then surge; body uses the small→huge zoom.
  */
 export function sampleIntroPose(index: number, zoomT: number): PathPose {
   if (index === 0) {
-    const zoom = sampleBezierPath(zoomT, aboutZoomPath());
+    const zoom = sampleBezierPath(zoomT, cueZoomPath());
     return { x: 0, y: 0, z: zoom.z, scale: zoom.scale, rot: 0 };
   }
   const content = index - 1;

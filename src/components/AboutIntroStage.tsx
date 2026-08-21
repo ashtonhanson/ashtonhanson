@@ -55,8 +55,8 @@ function applyHandoffStyle(
 
 /**
  * Sticky ABOUT chapter — metallic down-arrow on load, then ABOUT → ME → body.
- * Cue and ABOUT ride the same Z-scale; ABOUT still load-blurs until first scroll.
- * Each element rides a distinct Z-scale path, blurs out as the next blurs in.
+ * Cue drops in from the top, hovers, then blows past the camera.
+ * ABOUT arrives small and blurry on Z, then expands through the existing surge.
  */
 export function AboutIntroStage({
   aboutWord,
@@ -185,7 +185,7 @@ export function AboutIntroStage({
             handoffIndex + 3,
             atRest,
             travelT,
-            handoffIndex === 0 ? 0 : 1,
+            handoffIndex === 0 ? 3.2 : 1,
             pull,
           ),
         );

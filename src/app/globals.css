@@ -685,83 +685,71 @@ body {
 
 .scroll-cue {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.18rem;
+  justify-content: center;
   pointer-events: none;
 }
 
-.scroll-cue-shaft,
-.scroll-cue-head span {
+.scroll-cue-hover {
   display: block;
-  border-radius: 1px;
-  background-image: linear-gradient(
-    105deg,
-    #7a7a78 0%,
-    #c8c8c4 12%,
-    #8e8e8c 24%,
-    #ffffff 38%,
-    #9a9a98 50%,
-    #ececea 62%,
-    #858583 74%,
-    #f4f4f0 86%,
-    #7a7a78 100%
-  );
-  background-size: 320% 140%;
-  background-position: 0% 40%;
-  filter: drop-shadow(0 0 6px rgb(255 255 255 / 0.28))
-    drop-shadow(0 0 14px rgb(220 220 210 / 0.16));
+  transform-origin: 50% 50%;
 }
 
-.scroll-cue-shaft {
-  width: 1.85px;
-  height: 1.55rem;
-}
-
-.scroll-cue-head {
-  position: relative;
-  width: 1.45rem;
-  height: 0.78rem;
-}
-
-.scroll-cue-head span {
-  position: absolute;
-  top: 0;
-  width: 0.92rem;
-  height: 1.85px;
-}
-
-.scroll-cue-head span:first-child {
-  left: 0;
-  transform: rotate(38deg);
-  transform-origin: right center;
-}
-
-.scroll-cue-head span:last-child {
-  right: 0;
-  transform: rotate(-38deg);
-  transform-origin: left center;
+.scroll-cue-icon {
+  display: block;
+  width: clamp(4.4rem, 16vw, 8.25rem);
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 0 8px rgb(255 255 255 / 0.28))
+    drop-shadow(0 0 18px rgb(220 220 210 / 0.18));
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .scroll-cue-shaft,
-  .scroll-cue-head span {
-    animation:
-      nav-glow-drift 8.4s ease-in-out infinite alternate,
-      scroll-cue-flash 2.35s ease-in-out infinite;
+  .scroll-cue {
+    transform: translate3d(0, -44vh, 0);
+    animation: scroll-cue-arrive 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .scroll-cue-hover {
+    animation: scroll-cue-hover 2.6s ease-in-out 1.2s infinite;
+  }
+
+  .scroll-cue-icon {
+    animation: scroll-cue-flash 2.35s ease-in-out infinite;
+  }
+}
+
+@keyframes scroll-cue-arrive {
+  from {
+    transform: translate3d(0, -44vh, 0);
+    opacity: 0.15;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes scroll-cue-hover {
+  0%,
+  100% {
+    transform: translate3d(0, -0.55rem, 0);
+  }
+  50% {
+    transform: translate3d(0, 0.7rem, 0);
   }
 }
 
 @keyframes scroll-cue-flash {
   0%,
   100% {
-    filter: drop-shadow(0 0 3px rgb(255 255 255 / 0.14))
-      drop-shadow(0 0 8px rgb(200 200 190 / 0.08));
-    opacity: 0.52;
+    filter: drop-shadow(0 0 4px rgb(255 255 255 / 0.16))
+      drop-shadow(0 0 10px rgb(200 200 190 / 0.1));
+    opacity: 0.62;
   }
   48% {
-    filter: drop-shadow(0 0 9px rgb(255 255 255 / 0.52))
-      drop-shadow(0 0 20px rgb(230 230 220 / 0.28));
+    filter: drop-shadow(0 0 12px rgb(255 255 255 / 0.55))
+      drop-shadow(0 0 24px rgb(230 230 220 / 0.3));
     opacity: 1;
   }
 }
