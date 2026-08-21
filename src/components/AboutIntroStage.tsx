@@ -7,6 +7,7 @@ import { TitleShine } from "@/components/TitleShine";
 import {
   ABOUT_INTRO,
   clamp,
+  cueArriveY,
   cueHoldOpacity,
   cueLifeT,
   easeInOutCubic,
@@ -76,6 +77,7 @@ export function AboutIntroStage({
   useEffect(() => {
     let frame = 0;
     let lastNow = performance.now();
+    const born = lastNow;
     const handoffs = introHandoffs(bodyLines.length);
     const idleMap = new WeakMap<HTMLElement, IdleHoverState>();
     const pullMap = new WeakMap<HTMLElement, ReturnType<typeof createMousePullState>>();
@@ -157,6 +159,9 @@ export function AboutIntroStage({
         const lifeT =
           handoffIndex === 0 ? cueLifeT(progress, win) : vis.zoomT;
         const pose = sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
+        if (handoffIndex === 0) {
+          pose.y += cueArriveY(now - born);
+        }
         const transform = poseToTransform(pose);
         const loadBlend =
           handoffIndex === 1
@@ -222,7 +227,7 @@ export function AboutIntroStage({
     >
       <div
         ref={stageRef}
-        className="about-intro-stage absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] items-center justify-center overflow-clip px-5 md:px-8 xl:px-12"
+        className="about-intro-stage absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] items-center justify-center overflow-visible px-5 md:px-8 xl:px-12"
         style={{
           perspective: "1400px",
           perspectiveOrigin: "50% 50%",

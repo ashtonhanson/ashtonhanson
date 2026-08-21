@@ -48,6 +48,7 @@ import {
   ABOUT_INTRO,
   cueHoldOpacity,
   cueLifeT,
+  cueArriveY,
   handoffVisibility,
   introHandoffs,
   poseToTransform,
@@ -139,6 +140,7 @@ export function BrandingScene({
   useEffect(() => {
     let frame = 0;
     let lastNow = performance.now();
+    const born = lastNow;
     const idleMap = new WeakMap<HTMLElement, IdleHoverState>();
     const pullMap = new WeakMap<HTMLElement, MousePullState>();
     const loadClear = createLoadClearState();
@@ -252,6 +254,9 @@ export function BrandingScene({
         const lifeT =
           handoffIndex === 0 ? cueLifeT(progress, win) : vis.zoomT;
         const pose = sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
+        if (handoffIndex === 0) {
+          pose.y += cueArriveY(now - born);
+        }
         const loadBlend =
           handoffIndex === 1
             ? stepLoadClear(
@@ -493,7 +498,7 @@ export function BrandingScene({
       >
         <div
           ref={stageRef}
-          className="absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] items-center justify-center overflow-clip px-5 md:px-8 xl:px-12"
+          className="absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] items-center justify-center overflow-visible px-5 md:px-8 xl:px-12"
           style={{
             perspective: "1400px",
             perspectiveOrigin: "50% 50%",

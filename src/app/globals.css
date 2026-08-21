@@ -710,13 +710,8 @@ body {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .scroll-cue {
-    transform: translate3d(0, -92vh, 0);
-    animation: scroll-cue-arrive 1.45s cubic-bezier(0.2, 0.55, 0.32, 1) both;
-  }
-
   .scroll-cue-hover {
-    animation: scroll-cue-hover 2.35s ease-in-out 1.45s infinite;
+    animation: scroll-cue-hover 2.35s ease-in-out infinite;
   }
 
   .scroll-cue-icon {
@@ -725,20 +720,6 @@ body {
 
   .scroll-cue-shine {
     animation: scroll-cue-shine 1.65s linear infinite;
-  }
-}
-
-@keyframes scroll-cue-arrive {
-  from {
-    transform: translate3d(0, -92vh, 0);
-    opacity: 0.2;
-  }
-  72% {
-    opacity: 1;
-  }
-  to {
-    transform: translate3d(0, 0, 0);
-    opacity: 1;
   }
 }
 

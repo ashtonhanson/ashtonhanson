@@ -68,6 +68,9 @@ export const ABOUT_INTRO = {
   cueLayoutScale: 6.6,
   cuePeakScale: 1,
   cuePeakZ: 520,
+  /** Start above the viewport so the load-in is a real descent. */
+  cueArriveVh: -78,
+  cueArriveMs: 1550,
 
   /**
    * Zoom t when opacity begins falling. Keep this < 1 so nothing sits at max scale.
@@ -326,6 +329,13 @@ export function introElementPath(index: number): BezierPath {
 
 export function cueLifeT(progress: number, win: IntroHandoff) {
   return clamp(progress / Math.max(win.exitEnd, 0.0001), 0, 1);
+}
+
+/** vh offset from above the screen → 0. Nearly even speed so it doesn’t crawl in. */
+export function cueArriveY(elapsedMs: number) {
+  const t = clamp(elapsedMs / ABOUT_INTRO.cueArriveMs, 0, 1);
+  const u = 1 - (1 - t) ** 1.12;
+  return ABOUT_INTRO.cueArriveVh * (1 - u);
 }
 
 /** Peak tilt before scale finishes so the tail swings past the tip. */
