@@ -378,7 +378,7 @@ export function sampleIntroPose(
       z: zoom.z,
       scale: zoom.scale,
       rot: 0,
-      rotX: 6 + 32 * cueTiltAmount(zoomT),
+      rotX: 7 + 52 * cueTiltAmount(zoomT),
     };
   }
   const content = index - 1;
