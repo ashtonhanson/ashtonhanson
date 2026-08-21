@@ -50,7 +50,7 @@ import {
   poseToTransform,
   sampleIntroPose,
 } from "@/lib/cinematicDepth";
-import type { CaseStudy as CaseStudyType, MediaItem } from "@/lib/content";
+import { contact, type CaseStudy as CaseStudyType, type MediaItem } from "@/lib/content";
 import { preventOrphan } from "@/lib/text";
 
 const TITLE_CLASS =
@@ -84,6 +84,8 @@ type BrandingSceneProps = {
   /** Single-image plates instead of a carousel (logos). */
   mediaVariant?: "carousel" | "plate";
   introEmail?: string;
+  /** Render the contact form inside the intro pin (CONTACT → form). */
+  introForm?: boolean;
   /** Override intro pin timing (contact uses a shorter lockup). */
   intro?: Partial<IntroTiming>;
   /** Override first-study handoff timing. */
@@ -113,6 +115,7 @@ export function BrandingScene({
   finale = false,
   mediaVariant = "carousel",
   introEmail,
+  introForm = false,
   intro: introOverride,
   handoff: handoffOverride,
   cases,
@@ -124,6 +127,7 @@ export function BrandingScene({
   const tagsRef = useRef<HTMLDivElement>(null);
   const subtitleRef = useRef<HTMLDivElement>(null);
   const emailRef = useRef<HTMLDivElement>(null);
+  const formLockupRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<HTMLDivElement>(null);
   const intro = { ...BRANDING_INTRO, ...introOverride };
   const handoff = { ...HUB_HANDOFF, ...handoffOverride };
@@ -200,7 +204,8 @@ export function BrandingScene({
       (introSubtitle ? 1 : 0) +
       (introLines.length ? 1 : 0) +
       (introTags.length ? 1 : 0) +
-      (introEmail ? 1 : 0);
+      (introEmail ? 1 : 0) +
+      (introForm ? 1 : 0);
     const handoffs = introHandoffs(Math.max(extraCount - 1, 0));
     const lastReal = extraCount;
     const packedExitGate =
@@ -284,6 +289,37 @@ export function BrandingScene({
       if (introLines.length) applyElement(lineRefs.current[0] ?? null, handoffIndex++);
       if (introTags.length) applyElement(tagsRef.current, handoffIndex++);
       if (introEmail) applyElement(emailRef.current, handoffIndex++);
+      if (introForm && formLockupRef.current) {
+        const el = formLockupRef.current;
+        const win = handoffs[handoffIndex];
+        if (!win) {
+          paint(el, 0, ABOUT_INTRO.enterExitBlurPx, "none");
+        } else {
+          const vis = handoffVisibility(
+            progress,
+            win,
+            ABOUT_INTRO.enterExitBlurPx * 0.7,
+          );
+          const u = 1 - vis.opacity;
+          const transform = `translate3d(0, ${(16 * u).toFixed(2)}vh, 0) scale(${(1 + 0.18 * u).toFixed(4)})`;
+          paint(
+            el,
+            vis.opacity,
+            vis.blur,
+            composeIdleTransform(
+              idleFor(el),
+              transform,
+              now,
+              dt,
+              8,
+              vis.opacity >= 0.98,
+              u,
+              1,
+            ),
+          );
+          el.style.pointerEvents = vis.opacity > 0.65 ? "auto" : "none";
+        }
+      }
     };
 
     const updateArrivals = (
@@ -428,7 +464,7 @@ export function BrandingScene({
     return () => {
       window.cancelAnimationFrame(frame);
     };
-  }, [introLines.length, introTags.length, introSubtitle, introEmail, finale, cases.length, intro.pinHeightVh, intro.linesStart, intro.lineSpan, intro.holdAfter, intro.exitSpan, handoff.lead, handoff.span, handoff.finish]);
+  }, [introLines.length, introTags.length, introSubtitle, introEmail, introForm, finale, cases.length, intro.pinHeightVh, intro.linesStart, intro.lineSpan, intro.holdAfter, intro.exitSpan, handoff.lead, handoff.span, handoff.finish]);
 
   let angleCursor =
     (introLines.length ? 1 : 0) +
@@ -550,6 +586,27 @@ export function BrandingScene({
                   }}
                 >
                   <EmailShineLink email={introEmail} />
+                </div>
+              </div>
+            ) : null}
+
+            {introForm ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-end px-3 pb-[6vh] pt-[22vh] md:justify-center md:pb-8 md:pt-[18vh]">
+                <div
+                  ref={formLockupRef}
+                  className="flex w-full max-w-lg flex-col items-center will-change-transform"
+                  style={{
+                    opacity: 0,
+                    visibility: "hidden",
+                    transformOrigin: "50% 40%",
+                  }}
+                >
+                  <TitleShine as="p" className={FORM_TITLE_CLASS}>
+                    {contact.subtitle}
+                  </TitleShine>
+                  <div className="mt-8 w-full xl:mt-10">
+                    <ContactForm />
+                  </div>
                 </div>
               </div>
             ) : null}

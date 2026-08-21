@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import { BrandingScene } from "@/components/BrandingScene";
-import {
-  CONTACT_HANDOFF,
-  CONTACT_INTRO,
-} from "@/lib/brandingMotion";
-import { contact, contactCases } from "@/lib/content";
+import { CONTACT_INTRO } from "@/lib/brandingMotion";
+import { contact } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -16,9 +13,9 @@ export default function ContactPage() {
     <BrandingScene
       introTitle={contact.title}
       introLines={[]}
+      introForm
       intro={CONTACT_INTRO}
-      handoff={CONTACT_HANDOFF}
-      cases={contactCases}
+      cases={[]}
     />
   );
 }
