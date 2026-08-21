@@ -48,10 +48,45 @@ export function viewHeight() {
 
 const STICKY_TOP_REM = 3.6;
 
-/** Keep sticky lockups the Fold / device-frame height, not a mismatched 100dvh. */
-export function applyStickyStageSize(el: HTMLElement | null) {
-  if (!el) return;
+export function headerOffsetPx() {
+  const header = document.querySelector("header");
+  if (header) return header.getBoundingClientRect().height;
   const root =
     parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  el.style.height = `${Math.max(viewHeight() - STICKY_TOP_REM * root, 120)}px`;
+  return STICKY_TOP_REM * root;
+}
+
+/**
+ * Hold a lockup on screen for the life of its pin.
+ * Chrome device frames often break position:sticky; fixed-while-pinned does not.
+ */
+export function applyPinStage(pin: HTMLElement, stage: HTMLElement | null) {
+  if (!stage) return;
+  const viewH = viewHeight();
+  const header = headerOffsetPx();
+  const stageH = Math.max(viewH - header, 120);
+  const rect = pin.getBoundingClientRect();
+
+  stage.style.height = `${stageH}px`;
+  stage.style.left = "0";
+  stage.style.width = "100%";
+  stage.style.right = "auto";
+
+  if (rect.top > header) {
+    stage.style.position = "absolute";
+    stage.style.top = "0";
+    stage.style.bottom = "auto";
+    return;
+  }
+
+  if (rect.bottom > header + stageH) {
+    stage.style.position = "fixed";
+    stage.style.top = `${header}px`;
+    stage.style.bottom = "auto";
+    return;
+  }
+
+  stage.style.position = "absolute";
+  stage.style.top = "auto";
+  stage.style.bottom = "0";
 }

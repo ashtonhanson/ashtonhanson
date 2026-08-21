@@ -10,7 +10,7 @@ import {
   type ArriveKind,
 } from "@/lib/brandingMotion";
 import { chapterWindows, windowT } from "@/lib/homeMotion";
-import { applyStickyStageSize, viewHeight } from "@/lib/loadClear";
+import { applyPinStage, viewHeight } from "@/lib/loadClear";
 import {
   createIdleHoverState,
   composeIdleTransform,
@@ -103,7 +103,7 @@ export function CinematicChapter({
       if (document.hidden) return;
       const pin = pinRef.current;
       if (!pin) return;
-      applyStickyStageSize(stageRef.current);
+      applyPinStage(pin, stageRef.current);
       const progress = pinProgress(pin);
       const nodes = [
         ...pin.querySelectorAll<HTMLElement>("[data-home-arrive]"),
@@ -207,7 +207,7 @@ export function CinematicChapter({
     >
       <div
         ref={stageRef}
-        className="sticky top-[3.6rem] flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-clip px-5 md:px-8 xl:px-12 2xl:px-16"
+        className="absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-clip px-5 md:px-8 xl:px-12 2xl:px-16"
         style={
           perspective
             ? { perspective: "1400px", perspectiveOrigin: "50% 42%" }

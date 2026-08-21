@@ -24,7 +24,7 @@ import {
 import {
   createLoadClearState,
   LOAD_CLEAR_BLUR_PX,
-  applyStickyStageSize,
+  applyPinStage,
   pageHasScrolled,
   stepLoadClear,
   viewHeight,
@@ -105,7 +105,7 @@ export function AboutIntroStage({
 
       const pin = pinRef.current;
       if (!pin) return;
-      applyStickyStageSize(stageRef.current);
+      applyPinStage(pin, stageRef.current);
 
       const rect = pin.getBoundingClientRect();
       const viewH = viewHeight();
@@ -211,7 +211,7 @@ export function AboutIntroStage({
     >
       <div
         ref={stageRef}
-        className="about-intro-stage sticky top-[3.6rem] z-20 flex h-[calc(100dvh-3.6rem)] items-center justify-center overflow-clip px-5 md:px-8 xl:px-12"
+        className="about-intro-stage absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] items-center justify-center overflow-clip px-5 md:px-8 xl:px-12"
         style={{
           perspective: "1400px",
           perspectiveOrigin: "50% 50%",

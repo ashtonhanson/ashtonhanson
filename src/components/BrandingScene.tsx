@@ -40,7 +40,7 @@ import {
 import {
   createLoadClearState,
   LOAD_CLEAR_BLUR_PX,
-  applyStickyStageSize,
+  applyPinStage,
   pageHasScrolled,
   stepLoadClear,
   viewHeight,
@@ -583,7 +583,7 @@ export function BrandingScene({
       if (document.hidden) return;
       const pin = pinRef.current;
       if (!pin) return;
-      applyStickyStageSize(stageRef.current);
+      applyPinStage(pin, stageRef.current);
       const viewH = viewHeight();
       const range = pin.offsetHeight - viewH;
       const rect = pin.getBoundingClientRect();
@@ -616,7 +616,7 @@ export function BrandingScene({
       >
         <div
           ref={stageRef}
-          className="sticky top-[3.6rem] z-20 flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-clip px-5 md:px-8 xl:px-12"
+          className="absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-clip px-5 md:px-8 xl:px-12"
         >
           <div
             ref={titleRef}
