@@ -365,15 +365,17 @@ export function sampleIntroPose(
   lifeT = zoomT,
 ): PathPose {
   if (index === 0) {
-    const zoom = sampleBezierPath(zoomT, cueZoomPath());
-    const zDrop = clamp(zoomT, 0, 1);
+    const dropGate = 0.4;
+    const dropT = clamp(lifeT / dropGate, 0, 1);
+    const scaleT = clamp((lifeT - dropGate) / (1 - dropGate), 0, 1);
+    const zoom = sampleBezierPath(scaleT, cueZoomPath());
     return {
       x: 0,
-      y: 14 * zDrop + 58 * zDrop * zDrop,
+      y: 12 * dropT + 38 * dropT * dropT + 10 * scaleT,
       z: zoom.z,
       scale: zoom.scale,
       rot: 0,
-      rotX: 10 + 96 * cueTiltAmount(zoomT),
+      rotX: 10 + 96 * cueTiltAmount(scaleT),
     };
   }
   const content = index - 1;
