@@ -266,6 +266,8 @@ export class AhMediaCarousel extends ElementBase {
   #pullMap = new WeakMap<HTMLElement, MousePullState>();
   #motionRaf: number | null = null;
   #lastMotionNow = 0;
+  #inView = false;
+  #io: IntersectionObserver | null = null;
 
   constructor() {
     super();
@@ -305,12 +307,15 @@ export class AhMediaCarousel extends ElementBase {
     this.#scheduleFocus(true);
     this.#restartAutoplay();
     this.#startMotion();
+    this.#watchView();
   }
 
   disconnectedCallback() {
     this.#mq?.removeEventListener("change", this.#onReducedChange);
     window.removeEventListener("resize", this.#onResize);
     this.#track?.removeEventListener("scroll", this.#onScroll);
+    this.#io?.disconnect();
+    this.#io = null;
     this.#stopAutoplay();
     this.#stopMotion();
     if (this.#hoverTimer) window.clearTimeout(this.#hoverTimer);
@@ -351,6 +356,29 @@ export class AhMediaCarousel extends ElementBase {
     return window.matchMedia("(min-width: 768px)").matches;
   }
 
+  #watchView() {
+    this.#io?.disconnect();
+    this.#io = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.some(
+          (entry) => entry.isIntersecting && entry.intersectionRatio >= 0.18,
+        );
+        if (visible === this.#inView) return;
+        this.#inView = visible;
+        if (visible) {
+          this.#active = 0;
+          this.#targetIndex = 0;
+          this.#autoDir = 1;
+          this.#centerSlide(0, false);
+          this.#scheduleFocus(true);
+        }
+        this.#restartAutoplay();
+      },
+      { threshold: [0, 0.18, 0.35] },
+    );
+    this.#io.observe(this);
+  }
+
   #syncAutoPause() {
     this.#autoPaused =
       this.#reduced ||
@@ -358,6 +386,7 @@ export class AhMediaCarousel extends ElementBase {
       this.#hoverPaused ||
       this.#userPaused ||
       this.#dragging ||
+      !this.#inView ||
       this.#items.length < 2 ||
       Boolean(this.#scrollRaf);
   }
