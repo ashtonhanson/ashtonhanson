@@ -85,6 +85,9 @@ export const ABOUT_INTRO = {
   bodyPeakScale: 3.4,
   bodyStartZ: -90,
   bodyPeakZ: 160,
+
+  /** Counter perspective lift during Z surge — keeps type visually centered. */
+  zoomAnchorY: 4.5,
 } as const;
 
 export type PathPose = {
@@ -291,45 +294,45 @@ export function introElementPath(index: number): BezierPath {
     case 0: // ABOUT — rises, leans left, scales toward camera
       return {
         p0: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
-        p1: { x: -2.5, y: -7, z: 0, scale: 1, rot: -3.2 },
-        p2: { x: -6, y: -18, z: 0, scale: 1, rot: -8.5 },
-        p3: { x: -10, y: -32, z: 0, scale: 1, rot: -14 },
+        p1: { x: -2.5, y: -2, z: 0, scale: 1, rot: -3.2 },
+        p2: { x: -6, y: -6, z: 0, scale: 1, rot: -8.5 },
+        p3: { x: -10, y: -16, z: 0, scale: 1, rot: -14 },
       };
     case 1: // ME — rises, leans right, scales toward camera
       return {
         p0: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
-        p1: { x: 3.5, y: -8, z: 0, scale: 1, rot: 3.8 },
-        p2: { x: 9, y: -19, z: 0, scale: 1, rot: 10 },
-        p3: { x: 15, y: -34, z: 0, scale: 1, rot: 16 },
+        p1: { x: 3.5, y: -2, z: 0, scale: 1, rot: 3.8 },
+        p2: { x: 9, y: -6, z: 0, scale: 1, rot: 10 },
+        p3: { x: 15, y: -18, z: 0, scale: 1, rot: 16 },
       };
     case 2: // line 0 — from below-right
       return {
         p0: { x: 10, y: 10, z: 0, scale: 1, rot: 2 },
         p1: { x: 4, y: 4, z: 0, scale: 1, rot: 1 },
-        p2: { x: -3, y: -5, z: 0, scale: 1, rot: -1 },
-        p3: { x: -8, y: -48, z: 0, scale: 1, rot: -2 },
+        p2: { x: -3, y: -2, z: 0, scale: 1, rot: -1 },
+        p3: { x: -8, y: -22, z: 0, scale: 1, rot: -2 },
       };
     case 3: // line 1 — high arc from left
       return {
         p0: { x: -12, y: -8, z: 0, scale: 1, rot: 4 },
         p1: { x: -3, y: -2, z: 0, scale: 1, rot: 1 },
         p2: { x: 6, y: 3, z: 0, scale: 1, rot: -1.5 },
-        p3: { x: 11, y: -48, z: 0, scale: 1, rot: -3 },
+        p3: { x: 11, y: -22, z: 0, scale: 1, rot: -3 },
       };
     case 4: // line 2 — S-curve
       return {
         p0: { x: 8, y: 6, z: 0, scale: 1, rot: -2.5 },
         p1: { x: -6, y: -2, z: 0, scale: 1, rot: 1.5 },
-        p2: { x: 5, y: -8, z: 0, scale: 1, rot: -1 },
-        p3: { x: -8, y: -50, z: 0, scale: 1, rot: 2 },
+        p2: { x: 5, y: -4, z: 0, scale: 1, rot: -1 },
+        p3: { x: -8, y: -24, z: 0, scale: 1, rot: 2 },
       };
     default: {
       const sway = index % 2 === 0 ? 1 : -1;
       return {
         p0: { x: 10 * sway, y: 8 * sway, z: 0, scale: 1, rot: 3 * sway },
         p1: { x: -2 * sway, y: 2, z: 0, scale: 1, rot: -1 * sway },
-        p2: { x: 4 * sway, y: -6, z: 0, scale: 1, rot: 1.2 * sway },
-        p3: { x: -7 * sway, y: -50, z: 0, scale: 1, rot: -2 * sway },
+        p2: { x: 4 * sway, y: -3, z: 0, scale: 1, rot: 1.2 * sway },
+        p3: { x: -7 * sway, y: -24, z: 0, scale: 1, rot: -2 * sway },
       };
     }
   }
@@ -390,7 +393,7 @@ export function sampleIntroPose(
       : sampleBezierPath(zoomT, aboutZoomPath());
   return {
     x: lateral.x,
-    y: lateral.y,
+    y: lateral.y + ABOUT_INTRO.zoomAnchorY * zoomT,
     z: zoom.z,
     scale: zoom.scale,
     rot: lateral.rot,
