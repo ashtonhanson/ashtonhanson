@@ -497,10 +497,10 @@ export function BrandingScene({
     (introEmail ? 1 : 0);
 
   return (
-    <div ref={sceneRef}>
+    <div ref={sceneRef} className="w-full max-w-[100vw]">
       <section
         ref={pinRef}
-        className="relative"
+        className="relative w-full max-w-[100vw]"
         style={{ height: intro.pinHeightVh }}
         aria-label={`${introTitle} introduction`}
       >
@@ -646,7 +646,7 @@ export function BrandingScene({
 
       {cases.length ? (
       <div
-        className="relative z-[12] divide-y divide-line overflow-visible md:overflow-x-clip"
+        className="relative z-[12] overflow-x-clip divide-y divide-line"
         style={{ marginTop: intro.overlapCases }}
       >
         {cases.map((study, studyIndex) => {
@@ -670,8 +670,8 @@ export function BrandingScene({
                 isFinale
                   ? "relative overflow-visible"
                   : study.form
-                    ? "relative overflow-visible px-5 pb-[clamp(4.5rem,12vh,8rem)] pt-[clamp(7rem,24vh,12rem)] md:overflow-x-clip md:px-8 xl:px-12 xl:pb-[clamp(5.5rem,13vh,11rem)] xl:pt-[clamp(8rem,20vh,14rem)] 2xl:px-16"
-                    : "relative overflow-visible px-5 py-[clamp(4.5rem,12vh,8rem)] md:overflow-x-clip md:px-8 xl:px-12 xl:py-[clamp(5.5rem,13vh,11rem)] 2xl:px-16"
+                    ? "relative overflow-x-clip px-5 pb-[clamp(4.5rem,12vh,8rem)] pt-[clamp(7rem,24vh,12rem)] md:px-8 xl:px-12 xl:pb-[clamp(5.5rem,13vh,11rem)] xl:pt-[clamp(8rem,20vh,14rem)] 2xl:px-16"
+                    : "relative overflow-x-clip px-5 py-[clamp(4.5rem,12vh,8rem)] md:px-8 xl:px-12 xl:py-[clamp(5.5rem,13vh,11rem)] 2xl:px-16"
               }
               style={isFinale ? { height: PAGE_FINALE.pinHeightVh } : undefined}
             >

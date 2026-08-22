@@ -46,6 +46,17 @@ export function viewHeight() {
   return window.innerHeight || 1;
 }
 
+/** Visible viewport width, including Chrome device-frame / pinch offsets. */
+export function viewWidth() {
+  const visual = window.visualViewport?.width;
+  if (visual && visual > 1) return visual;
+  return window.innerWidth || document.documentElement.clientWidth || 1;
+}
+
+export function viewLeft() {
+  return window.visualViewport?.offsetLeft ?? 0;
+}
+
 const STICKY_TOP_REM = 3.6;
 
 export function headerOffsetPx() {
@@ -63,17 +74,21 @@ export function headerOffsetPx() {
 export function applyPinStage(pin: HTMLElement, stage: HTMLElement | null) {
   if (!stage) return;
   const viewH = viewHeight();
+  const viewW = viewWidth();
+  const viewL = viewLeft();
   const header = headerOffsetPx();
   const stageH = Math.max(viewH - header, 120);
   const rect = pin.getBoundingClientRect();
 
   stage.style.height = `${stageH}px`;
-  stage.style.left = "0";
-  stage.style.width = "100%";
+  stage.style.width = `${viewW}px`;
+  stage.style.maxWidth = `${viewW}px`;
   stage.style.right = "auto";
+  stage.style.boxSizing = "border-box";
 
   if (rect.top > header) {
     stage.style.position = "absolute";
+    stage.style.left = `${viewL - rect.left}px`;
     stage.style.top = "0";
     stage.style.bottom = "auto";
     return;
@@ -81,12 +96,14 @@ export function applyPinStage(pin: HTMLElement, stage: HTMLElement | null) {
 
   if (rect.bottom > header + stageH) {
     stage.style.position = "fixed";
+    stage.style.left = `${viewL}px`;
     stage.style.top = `${header}px`;
     stage.style.bottom = "auto";
     return;
   }
 
   stage.style.position = "absolute";
+  stage.style.left = `${viewL - rect.left}px`;
   stage.style.top = "auto";
   stage.style.bottom = "0";
 }

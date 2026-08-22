@@ -223,7 +223,7 @@ export function AboutIntroStage({
   return (
     <section
       ref={pinRef}
-      className="about-intro-pin relative"
+      className="about-intro-pin relative w-full max-w-[100vw]"
       style={{ height: ABOUT_INTRO.pinHeightVh }}
       aria-label="About introduction"
     >
