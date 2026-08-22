@@ -561,7 +561,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#track.addEventListener("pointercancel", this.#onPointerUp);
     this.#track.addEventListener("dragstart", (event) => event.preventDefault());
 
-    wrap.addEventListener("pointerenter", (event) => {
+    wrap.addEventListener("pointerenter", (event: PointerEvent) => {
       if (event.pointerType !== "mouse") return;
       this.#hoverPaused = true;
       this.#syncAutoPause();
