@@ -18,7 +18,7 @@ const SCALE_MAX = 1.08;
 const OPACITY_MIN = 0.5;
 const OPACITY_MAX = 1;
 const BLUR_MAX = 4;
-const AUTO_SPEED = 0.28; // px per frame — slow continuous drift
+const AUTO_PX_PER_SEC = 24; // slow continuous crawl
 const USER_PAUSE_MS = 4200;
 
 const STYLES = /* css */ `
@@ -268,6 +268,7 @@ export class AhMediaCarousel extends ElementBase {
   #lastMotionNow = 0;
   #inView = false;
   #io: IntersectionObserver | null = null;
+  #lastAutoNow = 0;
 
   constructor() {
     super();
@@ -360,9 +361,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#io?.disconnect();
     this.#io = new IntersectionObserver(
       (entries) => {
-        const visible = entries.some(
-          (entry) => entry.isIntersecting && entry.intersectionRatio >= 0.18,
-        );
+        const visible = entries.some((entry) => entry.isIntersecting);
         if (visible === this.#inView) return;
         this.#inView = visible;
         if (visible) {
@@ -374,7 +373,7 @@ export class AhMediaCarousel extends ElementBase {
         }
         this.#restartAutoplay();
       },
-      { threshold: [0, 0.18, 0.35] },
+      { threshold: [0, 0.01, 0.2] },
     );
     this.#io.observe(this);
   }
@@ -399,8 +398,11 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   #onPointerDown = (event: PointerEvent) => {
+    if (event.pointerType === "touch") {
+      this.#pauseForUser();
+      return;
+    }
     if (!this.#isDesktop()) return;
-    if (event.pointerType === "touch") return;
     if (event.button !== 0) return;
     if (!this.#track || this.#items.length < 2) return;
 
@@ -485,8 +487,11 @@ export class AhMediaCarousel extends ElementBase {
     this.#syncAutoPause();
     if (this.#reduced || this.#items.length < 2) return;
 
-    const tick = () => {
+    this.#lastAutoNow = performance.now();
+    const tick = (now: number) => {
       this.#autoRaf = window.requestAnimationFrame(tick);
+      const dt = Math.min(0.048, (now - this.#lastAutoNow) / 1000);
+      this.#lastAutoNow = now;
       this.#syncAutoPause();
       if (this.#autoPaused || !this.#track) return;
 
@@ -496,7 +501,7 @@ export class AhMediaCarousel extends ElementBase {
       );
       if (maxLeft < 1) return;
 
-      let next = this.#track.scrollLeft + this.#autoDir * AUTO_SPEED;
+      let next = this.#track.scrollLeft + this.#autoDir * AUTO_PX_PER_SEC * dt;
       if (next >= maxLeft) {
         next = maxLeft;
         this.#autoDir = -1;
@@ -550,18 +555,14 @@ export class AhMediaCarousel extends ElementBase {
       () => this.#pauseForUser(),
       { passive: true },
     );
-    this.#track.addEventListener(
-      "touchstart",
-      () => this.#pauseForUser(),
-      { passive: true },
-    );
     this.#track.addEventListener("pointerdown", this.#onPointerDown);
     this.#track.addEventListener("pointermove", this.#onPointerMove);
     this.#track.addEventListener("pointerup", this.#onPointerUp);
     this.#track.addEventListener("pointercancel", this.#onPointerUp);
     this.#track.addEventListener("dragstart", (event) => event.preventDefault());
 
-    wrap.addEventListener("pointerenter", () => {
+    wrap.addEventListener("pointerenter", (event) => {
+      if (event.pointerType !== "mouse") return;
       this.#hoverPaused = true;
       this.#syncAutoPause();
     });
