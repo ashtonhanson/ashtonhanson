@@ -367,16 +367,19 @@ export function sampleIntroPose(
   lifeT = zoomT,
 ): PathPose {
   if (index === 0) {
-    const exitT = smootherstep(clamp((lifeT - 0.35) / 0.65, 0, 1));
-    const zoomT = smootherstep(lifeT);
-    const zoom = sampleBezierPath(zoomT, cueZoomPath());
+    const dropT = smootherstep(lifeT / 0.48);
+    const scaleT = smootherstep((lifeT - 0.04) / 0.96);
+    const zoom = sampleBezierPath(scaleT, cueZoomPath());
+    const dropY = 8 * dropT + 26 * dropT * dropT;
+    const exitY = -ABOUT_INTRO.cueRestY + 14;
+    const y = dropY + (exitY - dropY) * scaleT;
     return {
       x: 0,
-      y: exitT * (20 + 36 * exitT),
+      y,
       z: zoom.z,
       scale: zoom.scale,
       rot: 0,
-      rotX: 6 + 34 * exitT,
+      rotX: 8 + 100 * cueTiltAmount(scaleT),
     };
   }
   const content = index - 1;
