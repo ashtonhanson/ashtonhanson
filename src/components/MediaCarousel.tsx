@@ -38,7 +38,16 @@ export function MediaCarousel({ items, label = "Gallery" }: MediaCarouselProps) 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    el.items = items;
+    let cancelled = false;
+    const apply = () => {
+      if (cancelled || !ref.current) return;
+      ref.current.items = items;
+    };
+    apply();
+    void customElements.whenDefined("ah-media-gallery-v10").then(apply);
+    return () => {
+      cancelled = true;
+    };
   }, [items]);
 
   useEffect(() => {

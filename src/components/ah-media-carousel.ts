@@ -154,11 +154,6 @@ const STYLES = /* css */ `
   object-fit: cover;
   transform: scale(1.08);
   transform-origin: center center;
-  opacity: 0;
-  transition: opacity 180ms ease;
-}
-
-.media.is-loaded {
   opacity: 1;
 }
 
@@ -607,11 +602,15 @@ export class AhMediaCarousel extends ElementBase {
     } else {
       const img = document.createElement("img");
       img.className = "media";
-      img.src = item.src;
+      img.decoding = "async";
+      img.loading = "eager";
       img.alt = item.alt;
+      img.src = item.src;
       const markLoaded = () => img.classList.add("is-loaded");
       img.addEventListener("load", markLoaded);
-      if (img.complete && img.naturalWidth > 0) markLoaded();
+      img.addEventListener("error", markLoaded);
+      if (img.complete) markLoaded();
+      void img.decode?.().then(markLoaded).catch(markLoaded);
       frame.appendChild(img);
     }
 
@@ -709,7 +708,7 @@ export class AhMediaCarousel extends ElementBase {
       const pose = `scale(${scale.toFixed(4)})`;
       slide.style.transformOrigin = "50% 50%";
       slide.style.transformStyle = "preserve-3d";
-      if (this.#reduced) {
+      if (this.#reduced || !this.#isDesktop()) {
         slide.style.transform = pose;
       } else {
         const pull = stepMousePull(
