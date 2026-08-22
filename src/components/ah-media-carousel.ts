@@ -285,7 +285,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#active = 0;
     this.#autoDir = 1;
     this.#render();
-    this.#scheduleFocus(true);
+    this.#resetToStart();
     this.#restartAutoplay();
   }
 
@@ -305,7 +305,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#mq.addEventListener("change", this.#onReducedChange);
     window.addEventListener("resize", this.#onResize);
     this.#render();
-    this.#scheduleFocus(true);
+    this.#resetToStart();
     this.#restartAutoplay();
     this.#startMotion();
     this.#watchView();
@@ -357,23 +357,31 @@ export class AhMediaCarousel extends ElementBase {
     return window.matchMedia("(min-width: 768px)").matches;
   }
 
+  #resetToStart() {
+    this.#active = 0;
+    this.#targetIndex = 0;
+    this.#autoDir = 1;
+    if (this.#track) this.#track.scrollLeft = 0;
+    this.#centerSlide(0, false);
+    this.#scheduleFocus(true);
+    this.#updateChrome();
+  }
+
   #watchView() {
     this.#io?.disconnect();
     this.#io = new IntersectionObserver(
       (entries) => {
-        const visible = entries.some((entry) => entry.isIntersecting);
+        const ratio = Math.max(
+          0,
+          ...entries.map((entry) => entry.intersectionRatio),
+        );
+        const visible = ratio >= 0.28;
         if (visible === this.#inView) return;
         this.#inView = visible;
-        if (visible) {
-          this.#active = 0;
-          this.#targetIndex = 0;
-          this.#autoDir = 1;
-          this.#centerSlide(0, false);
-          this.#scheduleFocus(true);
-        }
+        if (visible) this.#resetToStart();
         this.#restartAutoplay();
       },
-      { threshold: [0, 0.01, 0.2] },
+      { threshold: [0, 0.12, 0.28, 0.5, 0.75] },
     );
     this.#io.observe(this);
   }
@@ -501,13 +509,12 @@ export class AhMediaCarousel extends ElementBase {
       );
       if (maxLeft < 1) return;
 
-      let next = this.#track.scrollLeft + this.#autoDir * AUTO_PX_PER_SEC * dt;
+      let next = this.#track.scrollLeft + AUTO_PX_PER_SEC * dt;
       if (next >= maxLeft) {
-        next = maxLeft;
-        this.#autoDir = -1;
-      } else if (next <= 0) {
         next = 0;
-        this.#autoDir = 1;
+        this.#active = 0;
+        this.#targetIndex = 0;
+        this.#updateChrome();
       }
       this.#track.scrollLeft = next;
     };
@@ -620,7 +627,10 @@ export class AhMediaCarousel extends ElementBase {
       video.controls = index === 0;
       video.src = item.src;
 
-      const markLoaded = () => video.classList.add("is-loaded");
+      const markLoaded = () => {
+        video.classList.add("is-loaded");
+        if (index === 0 && this.#targetIndex === 0) this.#centerSlide(0, false);
+      };
       video.addEventListener("loadeddata", markLoaded);
       video.addEventListener("canplay", markLoaded);
       video.addEventListener("playing", markLoaded);
@@ -636,7 +646,10 @@ export class AhMediaCarousel extends ElementBase {
       img.loading = "eager";
       img.alt = item.alt;
       img.src = item.src;
-      const markLoaded = () => img.classList.add("is-loaded");
+      const markLoaded = () => {
+        img.classList.add("is-loaded");
+        if (index === 0 && this.#targetIndex === 0) this.#centerSlide(0, false);
+      };
       img.addEventListener("load", markLoaded);
       img.addEventListener("error", markLoaded);
       if (img.complete) markLoaded();
@@ -689,6 +702,7 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   #centerSlide(index: number, animated: boolean) {
+    if (!this.#track) return;
     const slide = this.#track.querySelector<HTMLElement>(
       `[data-slide="${index}"]`,
     );
