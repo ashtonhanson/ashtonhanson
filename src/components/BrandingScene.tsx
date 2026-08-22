@@ -41,8 +41,10 @@ import {
   LOAD_CLEAR_BLUR_PX,
   applyPinStage,
   pageHasScrolled,
+  pinProgress,
   stepLoadClear,
   viewHeight,
+  visualRectTop,
 } from "@/lib/loadClear";
 import {
   ABOUT_INTRO,
@@ -358,10 +360,7 @@ export function BrandingScene({
       const finaleStage = root.querySelector<HTMLElement>("[data-finale-stage]");
       let finaleProgress = 0;
       if (finalePin) {
-        const range = finalePin.offsetHeight - viewH;
-        const pinRect = finalePin.getBoundingClientRect();
-        finaleProgress =
-          range < 64 ? 0 : clamp(-pinRect.top / Math.max(range, 1), 0, 1);
+        finaleProgress = pinProgress(finalePin);
         if (finaleStage) {
           const { stageFadeStart, stageFadeEnd } = PAGE_FINALE;
           const stageFade = easeInOutCubic(
@@ -383,10 +382,14 @@ export function BrandingScene({
         const kind = (el.dataset.kind || "copy") as ArriveKind;
         const lag = Number(el.dataset.lag || 0);
         const index = Number(el.dataset.angle || 0);
-        // Measure the unposed wrapper so hover / arrive transforms
-        // cannot feed back into t (that used to force a one-way latch).
-        const rect = el.getBoundingClientRect();
-        let t = arriveT(rect.top, viewH, kind, lag);
+        const poseEl = (el.firstElementChild as HTMLElement) ?? el;
+        el.style.transform = "none";
+        el.style.filter = "none";
+        if (poseEl !== el) {
+          poseEl.style.transform = "none";
+          poseEl.style.filter = "none";
+        }
+        let t = arriveT(visualRectTop(el), viewH, kind, lag);
         if (el.hasAttribute("data-hub-handoff")) {
           const lockup = el.closest("[data-first-study]");
           const siblings = lockup
@@ -401,9 +404,6 @@ export function BrandingScene({
             handoff,
           );
         }
-        const poseEl = (el.firstElementChild as HTMLElement) ?? el;
-        el.style.transform = "none";
-        el.style.filter = "none";
         el.style.opacity = "1";
         el.style.visibility = "visible";
         const still = el.hasAttribute("data-still");
@@ -467,26 +467,34 @@ export function BrandingScene({
       });
     };
 
-    const loop = (now: number) => {
-      frame = window.requestAnimationFrame(loop);
+    const tick = (now: number) => {
       const dt = Math.min(48, now - lastNow);
       lastNow = now;
       if (document.hidden) return;
       const pin = pinRef.current;
       if (!pin) return;
       applyPinStage(pin, stageRef.current);
-      const viewH = viewHeight();
-      const range = pin.offsetHeight - viewH;
-      const rect = pin.getBoundingClientRect();
-      const progress =
-        range < 64 ? 0 : clamp(-rect.top / Math.max(range, 1), 0, 1);
+      const progress = pinProgress(pin);
       updateIntro(progress, now, dt);
       updateArrivals(progress, packedExitGate, now, dt);
     };
 
+    const loop = (now: number) => {
+      frame = window.requestAnimationFrame(loop);
+      tick(now);
+    };
+
+    const onScroll = () => tick(performance.now());
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.visualViewport?.addEventListener("scroll", onScroll);
+    window.visualViewport?.addEventListener("resize", onScroll);
+
     frame = window.requestAnimationFrame(loop);
     return () => {
       window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.visualViewport?.removeEventListener("scroll", onScroll);
+      window.visualViewport?.removeEventListener("resize", onScroll);
     };
   }, [introLines.length, introTags.length, introSubtitle, introEmail, introForm, finale, cases.length, intro.pinHeightVh, intro.linesStart, intro.lineSpan, intro.holdAfter, intro.exitSpan, handoff.lead, handoff.span, handoff.finish]);
 

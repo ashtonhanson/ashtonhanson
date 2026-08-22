@@ -57,6 +57,31 @@ export function viewLeft() {
   return window.visualViewport?.offsetLeft ?? 0;
 }
 
+export function viewTop() {
+  return window.visualViewport?.offsetTop ?? 0;
+}
+
+/** getBoundingClientRect top, in visual-viewport coordinates. */
+export function visualRectTop(el: HTMLElement) {
+  return el.getBoundingClientRect().top - viewTop();
+}
+
+/**
+ * 0 when the pin meets the header, 1 when it unsticks from the visible stage.
+ * Uses the visual viewport so Android Chrome / device-frame insets stay in sync.
+ */
+export function pinProgress(pin: HTMLElement) {
+  const header = headerOffsetPx();
+  const stageH = Math.max(viewHeight() - header, 120);
+  const range = pin.offsetHeight - stageH;
+  if (range < 64) return 0;
+  const pinnedTop = viewTop() + header;
+  return Math.min(
+    1,
+    Math.max(0, (pinnedTop - pin.getBoundingClientRect().top) / range),
+  );
+}
+
 const STICKY_TOP_REM = 3.6;
 
 export function headerOffsetPx() {
@@ -76,9 +101,12 @@ export function applyPinStage(pin: HTMLElement, stage: HTMLElement | null) {
   const viewH = viewHeight();
   const viewW = viewWidth();
   const viewL = viewLeft();
+  const viewT = viewTop();
   const header = headerOffsetPx();
   const stageH = Math.max(viewH - header, 120);
   const rect = pin.getBoundingClientRect();
+  const pinnedTop = viewT + header;
+  const pinnedBottom = pinnedTop + stageH;
 
   stage.style.height = `${stageH}px`;
   stage.style.width = `${viewW}px`;
@@ -86,7 +114,7 @@ export function applyPinStage(pin: HTMLElement, stage: HTMLElement | null) {
   stage.style.right = "auto";
   stage.style.boxSizing = "border-box";
 
-  if (rect.top > header) {
+  if (rect.top > pinnedTop) {
     stage.style.position = "absolute";
     stage.style.left = `${viewL - rect.left}px`;
     stage.style.top = "0";
@@ -94,7 +122,7 @@ export function applyPinStage(pin: HTMLElement, stage: HTMLElement | null) {
     return;
   }
 
-  if (rect.bottom > header + stageH) {
+  if (rect.bottom > pinnedBottom) {
     stage.style.position = "fixed";
     stage.style.left = `${viewL}px`;
     stage.style.top = `${header}px`;

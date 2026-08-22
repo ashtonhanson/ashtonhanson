@@ -189,8 +189,8 @@ export function arriveT(
   kind: ArriveKind,
   lagPx = 0,
 ) {
-  const start = viewH * (kind === "copy" ? 0.88 : 0.92) + lagPx;
-  const span = viewH * (kind === "copy" ? 0.13 : kind === "title" ? 0.24 : 0.2);
+  const start = viewH * (kind === "copy" ? 0.94 : 0.96) + lagPx;
+  const span = viewH * (kind === "copy" ? 0.28 : kind === "title" ? 0.38 : 0.34);
   return clamp((start - rectTop) / Math.max(span, 1), 0, 1);
 }
 

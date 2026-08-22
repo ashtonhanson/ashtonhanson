@@ -30,8 +30,8 @@ import {
   LOAD_CLEAR_BLUR_PX,
   applyPinStage,
   pageHasScrolled,
+  pinProgress,
   stepLoadClear,
-  viewHeight,
 } from "@/lib/loadClear";
 
 type AboutIntroStageProps = {
@@ -113,11 +113,7 @@ export function AboutIntroStage({
       if (!pin) return;
       applyPinStage(pin, stageRef.current);
 
-      const rect = pin.getBoundingClientRect();
-      const viewH = viewHeight();
-      const range = pin.offsetHeight - viewH;
-      const progress =
-        range < 64 ? 0 : clamp(-rect.top / Math.max(range, 1), 0, 1);
+      const progress = pinProgress(pin);
       if (progress !== lastProgress) {
         lastProgress = progress;
         onProgress?.(progress);

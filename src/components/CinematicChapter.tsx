@@ -10,7 +10,7 @@ import {
   type ArriveKind,
 } from "@/lib/brandingMotion";
 import { chapterWindows, windowT } from "@/lib/homeMotion";
-import { applyPinStage, viewHeight } from "@/lib/loadClear";
+import { applyPinStage, pinProgress } from "@/lib/loadClear";
 import {
   createIdleHoverState,
   composeIdleTransform,
@@ -48,12 +48,6 @@ function paint(
   el.style.pointerEvents = opacity > 0.65 ? "auto" : "none";
 }
 
-function pinProgress(pin: HTMLElement) {
-  const viewH = viewHeight();
-  const range = pin.offsetHeight - viewH;
-  const rect = pin.getBoundingClientRect();
-  return range < 64 ? 0 : clamp(-rect.top / Math.max(range, 1), 0, 1);
-}
 
 /**
  * Sticky lockup that brings `[data-home-arrive]` pieces in from unique
