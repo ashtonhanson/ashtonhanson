@@ -4,12 +4,11 @@ import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import {
   arriveAngle,
   arriveTransform,
-  arriveZTransform,
   finaleExitPose,
   shrinkOutPose,
   type ArriveKind,
 } from "@/lib/brandingMotion";
-import { chapterWindows, holdWindows, windowT } from "@/lib/homeMotion";
+import { chapterWindows, windowT } from "@/lib/homeMotion";
 import { applyPinStage, pinProgress } from "@/lib/loadClear";
 import {
   createIdleHoverState,
@@ -28,8 +27,7 @@ type CinematicChapterProps = {
   pinHeight: string;
   overlap?: string;
   angleOffset?: number;
-  /** Last chapter should hold — exiting at pin end leaves a blank page bottom. */
-  exitMode?: "shrink" | "scale" | "hold";
+  exitMode?: "shrink" | "scale";
   zIndex?: number;
   perspective?: boolean;
   "aria-label"?: string;
@@ -52,7 +50,7 @@ function paint(
 
 /**
  * Sticky lockup that brings `[data-home-arrive]` pieces in from unique
- * angles, holds, then shrinks, scales out, or stays through pin end.
+ * angles, holds, then shrinks or scales them out.
  */
 export function CinematicChapter({
   children,
@@ -106,17 +104,15 @@ export function CinematicChapter({
       );
       if (!nodes.length) return;
 
-      const hold = exitMode === "hold";
       const progress = pinProgress(pin);
       const { ins, outs } = chapterWindows(nodes.length);
-      const holds = hold ? holdWindows(nodes.length) : [];
 
       nodes.forEach((el, i) => {
         const kind = (el.dataset.kind || "copy") as ArriveKind;
         const angle = arriveAngle(i + angleOffset);
-        const inn = hold ? holds[i] : ins[i];
+        const inn = ins[i];
         const out = outs[i];
-        if (!inn || (!hold && !out)) return;
+        if (!inn || !out) return;
 
         const pullKind: MousePullKind | null =
           kind === "media"
@@ -161,16 +157,6 @@ export function CinematicChapter({
           );
         };
 
-        if (hold) {
-          const t = windowT(progress, inn);
-          const pose = arriveZTransform(t, angle, kind);
-          el.style.transformOrigin = pose.origin;
-          paintItem(pose.opacity, pose.blur, pose.transform, t >= 0.985, 1 - t);
-          return;
-        }
-
-        if (!inn || !out) return;
-
         if (progress >= out.start) {
           const exitT = windowT(progress, out);
           const pose =
@@ -214,16 +200,10 @@ export function CinematicChapter({
     >
       <div
         ref={stageRef}
-        className={`absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center px-5 md:px-8 xl:px-12 2xl:px-16 ${
-          exitMode === "hold" ? "overflow-x-clip overflow-y-visible" : "overflow-clip"
-        }`}
+        className="absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-clip px-5 md:px-8 xl:px-12 2xl:px-16"
         style={
-          perspective || exitMode === "hold"
-            ? {
-                perspective: "1400px",
-                perspectiveOrigin: "50% 42%",
-                transformStyle: "preserve-3d",
-              }
+          perspective
+            ? { perspective: "1400px", perspectiveOrigin: "50% 42%" }
             : undefined
         }
       >

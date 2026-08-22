@@ -4,7 +4,25 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type CSSProperties, type HTMLAttributes } from "react";
 import { TitleShine } from "@/components/TitleShine";
+import {
+  arriveAngle,
+  arriveT,
+  arriveZTransform,
+  type ArriveKind,
+} from "@/lib/brandingMotion";
+import { HOME_CHAPTER } from "@/lib/homeMotion";
 import { home } from "@/lib/content";
+import {
+  composeIdleTransform,
+  createIdleHoverState,
+  type IdleHoverState,
+} from "@/lib/idleHover";
+import { viewHeight, visualRectTop } from "@/lib/loadClear";
+import {
+  createMousePullState,
+  stepMousePull,
+  type MousePullState,
+} from "@/lib/mousePull";
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
@@ -88,6 +106,20 @@ function WorkLinks({
   );
 }
 
+function paint(
+  el: HTMLElement,
+  opacity: number,
+  blur: number,
+  transform: string,
+) {
+  el.style.opacity = opacity.toFixed(3);
+  el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none";
+  el.style.transformStyle = "preserve-3d";
+  el.style.transform = transform;
+  el.style.visibility = opacity < 0.02 ? "hidden" : "visible";
+  el.style.pointerEvents = opacity > 0.65 ? "auto" : "none";
+}
+
 export function SeeMenuBlock({
   cinematic = false,
   overlap = false,
@@ -140,6 +172,89 @@ export function SeeMenuBlock({
     };
   }, [reduced, cinematic]);
 
+  useEffect(() => {
+    if (!cinematic) return;
+
+    let frame = 0;
+    let lastNow = performance.now();
+    const idleMap = new WeakMap<HTMLElement, IdleHoverState>();
+    const pullMap = new WeakMap<HTMLElement, MousePullState>();
+
+    const idleFor = (el: HTMLElement) => {
+      let state = idleMap.get(el);
+      if (!state) {
+        state = createIdleHoverState();
+        idleMap.set(el, state);
+      }
+      return state;
+    };
+
+    const pullFor = (el: HTMLElement) => {
+      let state = pullMap.get(el);
+      if (!state) {
+        state = createMousePullState();
+        pullMap.set(el, state);
+      }
+      return state;
+    };
+
+    const loop = (now: number) => {
+      frame = window.requestAnimationFrame(loop);
+      const dt = Math.min(48, now - lastNow);
+      lastNow = now;
+      if (document.hidden) return;
+      const root = sectionRef.current;
+      if (!root) return;
+      const viewH = viewHeight();
+      const lockup =
+        root.querySelector<HTMLElement>("[data-menu-lockup]") ?? root;
+      const top = visualRectTop(lockup);
+      const nodes = [
+        ...root.querySelectorAll<HTMLElement>("[data-menu-arrive]"),
+      ].sort(
+        (a, b) => Number(a.dataset.index || 0) - Number(b.dataset.index || 0),
+      );
+
+      nodes.forEach((el, i) => {
+        const kind = (el.dataset.kind || "title") as ArriveKind;
+        const angle = arriveAngle(i + 4);
+        const t = reduced ? 1 : arriveT(top, viewH, kind, i * 40);
+        const pose = arriveZTransform(t, angle, kind);
+        el.style.transformOrigin = pose.origin;
+        const pull =
+          pose.opacity > 0.04
+            ? stepMousePull(
+                pullFor(el),
+                el,
+                now,
+                dt,
+                kind === "title" ? "title" : "subtitle",
+                t,
+              )
+            : undefined;
+        paint(
+          el,
+          pose.opacity,
+          pose.blur,
+          composeIdleTransform(
+            idleFor(el),
+            pose.transform,
+            now,
+            dt,
+            i + 4,
+            t >= 0.985,
+            1 - t,
+            1,
+            pull,
+          ),
+        );
+      });
+    };
+
+    frame = window.requestAnimationFrame(loop);
+    return () => window.cancelAnimationFrame(frame);
+  }, [cinematic, reduced]);
+
   const linksFocus =
     reduced || cinematic
       ? 1
@@ -148,49 +263,62 @@ export function SeeMenuBlock({
 
   if (cinematic) {
     return (
-      <div
-        className="relative mx-auto flex w-full max-w-3xl flex-col items-center justify-center text-center xl:max-w-4xl"
-        style={{ transformStyle: "preserve-3d" }}
+      <section
+        ref={sectionRef}
+        className="relative z-[14] flex w-full flex-col items-center justify-center overflow-x-clip px-5 py-[clamp(6rem,20vh,12rem)] md:px-8 xl:px-12 2xl:px-16"
+        style={{
+          marginTop: overlap ? HOME_CHAPTER.overlapGallery : undefined,
+          perspective: "1400px",
+          perspectiveOrigin: "50% 42%",
+          transformStyle: "preserve-3d",
+        }}
+        aria-label="See menu"
       >
         <div
-          className="relative flex w-full flex-col items-center"
+          data-menu-lockup
+          className="relative mx-auto flex w-full max-w-3xl flex-col items-center justify-center text-center xl:max-w-4xl"
           style={{ transformStyle: "preserve-3d" }}
         >
-          {home.seeMenuLines.map((line, index) => (
-            <div
-              key={line}
-              data-home-arrive
-              data-kind="title"
-              data-index={index}
-              className="will-change-transform"
-              style={{
-                opacity: 0,
-                visibility: "hidden",
-                transformOrigin: "50% 50%",
-              }}
-            >
-              <TitleShine
-                as="p"
-                className="font-display text-[clamp(1.6rem,5.5vw,3.15rem)] font-black uppercase leading-[0.95] tracking-[0.05em] xl:text-[clamp(2.25rem,3.4vw,4.25rem)]"
+          <div
+            className="relative flex w-full flex-col items-center"
+            style={{ transformStyle: "preserve-3d" }}
+          >
+            {home.seeMenuLines.map((line, index) => (
+              <div
+                key={line}
+                data-menu-arrive
+                data-kind="title"
+                data-index={index}
+                className="will-change-transform"
+                style={{
+                  opacity: 0,
+                  visibility: "hidden",
+                  transformOrigin: "50% 50%",
+                }}
               >
-                {line}
-              </TitleShine>
-            </div>
-          ))}
-        </div>
+                <TitleShine
+                  as="p"
+                  className="font-display text-[clamp(1.6rem,5.5vw,3.15rem)] font-black uppercase leading-[0.95] tracking-[0.05em] xl:text-[clamp(2.25rem,3.4vw,4.25rem)]"
+                >
+                  {line}
+                </TitleShine>
+              </div>
+            ))}
+          </div>
 
-        <WorkLinks
-          data-home-arrive
-          data-kind="copy"
-          data-index={home.seeMenuLines.length}
-          className="mt-12 flex flex-wrap justify-center gap-x-10 gap-y-3 will-change-transform"
-          style={{
-            opacity: 0,
-            visibility: "hidden",
-            transformOrigin: "50% 50%",
-          }}
-        />
-      </div>
+          <WorkLinks
+            data-menu-arrive
+            data-kind="copy"
+            data-index={home.seeMenuLines.length}
+            className="mt-12 flex flex-wrap justify-center gap-x-10 gap-y-3 will-change-transform"
+            style={{
+              opacity: 0,
+              visibility: "hidden",
+              transformOrigin: "50% 50%",
+            }}
+          />
+        </div>
+      </section>
     );
   }
 

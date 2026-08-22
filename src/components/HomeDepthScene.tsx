@@ -17,7 +17,7 @@ type HomeDepthSceneProps = {
  * Home cinematic scroll:
  * 1) Sticky ABOUT intro
  * 2) RECENT WORK / AI ANIMATION / gallery — unique-angle enter, hold, scale-up exit
- * 3) SEE MENU / FOR OTHER / WORK — same treatment
+ * 3) SEE MENU / FOR OTHER / WORK — viewport Z-arrive, no sticky pin
  */
 export function HomeDepthScene({
   aboutWord,
@@ -46,17 +46,7 @@ export function HomeDepthScene({
         {gallery}
       </CinematicChapter>
 
-      <CinematicChapter
-        pinHeight={HOME_CHAPTER.menuPinVh}
-        overlap={HOME_CHAPTER.overlapGallery}
-        angleOffset={4}
-        exitMode="hold"
-        zIndex={14}
-        perspective
-        aria-label="See menu"
-      >
-        {menu}
-      </CinematicChapter>
+      {menu}
     </div>
   );
 }

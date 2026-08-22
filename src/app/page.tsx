@@ -55,7 +55,7 @@ export default function HomePage() {
           </div>
         </div>
       }
-      menu={<SeeMenuBlock cinematic />}
+      menu={<SeeMenuBlock cinematic overlap />}
     />
   );
 }

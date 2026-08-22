@@ -3,22 +3,14 @@ import { clamp } from "@/lib/brandingMotion";
 /** Sticky home chapters after ABOUT — enter, hold the full lockup, then FIFO exit. */
 export const HOME_CHAPTER = {
   galleryPinVh: "280vh",
-  menuPinVh: "220vh",
   /**
    * A sticky pin unsticks a full viewport before the next section’s top.
    * Pull the next chapter up by ~1dvh so it starts as the previous leaves,
    * without a blank pause — extra is small so arrivals aren’t rushed.
    */
   overlapAbout: "calc(-100dvh - 14vh)",
-  /**
-   * Start while the previous lockup is leaving — not after a blank wait.
-   */
-  overlapGallery: "calc(-36vh)",
-  /** Last item at rest at this pin progress; remainder is the hold. */
-  menuArrivePack: 0.52,
-  menuEnterStart: 0.02,
-  menuItemSpan: 0.2,
-  menuItemOverlap: 0.07,
+  /** Pull SEE MENU up so it starts as the previous lockup leaves. */
+  overlapGallery: "calc(-28vh)",
   enterStart: 0.03,
   itemSpan: 0.18,
   /** Next piece starts before the previous finishes arriving. */
@@ -65,24 +57,6 @@ export function chapterWindows(itemCount: number) {
   outs = outs.map(scaleWin);
 
   return { ins, outs, exitGate: exitGate * scale };
-}
-
-/** Arrive windows packed into the first half of the pin — no exit. */
-export function holdWindows(itemCount: number) {
-  const n = Math.max(itemCount, 1);
-  const { menuEnterStart, menuItemSpan, menuItemOverlap, menuArrivePack } =
-    HOME_CHAPTER;
-  const step = Math.max(menuItemSpan - menuItemOverlap, 0.04);
-  const raw = Array.from({ length: n }, (_, i) => ({
-    start: menuEnterStart + i * step,
-    end: menuEnterStart + i * step + menuItemSpan,
-  }));
-  const lastEnd = raw[n - 1]?.end ?? menuEnterStart + menuItemSpan;
-  const scale = menuArrivePack / Math.max(lastEnd, 0.0001);
-  return raw.map((win) => ({
-    start: win.start * scale,
-    end: win.end * scale,
-  }));
 }
 
 /** 0→1 through a window; progress falling retraces the same pose. */
