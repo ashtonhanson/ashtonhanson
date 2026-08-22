@@ -12,10 +12,10 @@ export const HOME_CHAPTER = {
   /** Pull SEE MENU up so it starts as the previous lockup leaves. */
   overlapGallery: "calc(-28vh)",
   /** FIFO arrive for SEE MENU — each line gets its own window. */
-  menuEnterStart: 0.04,
-  menuItemSpan: 0.28,
-  menuOverlap: 0.1,
-  menuArrivePack: 0.9,
+  menuEnterStart: 0.03,
+  menuItemSpan: 0.24,
+  menuOverlap: 0.05,
+  menuArrivePack: 0.92,
   enterStart: 0.03,
   itemSpan: 0.18,
   /** Next piece starts before the previous finishes arriving. */

@@ -222,8 +222,8 @@ export function hubHandoffT(
 }
 
 /**
- * Same unique-angle fly-in as the other lockups, plus Z.
- * 0 = offstage (large, deep), 1 = rest. Scroll back retraces.
+ * ABOUT-style enter that stops at rest: small + deep + above,
+ * then slides down the Z axis. Parent must supply CSS perspective.
  */
 export function arriveZTransform(
   t: number,
@@ -232,16 +232,14 @@ export function arriveZTransform(
 ) {
   const e = easeOutCubic(t);
   const u = 1 - e;
-  const extra = kind === "title" ? 2.4 : kind === "media" ? 1.35 : 1.15;
-  const scale = 1 + extra * u;
-  const z = (kind === "title" ? -320 : -240) * u;
-  const dirX = angle.x >= 0 ? 1 : -1;
-  const lean = dirX * (6.4 + Math.abs(angle.rot) * 0.3) * u;
+  const startZ = kind === "title" ? -280 : -220;
+  const startScale = kind === "title" ? 0.26 : 0.34;
+  const startY = -28;
   return {
     opacity: e,
-    blur: (kind === "title" ? 20 : 14) * u,
-    origin: `${angle.x >= 0 ? "82%" : "18%"} ${angle.y >= 0 ? "78%" : "22%"}`,
-    transform: `perspective(1400px) translate3d(${(angle.x * u).toFixed(2)}vw, ${(angle.y * u).toFixed(2)}vh, ${z.toFixed(1)}px) rotateZ(${(angle.rot * u + lean).toFixed(2)}deg) scale(${scale.toFixed(4)})`,
+    blur: (kind === "title" ? 12 : 9) * u,
+    origin: "50% 50%",
+    transform: `translate3d(${(angle.x * 0.22 * u).toFixed(2)}vw, ${(startY * u).toFixed(2)}vh, ${(startZ * u).toFixed(1)}px) rotateX(${(16 * u).toFixed(2)}deg) rotateZ(${(angle.rot * 0.35 * u).toFixed(2)}deg) scale(${(startScale + (1 - startScale) * e).toFixed(4)})`,
   };
 }
 

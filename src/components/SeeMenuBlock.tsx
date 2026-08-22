@@ -222,32 +222,35 @@ export function SeeMenuBlock({
         const t = reduced || !win ? 1 : windowT(progress, win);
         const pose = arriveZTransform(t, angle, kind);
         el.style.transformOrigin = pose.origin;
+        const atRest = t >= 0.985;
         const pull =
-          pose.opacity > 0.04
+          atRest && pose.opacity > 0.04
             ? stepMousePull(
                 pullFor(el),
                 el,
                 now,
                 dt,
                 kind === "title" ? "title" : "subtitle",
-                t,
+                1,
               )
             : undefined;
         paint(
           el,
           pose.opacity,
           pose.blur,
-          composeIdleTransform(
-            idleFor(el),
-            pose.transform,
-            now,
-            dt,
-            i + 4,
-            t >= 0.985,
-            1 - t,
-            1,
-            pull,
-          ),
+          atRest
+            ? composeIdleTransform(
+                idleFor(el),
+                pose.transform,
+                now,
+                dt,
+                i + 4,
+                true,
+                0,
+                1,
+                pull,
+              )
+            : pose.transform,
         );
       });
     };
@@ -266,7 +269,7 @@ export function SeeMenuBlock({
     return (
       <section
         ref={sectionRef}
-        className="relative z-[14] flex min-h-[calc(100dvh-3.6rem)] w-full flex-col items-center justify-center overflow-x-clip px-5 py-[clamp(7rem,22vh,14rem)] md:px-8 xl:px-12 2xl:px-16"
+        className="relative z-[14] flex min-h-[calc(100dvh-3.6rem)] w-full flex-col items-center justify-center overflow-visible px-5 py-[clamp(7rem,22vh,14rem)] md:px-8 xl:px-12 2xl:px-16"
         style={{
           marginTop: overlap ? HOME_CHAPTER.overlapGallery : undefined,
           perspective: "1400px",
