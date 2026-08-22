@@ -56,6 +56,7 @@ import {
   poseToTransform,
   sampleIntroPose,
 } from "@/lib/cinematicDepth";
+import { SeeMenuArrive } from "@/components/SeeMenuBlock";
 import { contact, type CaseStudy as CaseStudyType, type MediaItem } from "@/lib/content";
 import { preventOrphan } from "@/lib/text";
 
@@ -97,6 +98,8 @@ type BrandingSceneProps = {
   /** Override first-study handoff timing. */
   handoff?: Partial<HandoffTiming>;
   cases: CaseStudyType[];
+  /** Last lockup — SEE MENU / FOR OTHER / WORK. Uses the same arrive as cases. */
+  menu?: boolean;
 };
 
 function paint(
@@ -127,6 +130,7 @@ export function BrandingScene({
   intro: introOverride,
   handoff: handoffOverride,
   cases,
+  menu = false,
 }: BrandingSceneProps) {
   const pinRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -813,6 +817,7 @@ export function BrandingScene({
         })}
       </div>
       ) : null}
+      {menu ? <SeeMenuArrive angleStart={angleCursor} /> : null}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { clamp } from "@/lib/brandingMotion";
 /** Sticky home chapters after ABOUT — enter, hold the full lockup, then FIFO exit. */
 export const HOME_CHAPTER = {
   galleryPinVh: "280vh",
+  menuPinVh: "280vh",
   /**
    * A sticky pin unsticks a full viewport before the next section’s top.
    * Pull the next chapter up by ~1dvh so it starts as the previous leaves,

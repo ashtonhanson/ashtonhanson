@@ -27,7 +27,7 @@ type CinematicChapterProps = {
   pinHeight: string;
   overlap?: string;
   angleOffset?: number;
-  exitMode?: "shrink" | "scale";
+  exitMode?: "shrink" | "scale" | "hold";
   zIndex?: number;
   perspective?: boolean;
   "aria-label"?: string;
@@ -157,7 +157,7 @@ export function CinematicChapter({
           );
         };
 
-        if (progress >= out.start) {
+        if (exitMode !== "hold" && progress >= out.start) {
           const exitT = windowT(progress, out);
           const pose =
             exitMode === "scale"

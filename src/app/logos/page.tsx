@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { BrandingScene } from "@/components/BrandingScene";
-import { SeeMenuBlock } from "@/components/SeeMenuBlock";
 import { logoCases, logosIntroLines } from "@/lib/content";
 
 export const metadata: Metadata = {
@@ -16,8 +15,8 @@ export default function LogosPage() {
         introLines={logosIntroLines}
         cases={logoCases}
         mediaVariant="plate"
+        menu
       />
-      <SeeMenuBlock cinematic overlap />
     </>
   );
 }

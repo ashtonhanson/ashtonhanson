@@ -2,7 +2,7 @@
 
 import { HomeDepthScene } from "@/components/HomeDepthScene";
 import { MediaCarousel } from "@/components/MediaCarousel";
-import { SeeMenuBlock } from "@/components/SeeMenuBlock";
+import { SeeMenuChapter } from "@/components/SeeMenuBlock";
 import { TitleShine } from "@/components/TitleShine";
 import { home } from "@/lib/content";
 
@@ -55,7 +55,7 @@ export default function HomePage() {
           </div>
         </div>
       }
-      menu={<SeeMenuBlock cinematic overlap />}
+      menu={<SeeMenuChapter />}
     />
   );
 }

@@ -4,25 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type CSSProperties, type HTMLAttributes } from "react";
 import { TitleShine } from "@/components/TitleShine";
-import {
-  arriveAngle,
-  arriveT,
-  arriveTransform,
-  type ArriveKind,
-} from "@/lib/brandingMotion";
-import { HOME_CHAPTER } from "@/lib/homeMotion";
 import { home } from "@/lib/content";
-import {
-  composeIdleTransform,
-  createIdleHoverState,
-  type IdleHoverState,
-} from "@/lib/idleHover";
-import { viewHeight, visualRectTop } from "@/lib/loadClear";
-import {
-  createMousePullState,
-  stepMousePull,
-  type MousePullState,
-} from "@/lib/mousePull";
 
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
@@ -106,18 +88,71 @@ function WorkLinks({
   );
 }
 
-function paint(
-  el: HTMLElement,
-  opacity: number,
-  blur: number,
-  transform: string,
-) {
-  el.style.opacity = opacity.toFixed(3);
-  el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none";
-  el.style.transformStyle = "preserve-3d";
-  el.style.transform = transform;
-  el.style.visibility = opacity < 0.02 ? "hidden" : "visible";
-  el.style.pointerEvents = opacity > 0.65 ? "auto" : "none";
+const LINE_CLASS =
+  "font-display text-[clamp(1.6rem,5.5vw,3.15rem)] font-black uppercase leading-[0.95] tracking-[0.05em] xl:text-[clamp(2.25rem,3.4vw,4.25rem)]";
+
+/** Same [data-arrive] lockup as a case study — BrandingScene paints these. */
+export function SeeMenuArrive({ angleStart }: { angleStart: number }) {
+  return (
+    <article className="relative overflow-x-clip px-5 pb-[clamp(4.5rem,12vh,8rem)] pt-[clamp(8rem,28vh,14rem)] md:px-8 xl:px-12 xl:pb-[clamp(5.5rem,13vh,11rem)] xl:pt-[clamp(9rem,26vh,16rem)] 2xl:px-16">
+      <div className="mx-auto flex max-w-3xl flex-col items-center text-center xl:max-w-4xl 2xl:max-w-5xl">
+        {home.seeMenuLines.map((line, index) => (
+          <div
+            key={line}
+            data-arrive
+            data-kind="title"
+            data-angle={angleStart + index}
+            data-lag={index * 20}
+            className="will-change-transform"
+            style={{ opacity: 0, transformOrigin: "50% 50%" }}
+          >
+            <TitleShine as="h2" className={LINE_CLASS}>
+              {line}
+            </TitleShine>
+          </div>
+        ))}
+        <div
+          data-arrive
+          data-kind="copy"
+          data-angle={angleStart + home.seeMenuLines.length}
+          data-lag={60}
+          className="mt-12 will-change-transform"
+          style={{ opacity: 0, transformOrigin: "50% 50%" }}
+        >
+          <WorkLinks className="flex flex-wrap justify-center gap-x-10 gap-y-3" />
+        </div>
+      </div>
+    </article>
+  );
+}
+
+/** Same [data-home-arrive] pieces as the AI ANIMATION chapter. */
+export function SeeMenuChapter() {
+  return (
+    <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center justify-center text-center xl:max-w-4xl">
+      {home.seeMenuLines.map((line, index) => (
+        <div
+          key={line}
+          data-home-arrive
+          data-kind="title"
+          data-index={index}
+          className="will-change-transform"
+          style={{ opacity: 0, visibility: "hidden", transformOrigin: "50% 50%" }}
+        >
+          <TitleShine as="p" className={LINE_CLASS}>
+            {line}
+          </TitleShine>
+        </div>
+      ))}
+      <WorkLinks
+        data-home-arrive
+        data-kind="copy"
+        data-index={home.seeMenuLines.length}
+        className="mt-12 flex flex-wrap justify-center gap-x-10 gap-y-3 will-change-transform"
+        style={{ opacity: 0, visibility: "hidden", transformOrigin: "50% 50%" }}
+      />
+    </div>
+  );
 }
 
 export function SeeMenuBlock({
@@ -141,7 +176,7 @@ export function SeeMenuBlock({
   }, []);
 
   useEffect(() => {
-    if (reduced || cinematic) {
+    if (reduced) {
       setProgress(0.5);
       return;
     }
@@ -170,158 +205,15 @@ export function SeeMenuBlock({
       window.removeEventListener("resize", onScroll);
       if (frame) window.cancelAnimationFrame(frame);
     };
-  }, [reduced, cinematic]);
+  }, [reduced]);
 
-  useEffect(() => {
-    if (!cinematic) return;
-
-    let frame = 0;
-    let lastNow = performance.now();
-    const idleMap = new WeakMap<HTMLElement, IdleHoverState>();
-    const pullMap = new WeakMap<HTMLElement, MousePullState>();
-
-    const idleFor = (el: HTMLElement) => {
-      let state = idleMap.get(el);
-      if (!state) {
-        state = createIdleHoverState();
-        idleMap.set(el, state);
-      }
-      return state;
-    };
-
-    const pullFor = (el: HTMLElement) => {
-      let state = pullMap.get(el);
-      if (!state) {
-        state = createMousePullState();
-        pullMap.set(el, state);
-      }
-      return state;
-    };
-
-    const loop = (now: number) => {
-      frame = window.requestAnimationFrame(loop);
-      const dt = Math.min(48, now - lastNow);
-      lastNow = now;
-      if (document.hidden) return;
-      const root = sectionRef.current;
-      if (!root) return;
-      const viewH = viewHeight();
-      const nodes = [
-        ...root.querySelectorAll<HTMLElement>("[data-menu-arrive]"),
-      ].sort(
-        (a, b) => Number(a.dataset.index || 0) - Number(b.dataset.index || 0),
-      );
-
-      nodes.forEach((el, i) => {
-        const kind = (el.dataset.kind || "title") as ArriveKind;
-        const angle = Number(el.dataset.angle || i + 4);
-        const poseEl = (el.firstElementChild as HTMLElement) ?? el;
-        el.style.transform = "none";
-        el.style.filter = "none";
-        el.style.opacity = "1";
-        el.style.visibility = "visible";
-        if (poseEl !== el) {
-          poseEl.style.filter = "none";
-        }
-        const raw = arriveT(visualRectTop(el), viewH, kind);
-        const t = reduced ? 1 : clamp(raw - i * 0.2, 0, 1);
-        const pose = arriveTransform(t, arriveAngle(angle), kind);
-        poseEl.style.transformOrigin = pose.origin;
-        const pull =
-          pose.opacity > 0.04
-            ? stepMousePull(
-                pullFor(poseEl),
-                poseEl,
-                now,
-                dt,
-                kind === "title" ? "title" : "subtitle",
-                t,
-              )
-            : undefined;
-        paint(
-          poseEl,
-          pose.opacity,
-          pose.blur,
-          composeIdleTransform(
-            idleFor(poseEl),
-            pose.transform,
-            now,
-            dt,
-            angle,
-            t >= 0.985,
-            1 - t,
-            kind === "title" ? 1.75 : 1,
-            pull,
-          ),
-        );
-      });
-    };
-
-    frame = window.requestAnimationFrame(loop);
-    return () => window.cancelAnimationFrame(frame);
-  }, [cinematic, reduced]);
-
-  const linksFocus =
-    reduced || cinematic
-      ? 1
-      : easeInOut(clamp((progress - 0.32) / 0.2, 0, 1)) *
-        (1 - easeInOut(clamp((progress - 0.72) / 0.22, 0, 1)));
+  const linksFocus = reduced
+    ? 1
+    : easeInOut(clamp((progress - 0.32) / 0.2, 0, 1)) *
+      (1 - easeInOut(clamp((progress - 0.72) / 0.22, 0, 1)));
 
   if (cinematic) {
-    return (
-      <section
-        ref={sectionRef}
-        className="relative z-[14] flex w-full flex-col items-center justify-center overflow-x-clip px-5 py-[clamp(6rem,18vh,12rem)] md:px-8 xl:px-12 2xl:px-16"
-        style={{
-          marginTop: overlap ? HOME_CHAPTER.overlapGallery : undefined,
-        }}
-        aria-label="See menu"
-      >
-        <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center justify-center text-center xl:max-w-4xl">
-          <div className="relative flex w-full flex-col items-center">
-            {home.seeMenuLines.map((line, index) => (
-              <div
-                key={line}
-                data-menu-arrive
-                data-kind="title"
-                data-index={index}
-                data-angle={index + 4}
-                className="will-change-transform"
-              >
-                <TitleShine
-                  as="p"
-                  className="font-display text-[clamp(1.6rem,5.5vw,3.15rem)] font-black uppercase leading-[0.95] tracking-[0.05em] xl:text-[clamp(2.25rem,3.4vw,4.25rem)]"
-                  style={{
-                    opacity: 0,
-                    visibility: "hidden",
-                    transformOrigin: "50% 50%",
-                  }}
-                >
-                  {line}
-                </TitleShine>
-              </div>
-            ))}
-          </div>
-
-          <div
-            data-menu-arrive
-            data-kind="copy"
-            data-index={home.seeMenuLines.length}
-            data-angle={home.seeMenuLines.length + 4}
-            className="will-change-transform"
-          >
-            <WorkLinks
-              className="mt-12 flex flex-wrap justify-center gap-x-10 gap-y-3"
-              style={{
-                opacity: 0,
-                visibility: "hidden",
-                transformOrigin: "50% 50%",
-              }}
-            />
-          </div>
-        </div>
-      </section>
-    );
+    return <SeeMenuArrive angleStart={24} />;
   }
 
   return (
