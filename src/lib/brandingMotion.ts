@@ -222,8 +222,8 @@ export function hubHandoffT(
 }
 
 /**
- * ABOUT-style enter that stops at rest: small + deep → on stage.
- * 0 = void, 1 = rest. Scroll back retraces the same Z path.
+ * Same unique-angle fly-in as the other lockups, plus Z.
+ * 0 = offstage (large, deep), 1 = rest. Scroll back retraces.
  */
 export function arriveZTransform(
   t: number,
@@ -232,13 +232,16 @@ export function arriveZTransform(
 ) {
   const e = easeOutCubic(t);
   const u = 1 - e;
-  const startZ = kind === "title" ? -220 : -180;
-  const startScale = kind === "title" ? 0.26 : 0.32;
+  const extra = kind === "title" ? 2.4 : kind === "media" ? 1.35 : 1.15;
+  const scale = 1 + extra * u;
+  const z = (kind === "title" ? -320 : -240) * u;
+  const dirX = angle.x >= 0 ? 1 : -1;
+  const lean = dirX * (6.4 + Math.abs(angle.rot) * 0.3) * u;
   return {
     opacity: e,
-    blur: (kind === "title" ? 14 : 10) * u,
-    origin: "50% 50%",
-    transform: `perspective(1400px) translate3d(${(angle.x * 0.55 * u).toFixed(2)}vw, ${(angle.y * 0.32 * u).toFixed(2)}vh, ${(startZ * u).toFixed(1)}px) rotateZ(${(angle.rot * 0.65 * u).toFixed(2)}deg) scale(${(startScale + (1 - startScale) * e).toFixed(4)})`,
+    blur: (kind === "title" ? 20 : 14) * u,
+    origin: `${angle.x >= 0 ? "82%" : "18%"} ${angle.y >= 0 ? "78%" : "22%"}`,
+    transform: `perspective(1400px) translate3d(${(angle.x * u).toFixed(2)}vw, ${(angle.y * u).toFixed(2)}vh, ${z.toFixed(1)}px) rotateZ(${(angle.rot * u + lean).toFixed(2)}deg) scale(${scale.toFixed(4)})`,
   };
 }
 

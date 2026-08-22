@@ -6,11 +6,10 @@ import { useEffect, useRef, useState, type CSSProperties, type HTMLAttributes } 
 import { TitleShine } from "@/components/TitleShine";
 import {
   arriveAngle,
-  arriveT,
   arriveZTransform,
   type ArriveKind,
 } from "@/lib/brandingMotion";
-import { HOME_CHAPTER } from "@/lib/homeMotion";
+import { HOME_CHAPTER, menuProgress, menuWindows, windowT } from "@/lib/homeMotion";
 import { home } from "@/lib/content";
 import {
   composeIdleTransform,
@@ -208,17 +207,19 @@ export function SeeMenuBlock({
       const viewH = viewHeight();
       const lockup =
         root.querySelector<HTMLElement>("[data-menu-lockup]") ?? root;
-      const top = visualRectTop(lockup);
+      const progress = menuProgress(visualRectTop(lockup), viewH);
       const nodes = [
         ...root.querySelectorAll<HTMLElement>("[data-menu-arrive]"),
       ].sort(
         (a, b) => Number(a.dataset.index || 0) - Number(b.dataset.index || 0),
       );
+      const wins = menuWindows(nodes.length);
 
       nodes.forEach((el, i) => {
         const kind = (el.dataset.kind || "title") as ArriveKind;
         const angle = arriveAngle(i + 4);
-        const t = reduced ? 1 : arriveT(top, viewH, kind, i * 40);
+        const win = wins[i];
+        const t = reduced || !win ? 1 : windowT(progress, win);
         const pose = arriveZTransform(t, angle, kind);
         el.style.transformOrigin = pose.origin;
         const pull =
@@ -265,7 +266,7 @@ export function SeeMenuBlock({
     return (
       <section
         ref={sectionRef}
-        className="relative z-[14] flex w-full flex-col items-center justify-center overflow-x-clip px-5 py-[clamp(6rem,20vh,12rem)] md:px-8 xl:px-12 2xl:px-16"
+        className="relative z-[14] flex min-h-[calc(100dvh-3.6rem)] w-full flex-col items-center justify-center overflow-x-clip px-5 py-[clamp(7rem,22vh,14rem)] md:px-8 xl:px-12 2xl:px-16"
         style={{
           marginTop: overlap ? HOME_CHAPTER.overlapGallery : undefined,
           perspective: "1400px",
