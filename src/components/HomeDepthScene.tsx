@@ -50,7 +50,7 @@ export function HomeDepthScene({
         pinHeight={HOME_CHAPTER.menuPinVh}
         overlap={HOME_CHAPTER.overlapGallery}
         angleOffset={4}
-        exitMode="shrink"
+        exitMode="hold"
         zIndex={14}
         aria-label="See menu"
       >

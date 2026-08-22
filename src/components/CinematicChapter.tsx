@@ -28,7 +28,8 @@ type CinematicChapterProps = {
   pinHeight: string;
   overlap?: string;
   angleOffset?: number;
-  exitMode?: "shrink" | "scale";
+  /** Last chapter should hold — exiting at pin end leaves a blank page bottom. */
+  exitMode?: "shrink" | "scale" | "hold";
   zIndex?: number;
   perspective?: boolean;
   "aria-label"?: string;
@@ -51,7 +52,7 @@ function paint(
 
 /**
  * Sticky lockup that brings `[data-home-arrive]` pieces in from unique
- * angles, holds, then shrinks or scales them out — same as home chapters.
+ * angles, holds, then shrinks, scales out, or stays through pin end.
  */
 export function CinematicChapter({
   children,
@@ -158,7 +159,7 @@ export function CinematicChapter({
           );
         };
 
-        if (progress >= out.start) {
+        if (exitMode !== "hold" && progress >= out.start) {
           const exitT = windowT(progress, out);
           const pose =
             exitMode === "scale"
