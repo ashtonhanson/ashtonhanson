@@ -9,6 +9,7 @@ import {
   clamp,
   cueArriveY,
   cueHoldOpacity,
+  cueIdleAmount,
   cueLifeT,
   easeInOutCubic,
   handoffVisibility,
@@ -196,10 +197,15 @@ export function AboutIntroStage({
             handoffIndex + 3,
             atRest,
             travelT,
-            handoffIndex === 0 ? (arriving ? 0 : 2.2) : 1,
+            handoffIndex === 0
+              ? cueIdleAmount(lifeT, arriving)
+              : 1,
             pull,
           ),
         );
+        if (handoffIndex === 0) {
+          el.closest(".scroll-cue")?.classList.toggle("is-exiting", lifeT > 0.45);
+        }
       };
 
       applyElement(cueRef.current, 0);

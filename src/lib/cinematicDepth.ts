@@ -352,6 +352,14 @@ export function cueTiltAmount(scaleT: number) {
   return clamp(scaleT, 0, 1);
 }
 
+/** Fade idle hover before opacity exit so the bob doesn't snap at center. */
+export function cueIdleAmount(lifeT: number, arriving: boolean) {
+  if (arriving) return 0;
+  if (lifeT <= 0.45) return 2.2;
+  if (lifeT >= 0.62) return 0;
+  return 2.2 * (1 - smootherstep((lifeT - 0.45) / 0.17));
+}
+
 /** Stay solid while the mark drops, then fade with the exit. */
 export function cueHoldOpacity(lifeT: number) {
   return 1 - smootherstep((lifeT - 0.6) / 0.4);
@@ -379,7 +387,7 @@ export function sampleIntroPose(
       z: zoom.z,
       scale: zoom.scale,
       rot: 0,
-      rotX: 8 + 100 * cueTiltAmount(scaleT),
+      rotX: 8 + 100 * smootherstep(cueTiltAmount(scaleT)),
     };
   }
   const content = index - 1;
