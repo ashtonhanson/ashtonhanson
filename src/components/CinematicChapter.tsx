@@ -3,6 +3,7 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import {
   arriveAngle,
+  arriveGrowTransform,
   arriveTransform,
   finaleExitPose,
   shrinkOutPose,
@@ -175,7 +176,9 @@ export function CinematicChapter({
         }
 
         const t = windowT(progress, inn);
-        const pose = arriveTransform(t, angle, kind);
+        const pose = el.hasAttribute("data-grow")
+          ? arriveGrowTransform(t, angle, kind)
+          : arriveTransform(t, angle, kind);
         el.style.transformOrigin = pose.origin;
         paintItem(pose.opacity, pose.blur, pose.transform, t >= 0.985, 1 - t);
       });

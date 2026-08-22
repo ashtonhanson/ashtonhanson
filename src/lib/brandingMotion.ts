@@ -221,6 +221,26 @@ export function hubHandoffT(
   return raw * raw * (3 - 2 * raw);
 }
 
+/** Same unique-angle arrive, but from small → rest instead of large → rest. */
+export function arriveGrowTransform(
+  t: number,
+  angle: ArriveAngle,
+  kind: ArriveKind,
+) {
+  const e = easeOutCubic(t);
+  const u = 1 - e;
+  const startScale = kind === "title" ? 0.28 : 0.36;
+  const blur = (kind === "title" ? 16 : 11) * u;
+  const dirX = angle.x >= 0 ? 1 : -1;
+  const lean = dirX * (5.2 + Math.abs(angle.rot) * 0.25) * u;
+  return {
+    opacity: e,
+    blur,
+    origin: "50% 50%",
+    transform: `translate3d(${(angle.x * 0.7 * u).toFixed(2)}vw, ${(angle.y * 0.7 * u).toFixed(2)}vh, 0) rotateZ(${(angle.rot * u + lean).toFixed(2)}deg) scale(${(startScale + (1 - startScale) * e).toFixed(4)})`,
+  };
+}
+
 export function arriveTransform(
   t: number,
   angle: ArriveAngle,

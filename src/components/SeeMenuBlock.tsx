@@ -95,11 +95,12 @@ const LINE_CLASS =
 export function SeeMenuArrive({ angleStart }: { angleStart: number }) {
   return (
     <article className="relative overflow-x-clip px-5 pb-[clamp(4.5rem,12vh,8rem)] pt-[clamp(8rem,28vh,14rem)] md:px-8 xl:px-12 xl:pb-[clamp(5.5rem,13vh,11rem)] xl:pt-[clamp(9rem,26vh,16rem)] 2xl:px-16">
-      <div className="mx-auto flex max-w-3xl flex-col items-center text-center xl:max-w-4xl 2xl:max-w-5xl">
+      <div className="mx-auto flex max-w-3xl flex-col items-center gap-y-6 text-center xl:max-w-4xl xl:gap-y-7 2xl:max-w-5xl">
         {home.seeMenuLines.map((line, index) => (
           <div
             key={line}
             data-arrive
+            data-grow=""
             data-kind="title"
             data-angle={angleStart + index}
             data-lag={index * 20}
@@ -113,10 +114,11 @@ export function SeeMenuArrive({ angleStart }: { angleStart: number }) {
         ))}
         <div
           data-arrive
+          data-grow=""
           data-kind="copy"
           data-angle={angleStart + home.seeMenuLines.length}
           data-lag={60}
-          className="mt-12 will-change-transform"
+          className="mt-14 will-change-transform xl:mt-16"
           style={{ opacity: 0, transformOrigin: "50% 50%" }}
         >
           <WorkLinks className="flex flex-wrap justify-center gap-x-10 gap-y-3" />
@@ -129,11 +131,12 @@ export function SeeMenuArrive({ angleStart }: { angleStart: number }) {
 /** Same [data-home-arrive] pieces as the AI ANIMATION chapter. */
 export function SeeMenuChapter() {
   return (
-    <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center justify-center text-center xl:max-w-4xl">
+    <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center justify-center gap-y-6 text-center xl:max-w-4xl xl:gap-y-7">
       {home.seeMenuLines.map((line, index) => (
         <div
           key={line}
           data-home-arrive
+          data-grow=""
           data-kind="title"
           data-index={index}
           className="will-change-transform"
@@ -146,9 +149,10 @@ export function SeeMenuChapter() {
       ))}
       <WorkLinks
         data-home-arrive
+        data-grow=""
         data-kind="copy"
         data-index={home.seeMenuLines.length}
-        className="mt-12 flex flex-wrap justify-center gap-x-10 gap-y-3 will-change-transform"
+        className="mt-14 flex flex-wrap justify-center gap-x-10 gap-y-3 will-change-transform xl:mt-16"
         style={{ opacity: 0, visibility: "hidden", transformOrigin: "50% 50%" }}
       />
     </div>

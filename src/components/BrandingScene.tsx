@@ -10,6 +10,7 @@ import { ScrollCue } from "@/components/ScrollCue";
 import { TitleShine } from "@/components/TitleShine";
 import {
   arriveAngle,
+  arriveGrowTransform,
   arriveT,
   arriveTransform,
   BRANDING_INTRO,
@@ -452,7 +453,9 @@ export function BrandingScene({
           );
           return;
         }
-        const pose = arriveTransform(t, arriveAngle(index), kind);
+        const pose = el.hasAttribute("data-grow")
+          ? arriveGrowTransform(t, arriveAngle(index), kind)
+          : arriveTransform(t, arriveAngle(index), kind);
         poseEl.style.transformOrigin = pose.origin;
         paintIdle(
           poseEl,
