@@ -20,6 +20,7 @@ const OPACITY_MAX = 1;
 const BLUR_MAX = 4;
 const AUTO_PX_PER_SEC = 46;
 const USER_PAUSE_MS = 4200;
+const FOCUS_GLIDE_MS = 1200;
 
 const STYLES = /* css */ `
 :host {
@@ -752,7 +753,7 @@ export class AhMediaCarousel extends ElementBase {
     if (!slide) return;
     const targetLeft = this.#slideScrollLeft(slide);
     if (animated && !this.#reduced) {
-      this.#animateScrollTo(targetLeft, 980);
+      this.#animateScrollTo(targetLeft, FOCUS_GLIDE_MS, index);
     } else {
       this.#track.scrollLeft = Math.max(
         0,
@@ -770,6 +771,7 @@ export class AhMediaCarousel extends ElementBase {
     );
     if (!slides.length) return;
 
+    const gliding = Boolean(this.#scrollRaf);
     const dt = Math.min(48, now - (this.#lastMotionNow || now));
     this.#lastMotionNow = now;
 
@@ -777,7 +779,7 @@ export class AhMediaCarousel extends ElementBase {
     const rootMid = trackRect.left + trackRect.width / 2;
     const falloff = Math.max(trackRect.width * 0.42, 1);
 
-    let best = 0;
+    let best = gliding ? this.#targetIndex : 0;
     let bestAmount = -1;
 
     slides.forEach((slide, index) => {
@@ -795,7 +797,7 @@ export class AhMediaCarousel extends ElementBase {
       const pose = `scale(${scale.toFixed(4)})`;
       slide.style.transformOrigin = "50% 50%";
       slide.style.transformStyle = "preserve-3d";
-      if (this.#reduced || !this.#isDesktop()) {
+      if (this.#reduced || !this.#isDesktop() || gliding) {
         slide.style.transform = pose;
       } else {
         const pull = stepMousePull(
@@ -818,17 +820,18 @@ export class AhMediaCarousel extends ElementBase {
       slide.style.opacity = String(opacity);
       slide.style.filter = `blur(${blur.toFixed(2)}px)`;
 
-      if (amount > bestAmount) {
+      if (!gliding && amount > bestAmount) {
         bestAmount = amount;
         best = index;
       }
     });
 
+    const focusIndex = gliding ? this.#targetIndex : best;
     slides.forEach((slide, index) => {
-      slide.style.zIndex = index === best ? "2" : "1";
+      slide.style.zIndex = index === focusIndex ? "2" : "1";
     });
 
-    if (best !== this.#active && !this.#scrollRaf) {
+    if (!gliding && best !== this.#active) {
       this.#active = best;
       this.#updateChrome();
       this.#syncPlayback();
@@ -868,7 +871,11 @@ export class AhMediaCarousel extends ElementBase {
     });
   }
 
-  #animateScrollTo(targetLeft: number, duration: number) {
+  #animateScrollTo(
+    targetLeft: number,
+    duration: number,
+    targetIndex = this.#targetIndex,
+  ) {
     if (this.#scrollRaf) window.cancelAnimationFrame(this.#scrollRaf);
 
     const maxLeft = Math.max(
@@ -878,55 +885,73 @@ export class AhMediaCarousel extends ElementBase {
     const end = Math.max(0, Math.min(maxLeft, targetLeft));
     const start = this.#track.scrollLeft;
     const delta = end - start;
-    if (Math.abs(delta) < 0.5) return;
+    if (Math.abs(delta) < 0.5) {
+      this.#active = targetIndex;
+      this.#targetIndex = targetIndex;
+      this.#updateChrome();
+      this.#syncPlayback();
+      return;
+    }
+
+    this.#targetIndex = targetIndex;
+    this.#active = targetIndex;
+    this.#updateChrome();
 
     const startTime = performance.now();
-    this.#syncAutoPause();
     const step = (now: number) => {
       const t = Math.min(1, (now - startTime) / duration);
       this.#track.scrollLeft = start + delta * easeInOutCubic(t);
-      this.#syncFocus();
+      this.#syncFocus(now);
       if (t < 1) {
         this.#scrollRaf = window.requestAnimationFrame(step);
       } else {
         this.#track.scrollLeft = end;
         this.#scrollRaf = null;
-        this.#syncFocus();
-        this.#syncAutoPause();
+        this.#active = targetIndex;
+        this.#targetIndex = targetIndex;
+        this.#syncFocus(now);
+        this.#updateChrome();
+        this.#syncPlayback();
       }
     };
     this.#scrollRaf = window.requestAnimationFrame(step);
   }
 
-  #goTo(index: number) {
+  #goTo(index: number, fromHover = false) {
     if (!this.#items.length || !this.#track) return;
-    this.#layoutSlides();
     const clamped = Math.max(0, Math.min(this.#items.length - 1, index));
     const slide = this.#track.querySelector<HTMLElement>(
       `[data-slide="${clamped}"]`,
     );
     if (!slide) return;
     const targetLeft = this.#slideScrollLeft(slide);
-    if (Math.abs(this.#track.scrollLeft - targetLeft) < 6) {
-      this.#targetIndex = clamped;
-      this.#active = clamped;
-      this.#updateChrome();
+    if (
+      clamped === this.#targetIndex &&
+      this.#scrollRaf &&
+      Math.abs(this.#track.scrollLeft - targetLeft) > 6
+    ) {
+      return;
+    }
+    if (
+      !this.#scrollRaf &&
+      clamped === this.#active &&
+      Math.abs(this.#track.scrollLeft - targetLeft) < 6
+    ) {
       return;
     }
 
+    if (fromHover) this.#pauseForUser();
     this.#targetIndex = clamped;
     this.#centerSlide(clamped, true);
   }
 
   #onSlideHover(index: number) {
-    if (this.#dragging || this.#lightboxOpen) return;
-    if (index === this.#active) return;
+    if (!this.#isDesktop() || this.#dragging || this.#lightboxOpen) return;
+    if (this.#scrollRaf && index === this.#targetIndex) return;
+    if (!this.#scrollRaf && index === this.#active) return;
     if (this.#hoverTimer) window.clearTimeout(this.#hoverTimer);
-    this.#hoverTimer = window.setTimeout(() => {
-      this.#hoverTimer = null;
-      if (this.#dragging || this.#lightboxOpen) return;
-      this.#goTo(index);
-    }, 120);
+    this.#hoverTimer = null;
+    this.#goTo(index, true);
   }
 }
 
@@ -940,15 +965,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v18": AhMediaCarousel;
+    "ah-media-gallery-v19": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v18")
+    !customElements.get("ah-media-gallery-v19")
   ) {
-    customElements.define("ah-media-gallery-v18", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v19", AhMediaCarousel);
   }
 }
