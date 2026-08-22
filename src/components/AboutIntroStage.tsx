@@ -196,10 +196,19 @@ export function AboutIntroStage({
             handoffIndex + 3,
             atRest,
             travelT,
-            handoffIndex === 0 ? (arriving ? 0 : 2.2) : 1,
+            handoffIndex === 0
+              ? lifeT > 0.35
+                ? 0
+                : arriving
+                  ? 0
+                  : 2.2
+              : 1,
             pull,
           ),
         );
+        if (handoffIndex === 0) {
+          el.closest(".scroll-cue")?.classList.toggle("is-exiting", lifeT > 0.35);
+        }
       };
 
       applyElement(cueRef.current, 0);

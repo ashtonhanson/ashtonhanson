@@ -715,6 +715,11 @@ body {
     animation: scroll-cue-hover 3.4s ease-in-out 1.7s infinite;
   }
 
+  .scroll-cue.is-exiting .scroll-cue-hover {
+    animation: none;
+    transform: none;
+  }
+
   .scroll-cue-icon {
     animation: scroll-cue-flash 6.2s ease-in-out infinite;
   }
