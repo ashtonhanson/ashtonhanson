@@ -24,6 +24,7 @@ export default function BrandingPage() {
         angleOffset={4}
         exitMode="hold"
         zIndex={14}
+        perspective
         aria-label="See menu"
       >
         <SeeMenuBlock cinematic />

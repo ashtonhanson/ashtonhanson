@@ -3,7 +3,7 @@ import { clamp } from "@/lib/brandingMotion";
 /** Sticky home chapters after ABOUT — enter, hold the full lockup, then FIFO exit. */
 export const HOME_CHAPTER = {
   galleryPinVh: "280vh",
-  menuPinVh: "260vh",
+  menuPinVh: "165vh",
   /**
    * A sticky pin unsticks a full viewport before the next section’s top.
    * Pull the next chapter up by ~1dvh so it starts as the previous leaves,
@@ -11,10 +11,12 @@ export const HOME_CHAPTER = {
    */
   overlapAbout: "calc(-100dvh - 14vh)",
   /**
-   * SEE MENU waits until the previous lockup has scrolled up to a sliver
-   * at the top of the screen — do not start during the prior hold.
+   * Start while the previous lockup is leaving — not after a blank wait.
    */
-  overlapGallery: "-8vh",
+  overlapGallery: "calc(-36vh)",
+  /** Stagger / span for the last-chapter Z arrive (chapterEnterProgress). */
+  menuStagger: 0.06,
+  menuArriveSpan: 0.5,
   enterStart: 0.03,
   itemSpan: 0.18,
   /** Next piece starts before the previous finishes arriving. */

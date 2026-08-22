@@ -25,6 +25,7 @@ export default function AdsPage() {
         angleOffset={4}
         exitMode="hold"
         zIndex={14}
+        perspective
         aria-label="See menu"
       >
         <SeeMenuBlock cinematic />

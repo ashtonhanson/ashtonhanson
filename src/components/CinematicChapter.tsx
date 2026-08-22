@@ -4,13 +4,14 @@ import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import {
   arriveAngle,
   arriveTransform,
+  arriveZTransform,
   clamp,
   finaleExitPose,
   shrinkOutPose,
   type ArriveKind,
 } from "@/lib/brandingMotion";
-import { chapterWindows, windowT } from "@/lib/homeMotion";
-import { applyPinStage, pinProgress } from "@/lib/loadClear";
+import { chapterWindows, HOME_CHAPTER, windowT } from "@/lib/homeMotion";
+import { applyPinStage, chapterEnterProgress, pinProgress } from "@/lib/loadClear";
 import {
   createIdleHoverState,
   composeIdleTransform,
@@ -99,7 +100,6 @@ export function CinematicChapter({
       const pin = pinRef.current;
       if (!pin) return;
       applyPinStage(pin, stageRef.current);
-      const progress = pinProgress(pin);
       const nodes = [
         ...pin.querySelectorAll<HTMLElement>("[data-home-arrive]"),
       ].sort(
@@ -107,6 +107,8 @@ export function CinematicChapter({
       );
       if (!nodes.length) return;
 
+      const hold = exitMode === "hold";
+      const progress = hold ? chapterEnterProgress(pin) : pinProgress(pin);
       const { ins, outs } = chapterWindows(nodes.length);
 
       nodes.forEach((el, i) => {
@@ -114,7 +116,7 @@ export function CinematicChapter({
         const angle = arriveAngle(i + angleOffset);
         const inn = ins[i];
         const out = outs[i];
-        if (!inn || !out) return;
+        if (!hold && (!inn || !out)) return;
 
         const pullKind: MousePullKind | null =
           kind === "media"
@@ -159,7 +161,22 @@ export function CinematicChapter({
           );
         };
 
-        if (exitMode !== "hold" && progress >= out.start) {
+        if (hold) {
+          const t = clamp(
+            (progress - i * HOME_CHAPTER.menuStagger) /
+              HOME_CHAPTER.menuArriveSpan,
+            0,
+            1,
+          );
+          const pose = arriveZTransform(t, angle, kind);
+          el.style.transformOrigin = pose.origin;
+          paintItem(pose.opacity, pose.blur, pose.transform, t >= 0.985, 1 - t);
+          return;
+        }
+
+        if (!inn || !out) return;
+
+        if (progress >= out.start) {
           const exitT = windowT(progress, out);
           const pose =
             exitMode === "scale"
@@ -202,9 +219,11 @@ export function CinematicChapter({
     >
       <div
         ref={stageRef}
-        className="absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-clip px-5 md:px-8 xl:px-12 2xl:px-16"
+        className={`absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center px-5 md:px-8 xl:px-12 2xl:px-16 ${
+          exitMode === "hold" ? "overflow-x-clip overflow-y-visible" : "overflow-clip"
+        }`}
         style={
-          perspective
+          perspective || exitMode === "hold"
             ? { perspective: "1400px", perspectiveOrigin: "50% 42%" }
             : undefined
         }
