@@ -271,6 +271,7 @@ export class AhMediaCarousel extends ElementBase {
   #wasVisible = false;
   #lastAutoNow = 0;
   #ignoreHoverUntil = 0;
+  #lastPointerMoveAt = 0;
   #ro: ResizeObserver | null = null;
 
   constructor() {
@@ -476,6 +477,7 @@ export class AhMediaCarousel extends ElementBase {
   };
 
   #onPointerMove = (event: PointerEvent) => {
+    this.#lastPointerMoveAt = performance.now();
     if (!this.#dragging || !this.#track) return;
     const dx = event.clientX - this.#dragStartX;
     if (Math.abs(dx) > DRAG_THRESHOLD) {
@@ -572,7 +574,6 @@ export class AhMediaCarousel extends ElementBase {
         this.#updateChrome();
       }
       this.#track.scrollLeft = next;
-      this.#markProgrammaticScroll();
     };
 
     this.#autoRaf = window.requestAnimationFrame(tick);
@@ -808,7 +809,7 @@ export class AhMediaCarousel extends ElementBase {
       const pose = `scale(${scale.toFixed(4)})`;
       slide.style.transformOrigin = "50% 50%";
       slide.style.transformStyle = "preserve-3d";
-      if (this.#reduced || !this.#isDesktop() || gliding) {
+      if (this.#reduced || !this.#isDesktop()) {
         slide.style.transform = pose;
       } else {
         const pull = stepMousePull(
@@ -932,16 +933,16 @@ export class AhMediaCarousel extends ElementBase {
   #goTo(index: number, fromHover = false) {
     if (!this.#items.length || !this.#track) return;
     if (this.#scrollRaf) return;
-    if (performance.now() < this.#ignoreHoverUntil && fromHover) return;
 
     const clamped = Math.max(0, Math.min(this.#items.length - 1, index));
     const slide = this.#track.querySelector<HTMLElement>(
       `[data-slide="${clamped}"]`,
     );
     if (!slide) return;
+    this.#layoutSlides();
     const targetLeft = this.#slideScrollLeft(slide);
     if (
-      clamped === this.#active &&
+      clamped === this.#targetIndex &&
       Math.abs(this.#track.scrollLeft - targetLeft) < 8
     ) {
       return;
@@ -952,11 +953,16 @@ export class AhMediaCarousel extends ElementBase {
     this.#centerSlide(clamped, true);
   }
 
+  #pointerIntent() {
+    return performance.now() - this.#lastPointerMoveAt < 320;
+  }
+
   #onSlideHover(index: number) {
     if (!this.#isDesktop() || this.#dragging || this.#lightboxOpen) return;
     if (this.#scrollRaf) return;
     if (performance.now() < this.#ignoreHoverUntil) return;
-    if (index === this.#active) return;
+    if (!this.#pointerIntent()) return;
+    if (index === this.#targetIndex) return;
     this.#goTo(index, true);
   }
 }
@@ -971,15 +977,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v20": AhMediaCarousel;
+    "ah-media-gallery-v21": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v20")
+    !customElements.get("ah-media-gallery-v21")
   ) {
-    customElements.define("ah-media-gallery-v20", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v21", AhMediaCarousel);
   }
 }
