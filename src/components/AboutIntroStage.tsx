@@ -301,8 +301,8 @@ export function AboutIntroStage({
                 }}
               >
                 {/* Cream readable type; zoom path starts small → much larger */}
-                <p className="whitespace-nowrap text-center font-display text-[clamp(1.12rem,3.4vw,2.4rem)] font-medium leading-[1.3] tracking-[0.02em] text-[rgb(232_223_196)] xl:text-[clamp(1.65rem,2.8vw,2.6rem)]">
-                  <MobileBreakText text={line} />
+                <p className="text-balance text-center font-display text-[clamp(1.12rem,3.4vw,2.4rem)] font-medium leading-[1.22] tracking-[0.02em] text-[rgb(232_223_196)] xl:text-[clamp(1.65rem,2.8vw,2.6rem)]">
+                  <MobileBreakText text={line} alwaysBreak />
                 </p>
               </div>
             </div>

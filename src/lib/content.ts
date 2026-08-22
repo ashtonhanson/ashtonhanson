@@ -27,7 +27,7 @@ export const home = {
   aboutTitle: "ABOUT ME",
   aboutWord: "ABOUT",
   meWord: "ME",
-  /** One complete line per entry; `\n` wraps to two lines on mobile only. */
+  /** One scroll beat per entry; `\n` splits into two display lines. */
   aboutLines: [
     "As a graphic designer\nof 10+ years",
     "with a strong focus on\nIllustration, Adobe Creative Suite,",
