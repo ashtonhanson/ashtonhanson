@@ -18,16 +18,17 @@ const SCALE_MAX = 1.08;
 const OPACITY_MIN = 0.5;
 const OPACITY_MAX = 1;
 const BLUR_MAX = 4;
-const AUTO_PX_PER_SEC = 46; // slow continuous crawl — visible, not a still frame
+const AUTO_PX_PER_SEC = 46;
 const USER_PAUSE_MS = 4200;
 
 const STYLES = /* css */ `
 :host {
   display: block;
   width: 100%;
-  min-width: 0;
   color: #d2d2d2;
   font-family: var(--font-display, "Montserrat", system-ui, sans-serif);
+  transform-style: preserve-3d;
+  perspective: 920px;
 }
 
 * {
@@ -36,12 +37,13 @@ const STYLES = /* css */ `
 
 .wrap {
   width: 100%;
-  min-width: 0;
+  perspective: 920px;
+  transform-style: preserve-3d;
 }
 
 .viewport {
   width: 100%;
-  min-width: 0;
+  transform-style: preserve-3d;
   border: 1.5px solid rgb(214 208 186 / 0.42);
   border-radius: 1.35rem;
   box-shadow:
@@ -49,52 +51,41 @@ const STYLES = /* css */ `
     inset 0 0 0 1px rgb(255 255 255 / 0.08);
 }
 
-/* Flat scroller — preserve-3d on this node makes overflow compute to
-   visible, which makes scrollLeft a no-op and freezes the reel. */
-.scroller {
-  position: relative;
-  width: 100%;
-  min-width: 0;
+.track {
+  display: flex;
+  gap: 0.75rem;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: visible;
   padding: 2rem 12%;
   scroll-behavior: auto;
   -ms-overflow-style: none;
   scrollbar-width: none;
-  container-type: inline-size;
-  container-name: gallery;
-}
-
-.scroller::-webkit-scrollbar {
-  display: none;
-}
-
-.track {
-  position: relative;
-  display: flex;
-  width: max-content;
-  gap: 0.75rem;
   transform-style: preserve-3d;
+}
+
+.track::-webkit-scrollbar {
+  display: none;
 }
 
 @media (min-width: 768px) {
   .viewport {
+    overflow: visible;
     background: transparent;
   }
 
-  .scroller {
+  .track {
     gap: 1rem;
     padding: 2.5rem 18%;
     cursor: grab;
     touch-action: pan-y;
   }
 
-  .scroller.is-dragging {
+  .track.is-dragging {
     cursor: grabbing;
     user-select: none;
   }
 
-  .scroller.is-dragging .slide {
+  .track.is-dragging .slide {
     cursor: grabbing;
   }
 }
@@ -102,8 +93,7 @@ const STYLES = /* css */ `
 .slide {
   position: relative;
   z-index: 1;
-  flex: 0 0 76cqw;
-  width: 76cqw;
+  width: 76%;
   max-width: 42rem;
   flex-shrink: 0;
   cursor: pointer;
@@ -129,31 +119,28 @@ const STYLES = /* css */ `
 
 @media (min-width: 768px) {
   .slide {
-    flex-basis: 68cqw;
-    width: 68cqw;
+    width: 68%;
   }
 }
 
 @media (min-width: 1280px) {
-  .scroller {
+  .track {
     padding: 2.75rem 14%;
   }
 
   .slide {
-    flex-basis: 62cqw;
-    width: 62cqw;
+    width: 62%;
     max-width: 52rem;
   }
 }
 
 @media (min-width: 1536px) {
-  .scroller {
+  .track {
     padding: 3rem 12%;
   }
 
   .slide {
-    flex-basis: 58cqw;
-    width: 58cqw;
+    width: 58%;
     max-width: 58rem;
   }
 }
@@ -255,6 +242,7 @@ export class AhMediaCarousel extends ElementBase {
   #active = 0;
   #targetIndex = 0;
   #reduced = false;
+  #hoverTimer: number | null = null;
   #scrollRaf: number | null = null;
   #scrollFrame: number | null = null;
   #autoRaf: number | null = null;
@@ -270,7 +258,6 @@ export class AhMediaCarousel extends ElementBase {
   #suppressClick = false;
   #mq: MediaQueryList | null = null;
   #root!: ShadowRoot;
-  #scroller!: HTMLDivElement;
   #track!: HTMLDivElement;
   #dots!: HTMLDivElement;
   #prevBtn!: HTMLButtonElement;
@@ -278,10 +265,8 @@ export class AhMediaCarousel extends ElementBase {
   #pullMap = new WeakMap<HTMLElement, MousePullState>();
   #motionRaf: number | null = null;
   #lastMotionNow = 0;
-  #wasVisible = false;
-  #animating = false;
-  #hoverTimer: number | null = null;
-  #ro: ResizeObserver | null = null;
+  #inView = false;
+  #io: IntersectionObserver | null = null;
   #lastAutoNow = 0;
 
   constructor() {
@@ -298,12 +283,9 @@ export class AhMediaCarousel extends ElementBase {
     this.#targetIndex = 0;
     this.#active = 0;
     this.#autoDir = 1;
-    this.#wasVisible = false;
     this.#render();
-    this.#layoutSlides();
-    this.#resetToStart();
+    this.#scheduleFocus(true);
     this.#restartAutoplay();
-    if (this.isConnected) this.#watchView();
   }
 
   pauseAutoplay() {
@@ -321,11 +303,8 @@ export class AhMediaCarousel extends ElementBase {
     this.#reduced = this.#mq.matches;
     this.#mq.addEventListener("change", this.#onReducedChange);
     window.addEventListener("resize", this.#onResize);
-    window.addEventListener("scroll", this.#onPageScroll, { passive: true });
-    window.visualViewport?.addEventListener("resize", this.#onPageScroll);
-    window.visualViewport?.addEventListener("scroll", this.#onPageScroll);
     this.#render();
-    this.#resetToStart();
+    this.#scheduleFocus(true);
     this.#restartAutoplay();
     this.#startMotion();
     this.#watchView();
@@ -334,12 +313,9 @@ export class AhMediaCarousel extends ElementBase {
   disconnectedCallback() {
     this.#mq?.removeEventListener("change", this.#onReducedChange);
     window.removeEventListener("resize", this.#onResize);
-    window.removeEventListener("scroll", this.#onPageScroll);
-    window.visualViewport?.removeEventListener("resize", this.#onPageScroll);
-    window.visualViewport?.removeEventListener("scroll", this.#onPageScroll);
-    this.#scroller?.removeEventListener("scroll", this.#onScroll);
-    this.#ro?.disconnect();
-    this.#ro = null;
+    this.#track?.removeEventListener("scroll", this.#onScroll);
+    this.#io?.disconnect();
+    this.#io = null;
     this.#stopAutoplay();
     this.#stopMotion();
     if (this.#hoverTimer) window.clearTimeout(this.#hoverTimer);
@@ -361,13 +337,7 @@ export class AhMediaCarousel extends ElementBase {
   };
 
   #onResize = () => {
-    this.#layoutSlides();
-    this.#syncVisibility();
     this.#syncFocus();
-  };
-
-  #onPageScroll = () => {
-    this.#syncVisibility();
   };
 
   #onScroll = () => {
@@ -386,76 +356,26 @@ export class AhMediaCarousel extends ElementBase {
     return window.matchMedia("(min-width: 768px)").matches;
   }
 
-  #maxScroll() {
-    if (!this.#scroller) return 0;
-    return Math.max(0, this.#scroller.scrollWidth - this.#scroller.clientWidth);
-  }
-
-  #slideBasisPx() {
-    if (!this.#scroller) return 0;
-    const style = getComputedStyle(this.#scroller);
-    const pad =
-      parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
-    const inner = Math.max(0, this.#scroller.clientWidth - pad);
-    if (inner < 768) return inner * 0.76;
-    if (inner < 1280) return inner * 0.68;
-    if (inner < 1536) return inner * 0.62;
-    return inner * 0.58;
-  }
-
-  #layoutSlides() {
-    if (!this.#scroller || !this.#track) return;
-    const basis = this.#slideBasisPx();
-    if (basis < 1) return;
-    this.#track.querySelectorAll<HTMLElement>(".slide").forEach((slide) => {
-      slide.style.flex = `0 0 ${basis}px`;
-      slide.style.width = `${basis}px`;
-    });
-  }
-
-  #resetToStart() {
-    this.#cancelScrollAnimation();
-    this.#active = 0;
-    this.#targetIndex = 0;
-    this.#autoDir = 1;
-    if (this.#scroller) this.#scroller.scrollLeft = 0;
-    this.#centerSlide(0, false);
-    this.#scheduleFocus(true);
-    this.#updateChrome();
-  }
-
-  #isVisibleEnough() {
-    const rect = this.getBoundingClientRect();
-    if (rect.width < 16 || rect.height < 16) return false;
-    const viewH = window.visualViewport?.height ?? window.innerHeight;
-    const viewW = window.visualViewport?.width ?? window.innerWidth;
-    const viewTop = window.visualViewport?.offsetTop ?? 0;
-    const viewLeft = window.visualViewport?.offsetLeft ?? 0;
-    const overlapY =
-      Math.min(rect.bottom, viewTop + viewH) - Math.max(rect.top, viewTop);
-    const overlapX =
-      Math.min(rect.right, viewLeft + viewW) - Math.max(rect.left, viewLeft);
-    return overlapY > 48 && overlapX > 48;
-  }
-
-  #syncVisibility() {
-    const visible = this.#isVisibleEnough();
-    if (visible && !this.#wasVisible) this.#resetToStart();
-    this.#wasVisible = visible;
-  }
-
   #watchView() {
-    this.#ro?.disconnect();
-    this.#ro = new ResizeObserver(() => {
-      this.#layoutSlides();
-      this.#syncVisibility();
-    });
-    if (this.#scroller) this.#ro.observe(this.#scroller);
-    this.#ro.observe(this);
-    requestAnimationFrame(() => {
-      this.#layoutSlides();
-      this.#syncVisibility();
-    });
+    this.#io?.disconnect();
+    this.#io = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.some((entry) => entry.isIntersecting);
+        if (visible === this.#inView) return;
+        this.#inView = visible;
+        if (visible) {
+          this.#active = 0;
+          this.#targetIndex = 0;
+          this.#autoDir = 1;
+          if (this.#track) this.#track.scrollLeft = 0;
+          this.#centerSlide(0, false);
+          this.#scheduleFocus(true);
+        }
+        this.#restartAutoplay();
+      },
+      { threshold: [0, 0.01, 0.2] },
+    );
+    this.#io.observe(this);
   }
 
   #syncAutoPause() {
@@ -464,15 +384,15 @@ export class AhMediaCarousel extends ElementBase {
       this.#lightboxOpen ||
       this.#userPaused ||
       this.#dragging ||
-      this.#animating ||
-      !this.#wasVisible ||
-      this.#items.length < 2;
+      !this.#inView ||
+      this.#items.length < 2 ||
+      Boolean(this.#scrollRaf);
   }
 
   #cancelScrollAnimation() {
-    if (this.#scrollRaf) window.cancelAnimationFrame(this.#scrollRaf);
+    if (!this.#scrollRaf) return;
+    window.cancelAnimationFrame(this.#scrollRaf);
     this.#scrollRaf = null;
-    this.#animating = false;
     this.#syncAutoPause();
   }
 
@@ -483,30 +403,34 @@ export class AhMediaCarousel extends ElementBase {
     }
     if (!this.#isDesktop()) return;
     if (event.button !== 0) return;
-    if (!this.#scroller || this.#items.length < 2) return;
+    if (!this.#track || this.#items.length < 2) return;
 
     this.#cancelScrollAnimation();
     this.#dragging = true;
     this.#dragMoved = false;
     this.#suppressClick = false;
     this.#dragStartX = event.clientX;
-    this.#dragStartScroll = this.#scroller.scrollLeft;
-    this.#scroller.setPointerCapture(event.pointerId);
+    this.#dragStartScroll = this.#track.scrollLeft;
+    this.#track.setPointerCapture(event.pointerId);
     this.#pauseForUser();
     this.#syncAutoPause();
   };
 
   #onPointerMove = (event: PointerEvent) => {
-    if (!this.#dragging || !this.#scroller) return;
+    if (!this.#dragging || !this.#track) return;
     const dx = event.clientX - this.#dragStartX;
     if (Math.abs(dx) > DRAG_THRESHOLD) {
       if (!this.#dragMoved) {
         this.#dragMoved = true;
-        this.#scroller.classList.add("is-dragging");
+        this.#track.classList.add("is-dragging");
       }
-      this.#scroller.scrollLeft = Math.max(
+      const maxLeft = Math.max(
         0,
-        Math.min(this.#maxScroll(), this.#dragStartScroll - dx),
+        this.#track.scrollWidth - this.#track.clientWidth,
+      );
+      this.#track.scrollLeft = Math.max(
+        0,
+        Math.min(maxLeft, this.#dragStartScroll - dx),
       );
     }
   };
@@ -514,9 +438,9 @@ export class AhMediaCarousel extends ElementBase {
   #onPointerUp = (event: PointerEvent) => {
     if (!this.#dragging) return;
     this.#dragging = false;
-    this.#scroller?.classList.remove("is-dragging");
-    if (this.#scroller?.hasPointerCapture(event.pointerId)) {
-      this.#scroller.releasePointerCapture(event.pointerId);
+    this.#track?.classList.remove("is-dragging");
+    if (this.#track?.hasPointerCapture(event.pointerId)) {
+      this.#track.releasePointerCapture(event.pointerId);
     }
     if (this.#dragMoved) this.#suppressClick = true;
     this.#dragMoved = false;
@@ -567,23 +491,23 @@ export class AhMediaCarousel extends ElementBase {
       this.#autoRaf = window.requestAnimationFrame(tick);
       const dt = Math.min(0.048, (now - this.#lastAutoNow) / 1000);
       this.#lastAutoNow = now;
-      this.#syncVisibility();
       this.#syncAutoPause();
-      if (this.#autoPaused || !this.#scroller) return;
+      if (this.#autoPaused || !this.#track) return;
 
-      if (this.#maxScroll() < 1) {
-        this.#layoutSlides();
-        return;
-      }
+      const maxLeft = Math.max(
+        0,
+        this.#track.scrollWidth - this.#track.clientWidth,
+      );
+      if (maxLeft < 1) return;
 
-      let next = this.#scroller.scrollLeft + AUTO_PX_PER_SEC * dt;
-      if (next >= this.#maxScroll()) {
+      let next = this.#track.scrollLeft + AUTO_PX_PER_SEC * dt;
+      if (next >= maxLeft) {
         next = 0;
         this.#active = 0;
         this.#targetIndex = 0;
         this.#updateChrome();
       }
-      this.#scroller.scrollLeft = next;
+      this.#track.scrollLeft = next;
     };
 
     this.#autoRaf = window.requestAnimationFrame(tick);
@@ -607,9 +531,7 @@ export class AhMediaCarousel extends ElementBase {
       <style>${STYLES}</style>
       <div class="wrap" data-region role="region" aria-roledescription="carousel" aria-label="${escapeAttr(label)}">
         <div class="viewport">
-          <div class="scroller" part="track">
-            <div class="track"></div>
-          </div>
+          <div class="track" part="track"></div>
         </div>
         <div class="controls" part="controls">
           <button type="button" class="nav-btn" data-prev aria-label="Previous">PREV</button>
@@ -619,14 +541,13 @@ export class AhMediaCarousel extends ElementBase {
       </div>
     `;
 
-    this.#scroller = this.#root.querySelector(".scroller")!;
     this.#track = this.#root.querySelector(".track")!;
     this.#dots = this.#root.querySelector("[data-dots]")!;
     this.#prevBtn = this.#root.querySelector("[data-prev]")!;
     this.#nextBtn = this.#root.querySelector("[data-next]")!;
 
-    this.#scroller.addEventListener("scroll", this.#onScroll, { passive: true });
-    this.#scroller.addEventListener(
+    this.#track.addEventListener("scroll", this.#onScroll, { passive: true });
+    this.#track.addEventListener(
       "wheel",
       (event) => {
         if (Math.abs(event.deltaX) > Math.abs(event.deltaY) + 2) {
@@ -635,11 +556,11 @@ export class AhMediaCarousel extends ElementBase {
       },
       { passive: true },
     );
-    this.#scroller.addEventListener("pointerdown", this.#onPointerDown);
-    this.#scroller.addEventListener("pointermove", this.#onPointerMove);
-    this.#scroller.addEventListener("pointerup", this.#onPointerUp);
-    this.#scroller.addEventListener("pointercancel", this.#onPointerUp);
-    this.#scroller.addEventListener("dragstart", (event) => event.preventDefault());
+    this.#track.addEventListener("pointerdown", this.#onPointerDown);
+    this.#track.addEventListener("pointermove", this.#onPointerMove);
+    this.#track.addEventListener("pointerup", this.#onPointerUp);
+    this.#track.addEventListener("pointercancel", this.#onPointerUp);
+    this.#track.addEventListener("dragstart", (event) => event.preventDefault());
 
     this.#prevBtn.addEventListener("click", () => {
       this.#pauseForUser();
@@ -668,8 +589,6 @@ export class AhMediaCarousel extends ElementBase {
     });
 
     this.#updateChrome();
-    this.#layoutSlides();
-    if (this.isConnected) this.#watchView();
   }
 
   #createSlide(item: CarouselMediaItem, index: number) {
@@ -692,11 +611,7 @@ export class AhMediaCarousel extends ElementBase {
       video.controls = index === 0;
       video.src = item.src;
 
-      const markLoaded = () => {
-        video.classList.add("is-loaded");
-        this.#layoutSlides();
-        if (index === 0 && this.#targetIndex === 0) this.#centerSlide(0, false);
-      };
+      const markLoaded = () => video.classList.add("is-loaded");
       video.addEventListener("loadeddata", markLoaded);
       video.addEventListener("canplay", markLoaded);
       video.addEventListener("playing", markLoaded);
@@ -712,11 +627,7 @@ export class AhMediaCarousel extends ElementBase {
       img.loading = "eager";
       img.alt = item.alt;
       img.src = item.src;
-      const markLoaded = () => {
-        img.classList.add("is-loaded");
-        this.#layoutSlides();
-        if (index === 0 && this.#targetIndex === 0) this.#centerSlide(0, false);
-      };
+      const markLoaded = () => img.classList.add("is-loaded");
       img.addEventListener("load", markLoaded);
       img.addEventListener("error", markLoaded);
       if (img.complete) markLoaded();
@@ -726,9 +637,8 @@ export class AhMediaCarousel extends ElementBase {
 
     slide.appendChild(frame);
 
-    slide.addEventListener("pointerenter", () => this.#onSlideHover(index));
-    slide.addEventListener("pointerleave", () => this.#onSlideLeave());
-
+    slide.addEventListener("mouseenter", () => this.#onSlideHover(index));
+    slide.addEventListener("mouseleave", () => this.#onSlideLeave());
     slide.addEventListener("click", (event) => {
       if (this.#suppressClick) {
         this.#suppressClick = false;
@@ -766,13 +676,10 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   #slideScrollLeft(slide: HTMLElement) {
-    return (
-      slide.offsetLeft - (this.#scroller.clientWidth - slide.offsetWidth) / 2
-    );
+    return slide.offsetLeft - (this.#track.clientWidth - slide.offsetWidth) / 2;
   }
 
   #centerSlide(index: number, animated: boolean) {
-    if (!this.#scroller || !this.#track) return;
     const slide = this.#track.querySelector<HTMLElement>(
       `[data-slide="${index}"]`,
     );
@@ -781,9 +688,12 @@ export class AhMediaCarousel extends ElementBase {
     if (animated && !this.#reduced) {
       this.#animateScrollTo(targetLeft, 980);
     } else {
-      this.#scroller.scrollLeft = Math.max(
+      this.#track.scrollLeft = Math.max(
         0,
-        Math.min(this.#maxScroll(), targetLeft),
+        Math.min(
+          Math.max(0, this.#track.scrollWidth - this.#track.clientWidth),
+          targetLeft,
+        ),
       );
     }
   }
@@ -797,7 +707,7 @@ export class AhMediaCarousel extends ElementBase {
     const dt = Math.min(48, now - (this.#lastMotionNow || now));
     this.#lastMotionNow = now;
 
-    const trackRect = this.#scroller.getBoundingClientRect();
+    const trackRect = this.#track.getBoundingClientRect();
     const rootMid = trackRect.left + trackRect.width / 2;
     const falloff = Math.max(trackRect.width * 0.42, 1);
 
@@ -807,7 +717,7 @@ export class AhMediaCarousel extends ElementBase {
     slides.forEach((slide, index) => {
       const mid =
         trackRect.left +
-        (slide.offsetLeft - this.#scroller.scrollLeft) +
+        (slide.offsetLeft - this.#track.scrollLeft) +
         slide.offsetWidth / 2;
       const dist = Math.abs(mid - rootMid);
       const amount = Math.max(0, Math.min(1, 1 - dist / falloff));
@@ -852,7 +762,7 @@ export class AhMediaCarousel extends ElementBase {
       slide.style.zIndex = index === best ? "2" : "1";
     });
 
-    if (!this.#animating && best !== this.#active) {
+    if (best !== this.#active) {
       this.#active = best;
       this.#targetIndex = best;
       this.#updateChrome();
@@ -896,28 +806,26 @@ export class AhMediaCarousel extends ElementBase {
   #animateScrollTo(targetLeft: number, duration: number) {
     if (this.#scrollRaf) window.cancelAnimationFrame(this.#scrollRaf);
 
-    const end = Math.max(0, Math.min(this.#maxScroll(), targetLeft));
-    const start = this.#scroller.scrollLeft;
+    const maxLeft = Math.max(
+      0,
+      this.#track.scrollWidth - this.#track.clientWidth,
+    );
+    const end = Math.max(0, Math.min(maxLeft, targetLeft));
+    const start = this.#track.scrollLeft;
     const delta = end - start;
-    if (Math.abs(delta) < 0.5) {
-      this.#animating = false;
-      this.#syncAutoPause();
-      return;
-    }
+    if (Math.abs(delta) < 0.5) return;
 
     const startTime = performance.now();
-    this.#animating = true;
     this.#syncAutoPause();
     const step = (now: number) => {
       const t = Math.min(1, (now - startTime) / duration);
-      this.#scroller.scrollLeft = start + delta * easeInOutCubic(t);
+      this.#track.scrollLeft = start + delta * easeInOutCubic(t);
       this.#syncFocus();
       if (t < 1) {
         this.#scrollRaf = window.requestAnimationFrame(step);
       } else {
-        this.#scroller.scrollLeft = end;
+        this.#track.scrollLeft = end;
         this.#scrollRaf = null;
-        this.#animating = false;
         this.#syncFocus();
         this.#syncAutoPause();
       }
@@ -937,13 +845,12 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   #onSlideHover(index: number) {
-    if (this.#reduced || this.#dragging || this.#lightboxOpen) return;
+    if (this.#reduced || this.#dragging) return;
     if (this.#hoverTimer) window.clearTimeout(this.#hoverTimer);
     this.#hoverTimer = window.setTimeout(() => {
-      this.#hoverTimer = null;
-      if (this.#dragging || this.#lightboxOpen) return;
+      if (this.#dragging || index === this.#targetIndex) return;
       this.#goTo(index);
-    }, 140);
+    }, 240);
   }
 
   #onSlideLeave() {
@@ -964,15 +871,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v14": AhMediaCarousel;
+    "ah-media-gallery-v15": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v14")
+    !customElements.get("ah-media-gallery-v15")
   ) {
-    customElements.define("ah-media-gallery-v14", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v15", AhMediaCarousel);
   }
 }
