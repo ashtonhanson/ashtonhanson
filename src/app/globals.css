@@ -700,8 +700,8 @@ body {
   width: clamp(14.5rem, 52.8vw, 27.2rem);
   height: auto;
   overflow: visible;
-  filter: drop-shadow(0 0 5px rgb(255 255 255 / 0.12))
-    drop-shadow(0 0 10px rgb(220 220 210 / 0.08));
+  filter: drop-shadow(0 0 6px rgb(255 255 255 / 0.22))
+    drop-shadow(0 0 14px rgb(220 220 210 / 0.12));
 }
 
 .scroll-cue-shine {
@@ -715,11 +715,13 @@ body {
   }
 
   .scroll-cue-icon {
-    animation: scroll-cue-flash 3.4s ease-in-out infinite;
+    animation: scroll-cue-flash 6.2s ease-in-out infinite;
   }
 
   .scroll-cue-shine {
-    animation: scroll-cue-shine 3.2s linear infinite;
+    animation:
+      scroll-cue-shine-x 8.4s ease-in-out infinite alternate,
+      scroll-cue-shine-y 11.2s ease-in-out infinite alternate;
   }
 }
 
@@ -739,26 +741,43 @@ body {
   }
 }
 
-@keyframes scroll-cue-shine {
-  from {
-    transform: translateX(-33.333%);
+@keyframes scroll-cue-shine-x {
+  0% {
+    translate: -20% 0;
   }
-  to {
-    transform: translateX(33.333%);
+  100% {
+    translate: 20% 0;
+  }
+}
+
+@keyframes scroll-cue-shine-y {
+  0% {
+    transform: translateY(-12%);
+  }
+  35% {
+    transform: translateY(10%);
+  }
+  70% {
+    transform: translateY(-8%);
+  }
+  100% {
+    transform: translateY(12%);
   }
 }
 
 @keyframes scroll-cue-flash {
   0%,
   100% {
-    filter: drop-shadow(0 0 3px rgb(255 255 255 / 0.08))
-      drop-shadow(0 0 7px rgb(200 200 190 / 0.05));
-    opacity: 1;
+    filter: drop-shadow(0 0 4px rgb(255 255 255 / 0.16))
+      drop-shadow(0 0 10px rgb(200 200 190 / 0.08));
   }
-  48% {
-    filter: drop-shadow(0 0 6px rgb(255 255 255 / 0.2))
-      drop-shadow(0 0 12px rgb(230 230 220 / 0.1));
-    opacity: 1;
+  40% {
+    filter: drop-shadow(0 0 8px rgb(255 255 255 / 0.34))
+      drop-shadow(0 0 16px rgb(230 230 220 / 0.16));
+  }
+  65% {
+    filter: drop-shadow(0 0 5px rgb(255 255 255 / 0.2))
+      drop-shadow(0 0 12px rgb(210 210 200 / 0.1));
   }
 }
 

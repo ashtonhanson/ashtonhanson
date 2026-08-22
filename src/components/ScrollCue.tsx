@@ -37,21 +37,32 @@ export const ScrollCue = forwardRef<HTMLDivElement>(function ScrollCue(
               <clipPath id={clipId}>
                 <path d={ARROW_PATH} />
               </clipPath>
-              <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#5c5c5a" />
-                <stop offset="44%" stopColor="#5c5c5a" />
-                <stop offset="50%" stopColor="#c4c4c0" stopOpacity="0.42" />
-                <stop offset="56%" stopColor="#5c5c5a" />
-                <stop offset="100%" stopColor="#5c5c5a" />
+              <linearGradient
+                id={gradId}
+                x1="0"
+                y1="0"
+                x2="1"
+                y2="0.28"
+                gradientUnits="objectBoundingBox"
+              >
+                <stop offset="0%" stopColor="#7a7a78" />
+                <stop offset="12%" stopColor="#c8c8c4" />
+                <stop offset="24%" stopColor="#8e8e8c" />
+                <stop offset="38%" stopColor="#ffffff" />
+                <stop offset="50%" stopColor="#9a9a98" />
+                <stop offset="62%" stopColor="#ececea" />
+                <stop offset="74%" stopColor="#858583" />
+                <stop offset="86%" stopColor="#f4f4f0" />
+                <stop offset="100%" stopColor="#7a7a78" />
               </linearGradient>
             </defs>
             <g clipPath={`url(#${clipId})`}>
               <rect
                 className="scroll-cue-shine"
-                x="-48"
-                y="-4"
-                width="144"
-                height="72"
+                x="-96"
+                y="-32"
+                width="240"
+                height="128"
                 fill={`url(#${gradId})`}
               />
             </g>

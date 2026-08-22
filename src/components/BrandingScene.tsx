@@ -684,7 +684,6 @@ export function BrandingScene({
               >
                 <div
                   data-arrive
-                  data-hub-handoff={studyIndex === 0 ? "" : undefined}
                   data-kind="title"
                   data-angle={titleAngle}
                   className="will-change-transform"
@@ -701,7 +700,6 @@ export function BrandingScene({
                 {subText ? (
                 <div
                   data-arrive
-                  data-hub-handoff={studyIndex === 0 ? "" : undefined}
                   data-kind="copy"
                   data-idle="subtitle"
                   data-angle={subAngle}
@@ -722,7 +720,6 @@ export function BrandingScene({
                   <div className="mt-8 w-full max-w-3xl text-center xl:mt-10 xl:max-w-4xl">
                     <div
                       data-arrive
-                      data-hub-handoff={studyIndex === 0 ? "" : undefined}
                       data-kind="copy"
                       data-angle={bodyAngle}
                       data-lag={20}
@@ -742,7 +739,6 @@ export function BrandingScene({
                 {study.form ? (
                   <div
                     data-arrive
-                    data-hub-handoff={studyIndex === 0 ? "" : undefined}
                     data-still=""
                     data-kind="copy"
                     data-angle={formAngle}
@@ -757,7 +753,6 @@ export function BrandingScene({
                     items={study.media}
                     label={`${study.title} gallery`}
                     angle={mediaAngle}
-                    hubHandoff={studyIndex === 0}
                     variant={mediaVariant}
                   />
                 ) : null}
@@ -813,21 +808,18 @@ function ArriveMedia({
   label,
   angle,
   lag = 36,
-  hubHandoff = false,
   variant = "carousel",
 }: {
   items: MediaItem[];
   label: string;
   angle: number;
   lag?: number;
-  hubHandoff?: boolean;
   variant?: "carousel" | "plate";
 }) {
   const plate = variant === "plate" ? items[0] : null;
   return (
     <div
       data-arrive
-      data-hub-handoff={hubHandoff ? "" : undefined}
       data-kind="media"
       data-angle={angle}
       data-lag={lag}

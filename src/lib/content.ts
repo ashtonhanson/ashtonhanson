@@ -103,6 +103,10 @@ export const brandingCases: CaseStudy[] = [
         heading: "REVISED\nHUB TABLET LAYOUT",
         media: [
           {
+            src: "/logos/hub-tablet-on-wht.jpg",
+            alt: "HUB Tablet logo on white",
+          },
+          {
             src: "/branding/hub-tablet/new-layout/pre-comp.mov",
             alt: "HUB Tablet revised layout animation",
             type: "video",

@@ -67,10 +67,10 @@ export const BRANDING_INTRO: IntroTiming = {
   /** Each segment’s shrink-out (small + blur + fade). */
   exitSpan: 0.075,
   /**
-   * Sticky intro unsticks a full viewport before HUB TABLET’s top.
-   * Pull the case studies up so they start as BRANDING is leaving.
+   * Slight pull so the first case starts as the intro leaves,
+   * without scrolling past its title / subtitle / description.
    */
-  overlapCases: "calc(-100dvh - 16vh)",
+  overlapCases: "calc(-12vh)",
 } as const;
 
 /** CONTACT intro — still a cinematic pin, then the form lockup. */
