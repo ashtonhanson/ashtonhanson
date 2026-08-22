@@ -18,7 +18,7 @@ const SCALE_MAX = 1.08;
 const OPACITY_MIN = 0.5;
 const OPACITY_MAX = 1;
 const BLUR_MAX = 4;
-const AUTO_PX_PER_SEC = 24; // slow continuous crawl
+const AUTO_PX_PER_SEC = 46; // slow continuous crawl — visible, not a still frame
 const USER_PAUSE_MS = 4200;
 
 const STYLES = /* css */ `
@@ -242,14 +242,12 @@ export class AhMediaCarousel extends ElementBase {
   #active = 0;
   #targetIndex = 0;
   #reduced = false;
-  #hoverTimer: number | null = null;
   #scrollRaf: number | null = null;
   #scrollFrame: number | null = null;
   #autoRaf: number | null = null;
   #autoDir = 1;
   #autoPaused = false;
   #lightboxOpen = false;
-  #hoverPaused = false;
   #userPaused = false;
   #userPauseTimer: number | null = null;
   #dragging = false;
@@ -319,7 +317,6 @@ export class AhMediaCarousel extends ElementBase {
     this.#io = null;
     this.#stopAutoplay();
     this.#stopMotion();
-    if (this.#hoverTimer) window.clearTimeout(this.#hoverTimer);
     if (this.#userPauseTimer) window.clearTimeout(this.#userPauseTimer);
     if (this.#scrollRaf) window.cancelAnimationFrame(this.#scrollRaf);
     if (this.#scrollFrame) window.cancelAnimationFrame(this.#scrollFrame);
@@ -375,22 +372,37 @@ export class AhMediaCarousel extends ElementBase {
           0,
           ...entries.map((entry) => entry.intersectionRatio),
         );
-        const visible = ratio >= 0.28;
+        const visible = ratio >= 0.08;
         if (visible === this.#inView) return;
         this.#inView = visible;
         if (visible) this.#resetToStart();
         this.#restartAutoplay();
       },
-      { threshold: [0, 0.12, 0.28, 0.5, 0.75] },
+      { threshold: [0, 0.08, 0.2, 0.4, 0.6] },
     );
     this.#io.observe(this);
+    requestAnimationFrame(() => this.#seedInView());
+  }
+
+  #seedInView() {
+    const rect = this.getBoundingClientRect();
+    const viewH = window.innerHeight || 1;
+    const height = Math.max(rect.height, 1);
+    const overlap = Math.min(rect.bottom, viewH) - Math.max(rect.top, 0);
+    const visible = overlap / height >= 0.08;
+    if (visible === this.#inView) {
+      if (visible) this.#restartAutoplay();
+      return;
+    }
+    this.#inView = visible;
+    if (visible) this.#resetToStart();
+    this.#restartAutoplay();
   }
 
   #syncAutoPause() {
     this.#autoPaused =
       this.#reduced ||
       this.#lightboxOpen ||
-      this.#hoverPaused ||
       this.#userPaused ||
       this.#dragging ||
       !this.#inView ||
@@ -554,12 +566,15 @@ export class AhMediaCarousel extends ElementBase {
     this.#dots = this.#root.querySelector("[data-dots]")!;
     this.#prevBtn = this.#root.querySelector("[data-prev]")!;
     this.#nextBtn = this.#root.querySelector("[data-next]")!;
-    const wrap = this.#root.querySelector(".wrap")!;
 
     this.#track.addEventListener("scroll", this.#onScroll, { passive: true });
     this.#track.addEventListener(
       "wheel",
-      () => this.#pauseForUser(),
+      (event) => {
+        if (Math.abs(event.deltaX) > Math.abs(event.deltaY) + 2) {
+          this.#pauseForUser();
+        }
+      },
       { passive: true },
     );
     this.#track.addEventListener("pointerdown", this.#onPointerDown);
@@ -567,16 +582,6 @@ export class AhMediaCarousel extends ElementBase {
     this.#track.addEventListener("pointerup", this.#onPointerUp);
     this.#track.addEventListener("pointercancel", this.#onPointerUp);
     this.#track.addEventListener("dragstart", (event) => event.preventDefault());
-
-    wrap.addEventListener("pointerenter", (event) => {
-      if ((event as PointerEvent).pointerType !== "mouse") return;
-      this.#hoverPaused = true;
-      this.#syncAutoPause();
-    });
-    wrap.addEventListener("pointerleave", () => {
-      this.#hoverPaused = false;
-      this.#syncAutoPause();
-    });
 
     this.#prevBtn.addEventListener("click", () => {
       this.#pauseForUser();
@@ -659,8 +664,6 @@ export class AhMediaCarousel extends ElementBase {
 
     slide.appendChild(frame);
 
-    slide.addEventListener("mouseenter", () => this.#onSlideHover(index));
-    slide.addEventListener("mouseleave", () => this.#onSlideLeave());
     slide.addEventListener("click", (event) => {
       if (this.#suppressClick) {
         this.#suppressClick = false;
@@ -866,22 +869,6 @@ export class AhMediaCarousel extends ElementBase {
     this.#targetIndex = clamped;
     this.#centerSlide(clamped, true);
   }
-
-  #onSlideHover(index: number) {
-    if (this.#reduced || this.#dragging) return;
-    if (this.#hoverTimer) window.clearTimeout(this.#hoverTimer);
-    this.#hoverTimer = window.setTimeout(() => {
-      if (this.#dragging || index === this.#targetIndex) return;
-      this.#goTo(index);
-    }, 240);
-  }
-
-  #onSlideLeave() {
-    if (this.#hoverTimer) {
-      window.clearTimeout(this.#hoverTimer);
-      this.#hoverTimer = null;
-    }
-  }
 }
 
 function escapeAttr(value: string) {
@@ -894,15 +881,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v10": AhMediaCarousel;
+    "ah-media-gallery-v11": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v10")
+    !customElements.get("ah-media-gallery-v11")
   ) {
-    customElements.define("ah-media-gallery-v10", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v11", AhMediaCarousel);
   }
 }
