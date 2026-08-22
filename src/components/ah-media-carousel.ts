@@ -264,6 +264,7 @@ export class AhMediaCarousel extends ElementBase {
   #lastMotionNow = 0;
   #wasVisible = false;
   #lastAutoNow = 0;
+  #ro: ResizeObserver | null = null;
 
   constructor() {
     super();
@@ -284,6 +285,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#layoutSlides();
     this.#resetToStart();
     this.#restartAutoplay();
+    if (this.isConnected) this.#watchLayout();
   }
 
   pauseAutoplay() {
@@ -308,6 +310,16 @@ export class AhMediaCarousel extends ElementBase {
     this.#resetToStart();
     this.#restartAutoplay();
     this.#startMotion();
+    this.#watchLayout();
+  }
+
+  #watchLayout() {
+    this.#ro?.disconnect();
+    this.#ro = new ResizeObserver(() => {
+      this.#layoutSlides();
+    });
+    if (this.#track) this.#ro.observe(this.#track);
+    this.#ro.observe(this);
   }
 
   disconnectedCallback() {
@@ -316,6 +328,8 @@ export class AhMediaCarousel extends ElementBase {
     window.removeEventListener("scroll", this.#onPageScroll);
     window.visualViewport?.removeEventListener("scroll", this.#onPageScroll);
     this.#track?.removeEventListener("scroll", this.#onScroll);
+    this.#ro?.disconnect();
+    this.#ro = null;
     this.#stopAutoplay();
     this.#stopMotion();
     if (this.#hoverTimer) window.clearTimeout(this.#hoverTimer);
@@ -421,13 +435,11 @@ export class AhMediaCarousel extends ElementBase {
 
   #syncAutoPause() {
     this.#autoPaused =
-      this.#reduced ||
       this.#lightboxOpen ||
       this.#userPaused ||
-      this.#dragging ||
+      this.#dragMoved ||
       !this.#isVisibleEnough() ||
-      this.#items.length < 2 ||
-      Boolean(this.#scrollRaf);
+      this.#items.length < 2;
   }
 
   #cancelScrollAnimation() {
@@ -524,8 +536,7 @@ export class AhMediaCarousel extends ElementBase {
 
   #restartAutoplay() {
     this.#stopAutoplay();
-    this.#syncAutoPause();
-    if (this.#reduced || this.#items.length < 2) return;
+    if (this.#items.length < 2) return;
 
     this.#lastAutoNow = performance.now();
     const tick = (now: number) => {
@@ -534,14 +545,15 @@ export class AhMediaCarousel extends ElementBase {
       this.#lastAutoNow = now;
       this.#syncVisibility();
       this.#syncAutoPause();
-      if (this.#autoPaused || !this.#track) return;
+      if (this.#autoPaused || !this.#track || this.#scrollRaf) return;
 
       if (this.#maxScroll() < 1) {
         this.#layoutSlides();
         return;
       }
 
-      let next = this.#track.scrollLeft + AUTO_PX_PER_SEC * dt;
+      const speed = this.#reduced ? AUTO_PX_PER_SEC * 0.35 : AUTO_PX_PER_SEC;
+      let next = this.#track.scrollLeft + speed * dt;
       if (next >= this.#maxScroll()) {
         next = 0;
         this.#active = 0;
@@ -602,12 +614,6 @@ export class AhMediaCarousel extends ElementBase {
     this.#track.addEventListener("pointerup", this.#onPointerUp);
     this.#track.addEventListener("pointercancel", this.#onPointerUp);
     this.#track.addEventListener("dragstart", (event) => event.preventDefault());
-    this.#track.addEventListener("pointerover", (event) => {
-      const slide = (event.target as HTMLElement).closest<HTMLElement>(".slide");
-      if (!slide?.dataset.slide) return;
-      const index = Number(slide.dataset.slide);
-      if (Number.isFinite(index)) this.#onSlideHover(index);
-    });
 
     this.#prevBtn.addEventListener("click", () => {
       this.#pauseForUser();
@@ -696,6 +702,8 @@ export class AhMediaCarousel extends ElementBase {
     }
 
     slide.appendChild(frame);
+
+    slide.addEventListener("pointerenter", () => this.#onSlideHover(index));
 
     slide.addEventListener("click", (event) => {
       if (this.#suppressClick) {
@@ -911,13 +919,14 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   #onSlideHover(index: number) {
-    if (this.#reduced || this.#dragging || this.#lightboxOpen) return;
+    if (this.#dragging || this.#lightboxOpen) return;
+    if (index === this.#active) return;
     if (this.#hoverTimer) window.clearTimeout(this.#hoverTimer);
     this.#hoverTimer = window.setTimeout(() => {
       this.#hoverTimer = null;
       if (this.#dragging || this.#lightboxOpen) return;
       this.#goTo(index);
-    }, 80);
+    }, 120);
   }
 }
 
@@ -931,15 +940,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v17": AhMediaCarousel;
+    "ah-media-gallery-v18": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v17")
+    !customElements.get("ah-media-gallery-v18")
   ) {
-    customElements.define("ah-media-gallery-v17", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v18", AhMediaCarousel);
   }
 }
