@@ -11,11 +11,6 @@ export const HOME_CHAPTER = {
   overlapAbout: "calc(-100dvh - 14vh)",
   /** Pull SEE MENU up so it starts as the previous lockup leaves. */
   overlapGallery: "calc(-28vh)",
-  /** FIFO arrive for SEE MENU — each line gets its own window. */
-  menuEnterStart: 0.03,
-  menuItemSpan: 0.24,
-  menuOverlap: 0.05,
-  menuArrivePack: 0.92,
   enterStart: 0.03,
   itemSpan: 0.18,
   /** Next piece starts before the previous finishes arriving. */
@@ -62,31 +57,6 @@ export function chapterWindows(itemCount: number) {
   outs = outs.map(scaleWin);
 
   return { ins, outs, exitGate: exitGate * scale };
-}
-
-/** 0 when the lockup is still below the fold, 1 when it’s settled on stage. */
-export function menuProgress(lockupTop: number, viewH: number) {
-  const start = viewH * 1.12;
-  const end = viewH * 0.16;
-  return clamp((start - lockupTop) / Math.max(start - end, 1), 0, 1);
-}
-
-/** One arrive window per line, packed before the hold. */
-export function menuWindows(itemCount: number) {
-  const n = Math.max(itemCount, 1);
-  const { menuEnterStart, menuItemSpan, menuOverlap, menuArrivePack } =
-    HOME_CHAPTER;
-  const step = Math.max(menuItemSpan - menuOverlap, 0.06);
-  const raw = Array.from({ length: n }, (_, i) => ({
-    start: menuEnterStart + i * step,
-    end: menuEnterStart + i * step + menuItemSpan,
-  }));
-  const lastEnd = raw[n - 1]?.end ?? menuEnterStart + menuItemSpan;
-  const scale = menuArrivePack / Math.max(lastEnd, 0.0001);
-  return raw.map((win) => ({
-    start: win.start * scale,
-    end: win.end * scale,
-  }));
 }
 
 /** 0→1 through a window; progress falling retraces the same pose. */

@@ -221,28 +221,6 @@ export function hubHandoffT(
   return raw * raw * (3 - 2 * raw);
 }
 
-/**
- * ABOUT-style enter that stops at rest: small + deep + above,
- * then slides down the Z axis. Parent must supply CSS perspective.
- */
-export function arriveZTransform(
-  t: number,
-  angle: ArriveAngle,
-  kind: ArriveKind,
-) {
-  const e = easeOutCubic(t);
-  const u = 1 - e;
-  const startZ = kind === "title" ? -280 : -220;
-  const startScale = kind === "title" ? 0.26 : 0.34;
-  const startY = -28;
-  return {
-    opacity: e,
-    blur: (kind === "title" ? 12 : 9) * u,
-    origin: "50% 50%",
-    transform: `translate3d(${(angle.x * 0.22 * u).toFixed(2)}vw, ${(startY * u).toFixed(2)}vh, ${(startZ * u).toFixed(1)}px) rotateX(${(16 * u).toFixed(2)}deg) rotateZ(${(angle.rot * 0.35 * u).toFixed(2)}deg) scale(${(startScale + (1 - startScale) * e).toFixed(4)})`,
-  };
-}
-
 export function arriveTransform(
   t: number,
   angle: ArriveAngle,

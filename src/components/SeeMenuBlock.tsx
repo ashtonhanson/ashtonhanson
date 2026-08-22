@@ -6,10 +6,11 @@ import { useEffect, useRef, useState, type CSSProperties, type HTMLAttributes } 
 import { TitleShine } from "@/components/TitleShine";
 import {
   arriveAngle,
-  arriveZTransform,
+  arriveT,
+  arriveTransform,
   type ArriveKind,
 } from "@/lib/brandingMotion";
-import { HOME_CHAPTER, menuProgress, menuWindows, windowT } from "@/lib/homeMotion";
+import { HOME_CHAPTER } from "@/lib/homeMotion";
 import { home } from "@/lib/content";
 import {
   composeIdleTransform,
@@ -205,52 +206,53 @@ export function SeeMenuBlock({
       const root = sectionRef.current;
       if (!root) return;
       const viewH = viewHeight();
-      const lockup =
-        root.querySelector<HTMLElement>("[data-menu-lockup]") ?? root;
-      const progress = menuProgress(visualRectTop(lockup), viewH);
       const nodes = [
         ...root.querySelectorAll<HTMLElement>("[data-menu-arrive]"),
       ].sort(
         (a, b) => Number(a.dataset.index || 0) - Number(b.dataset.index || 0),
       );
-      const wins = menuWindows(nodes.length);
 
       nodes.forEach((el, i) => {
         const kind = (el.dataset.kind || "title") as ArriveKind;
-        const angle = arriveAngle(i + 4);
-        const win = wins[i];
-        const t = reduced || !win ? 1 : windowT(progress, win);
-        const pose = arriveZTransform(t, angle, kind);
-        el.style.transformOrigin = pose.origin;
-        const atRest = t >= 0.985;
+        const angle = Number(el.dataset.angle || i + 4);
+        const poseEl = (el.firstElementChild as HTMLElement) ?? el;
+        el.style.transform = "none";
+        el.style.filter = "none";
+        el.style.opacity = "1";
+        el.style.visibility = "visible";
+        if (poseEl !== el) {
+          poseEl.style.filter = "none";
+        }
+        const raw = arriveT(visualRectTop(el), viewH, kind);
+        const t = reduced ? 1 : clamp(raw - i * 0.2, 0, 1);
+        const pose = arriveTransform(t, arriveAngle(angle), kind);
+        poseEl.style.transformOrigin = pose.origin;
         const pull =
-          atRest && pose.opacity > 0.04
+          pose.opacity > 0.04
             ? stepMousePull(
-                pullFor(el),
-                el,
+                pullFor(poseEl),
+                poseEl,
                 now,
                 dt,
                 kind === "title" ? "title" : "subtitle",
-                1,
+                t,
               )
             : undefined;
         paint(
-          el,
+          poseEl,
           pose.opacity,
           pose.blur,
-          atRest
-            ? composeIdleTransform(
-                idleFor(el),
-                pose.transform,
-                now,
-                dt,
-                i + 4,
-                true,
-                0,
-                1,
-                pull,
-              )
-            : pose.transform,
+          composeIdleTransform(
+            idleFor(poseEl),
+            pose.transform,
+            now,
+            dt,
+            angle,
+            t >= 0.985,
+            1 - t,
+            kind === "title" ? 1.75 : 1,
+            pull,
+          ),
         );
       });
     };
@@ -269,40 +271,31 @@ export function SeeMenuBlock({
     return (
       <section
         ref={sectionRef}
-        className="relative z-[14] flex min-h-[calc(100dvh-3.6rem)] w-full flex-col items-center justify-center overflow-visible px-5 py-[clamp(7rem,22vh,14rem)] md:px-8 xl:px-12 2xl:px-16"
+        className="relative z-[14] flex w-full flex-col items-center justify-center overflow-x-clip px-5 py-[clamp(6rem,18vh,12rem)] md:px-8 xl:px-12 2xl:px-16"
         style={{
           marginTop: overlap ? HOME_CHAPTER.overlapGallery : undefined,
-          perspective: "1400px",
-          perspectiveOrigin: "50% 42%",
-          transformStyle: "preserve-3d",
         }}
         aria-label="See menu"
       >
-        <div
-          data-menu-lockup
-          className="relative mx-auto flex w-full max-w-3xl flex-col items-center justify-center text-center xl:max-w-4xl"
-          style={{ transformStyle: "preserve-3d" }}
-        >
-          <div
-            className="relative flex w-full flex-col items-center"
-            style={{ transformStyle: "preserve-3d" }}
-          >
+        <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center justify-center text-center xl:max-w-4xl">
+          <div className="relative flex w-full flex-col items-center">
             {home.seeMenuLines.map((line, index) => (
               <div
                 key={line}
                 data-menu-arrive
                 data-kind="title"
                 data-index={index}
+                data-angle={index + 4}
                 className="will-change-transform"
-                style={{
-                  opacity: 0,
-                  visibility: "hidden",
-                  transformOrigin: "50% 50%",
-                }}
               >
                 <TitleShine
                   as="p"
                   className="font-display text-[clamp(1.6rem,5.5vw,3.15rem)] font-black uppercase leading-[0.95] tracking-[0.05em] xl:text-[clamp(2.25rem,3.4vw,4.25rem)]"
+                  style={{
+                    opacity: 0,
+                    visibility: "hidden",
+                    transformOrigin: "50% 50%",
+                  }}
                 >
                   {line}
                 </TitleShine>
@@ -310,17 +303,22 @@ export function SeeMenuBlock({
             ))}
           </div>
 
-          <WorkLinks
+          <div
             data-menu-arrive
             data-kind="copy"
             data-index={home.seeMenuLines.length}
-            className="mt-12 flex flex-wrap justify-center gap-x-10 gap-y-3 will-change-transform"
-            style={{
-              opacity: 0,
-              visibility: "hidden",
-              transformOrigin: "50% 50%",
-            }}
-          />
+            data-angle={home.seeMenuLines.length + 4}
+            className="will-change-transform"
+          >
+            <WorkLinks
+              className="mt-12 flex flex-wrap justify-center gap-x-10 gap-y-3"
+              style={{
+                opacity: 0,
+                visibility: "hidden",
+                transformOrigin: "50% 50%",
+              }}
+            />
+          </div>
         </div>
       </section>
     );
