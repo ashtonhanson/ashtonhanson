@@ -148,8 +148,14 @@ export function SeeMenuBlock({
 
   if (cinematic) {
     return (
-      <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center justify-center text-center xl:max-w-4xl">
-        <div className="relative flex w-full flex-col items-center">
+      <div
+        className="relative mx-auto flex w-full max-w-3xl flex-col items-center justify-center text-center xl:max-w-4xl"
+        style={{ transformStyle: "preserve-3d" }}
+      >
+        <div
+          className="relative flex w-full flex-col items-center"
+          style={{ transformStyle: "preserve-3d" }}
+        >
           {home.seeMenuLines.map((line, index) => (
             <div
               key={line}

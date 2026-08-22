@@ -221,23 +221,24 @@ export function hubHandoffT(
   return raw * raw * (3 - 2 * raw);
 }
 
-/** 0 = deep on Z (small), 1 = rest. Scroll back retraces into the void. */
+/**
+ * ABOUT-style enter that stops at rest: small + deep → on stage.
+ * 0 = void, 1 = rest. Scroll back retraces the same Z path.
+ */
 export function arriveZTransform(
   t: number,
   angle: ArriveAngle,
   kind: ArriveKind,
 ) {
-  const x = clamp(t, 0, 1);
-  const e = x * x * x * (x * (x * 6 - 15) + 10);
+  const e = easeOutCubic(t);
   const u = 1 - e;
-  const startZ = kind === "title" ? -340 : kind === "media" ? -250 : -300;
-  const startScale = kind === "title" ? 0.2 : 0.3;
-  const blur = (kind === "title" ? 16 : 11) * u;
+  const startZ = kind === "title" ? -220 : -180;
+  const startScale = kind === "title" ? 0.26 : 0.32;
   return {
     opacity: e,
-    blur,
+    blur: (kind === "title" ? 14 : 10) * u,
     origin: "50% 50%",
-    transform: `translate3d(${(angle.x * 0.28 * u).toFixed(2)}vw, ${(angle.y * 0.16 * u).toFixed(2)}vh, ${(startZ * u).toFixed(1)}px) rotateZ(${(angle.rot * 0.4 * u).toFixed(2)}deg) scale(${(startScale + (1 - startScale) * e).toFixed(4)})`,
+    transform: `perspective(1400px) translate3d(${(angle.x * 0.55 * u).toFixed(2)}vw, ${(angle.y * 0.32 * u).toFixed(2)}vh, ${(startZ * u).toFixed(1)}px) rotateZ(${(angle.rot * 0.65 * u).toFixed(2)}deg) scale(${(startScale + (1 - startScale) * e).toFixed(4)})`,
   };
 }
 

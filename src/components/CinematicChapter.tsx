@@ -5,13 +5,12 @@ import {
   arriveAngle,
   arriveTransform,
   arriveZTransform,
-  clamp,
   finaleExitPose,
   shrinkOutPose,
   type ArriveKind,
 } from "@/lib/brandingMotion";
-import { chapterWindows, HOME_CHAPTER, windowT } from "@/lib/homeMotion";
-import { applyPinStage, chapterEnterProgress, pinProgress } from "@/lib/loadClear";
+import { chapterWindows, holdWindows, windowT } from "@/lib/homeMotion";
+import { applyPinStage, pinProgress } from "@/lib/loadClear";
 import {
   createIdleHoverState,
   composeIdleTransform,
@@ -108,15 +107,16 @@ export function CinematicChapter({
       if (!nodes.length) return;
 
       const hold = exitMode === "hold";
-      const progress = hold ? chapterEnterProgress(pin) : pinProgress(pin);
+      const progress = pinProgress(pin);
       const { ins, outs } = chapterWindows(nodes.length);
+      const holds = hold ? holdWindows(nodes.length) : [];
 
       nodes.forEach((el, i) => {
         const kind = (el.dataset.kind || "copy") as ArriveKind;
         const angle = arriveAngle(i + angleOffset);
-        const inn = ins[i];
+        const inn = hold ? holds[i] : ins[i];
         const out = outs[i];
-        if (!hold && (!inn || !out)) return;
+        if (!inn || (!hold && !out)) return;
 
         const pullKind: MousePullKind | null =
           kind === "media"
@@ -162,12 +162,7 @@ export function CinematicChapter({
         };
 
         if (hold) {
-          const t = clamp(
-            (progress - i * HOME_CHAPTER.menuStagger) /
-              HOME_CHAPTER.menuArriveSpan,
-            0,
-            1,
-          );
+          const t = windowT(progress, inn);
           const pose = arriveZTransform(t, angle, kind);
           el.style.transformOrigin = pose.origin;
           paintItem(pose.opacity, pose.blur, pose.transform, t >= 0.985, 1 - t);
@@ -224,7 +219,11 @@ export function CinematicChapter({
         }`}
         style={
           perspective || exitMode === "hold"
-            ? { perspective: "1400px", perspectiveOrigin: "50% 42%" }
+            ? {
+                perspective: "1400px",
+                perspectiveOrigin: "50% 42%",
+                transformStyle: "preserve-3d",
+              }
             : undefined
         }
       >

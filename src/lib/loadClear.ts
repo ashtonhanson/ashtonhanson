@@ -67,19 +67,6 @@ export function visualRectTop(el: HTMLElement) {
 }
 
 /**
- * 0 while the pin is still below the fold, 1 shortly after it sticks.
- * Bidirectional: scrolling back raises the pin and this falls, same path.
- */
-export function chapterEnterProgress(pin: HTMLElement) {
-  const viewH = viewHeight();
-  const header = headerOffsetPx();
-  const top = visualRectTop(pin);
-  const start = viewH * 0.94;
-  const end = header - viewH * 0.4;
-  return Math.min(1, Math.max(0, (start - top) / Math.max(start - end, 1)));
-}
-
-/**
  * 0 when the pin meets the header, 1 when it unsticks from the visible stage.
  * Uses the visual viewport so Android Chrome / device-frame insets stay in sync.
  */
