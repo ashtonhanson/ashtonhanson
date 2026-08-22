@@ -425,7 +425,7 @@ export class AhMediaCarousel extends ElementBase {
       this.#lightboxOpen ||
       this.#userPaused ||
       this.#dragging ||
-      !this.#wasVisible ||
+      !this.#isVisibleEnough() ||
       this.#items.length < 2 ||
       Boolean(this.#scrollRaf);
   }
@@ -453,7 +453,6 @@ export class AhMediaCarousel extends ElementBase {
     this.#dragStartX = event.clientX;
     this.#dragStartScroll = this.#track.scrollLeft;
     this.#track.setPointerCapture(event.pointerId);
-    this.#pauseForUser();
     this.#syncAutoPause();
   };
 
@@ -464,6 +463,7 @@ export class AhMediaCarousel extends ElementBase {
       if (!this.#dragMoved) {
         this.#dragMoved = true;
         this.#track.classList.add("is-dragging");
+        this.#pauseForUser();
       }
       const maxLeft = Math.max(
         0,
@@ -602,6 +602,12 @@ export class AhMediaCarousel extends ElementBase {
     this.#track.addEventListener("pointerup", this.#onPointerUp);
     this.#track.addEventListener("pointercancel", this.#onPointerUp);
     this.#track.addEventListener("dragstart", (event) => event.preventDefault());
+    this.#track.addEventListener("pointerover", (event) => {
+      const slide = (event.target as HTMLElement).closest<HTMLElement>(".slide");
+      if (!slide?.dataset.slide) return;
+      const index = Number(slide.dataset.slide);
+      if (Number.isFinite(index)) this.#onSlideHover(index);
+    });
 
     this.#prevBtn.addEventListener("click", () => {
       this.#pauseForUser();
@@ -691,8 +697,6 @@ export class AhMediaCarousel extends ElementBase {
 
     slide.appendChild(frame);
 
-    slide.addEventListener("pointerenter", () => this.#onSlideHover(index));
-    slide.addEventListener("pointerleave", () => this.#onSlideLeave());
     slide.addEventListener("click", (event) => {
       if (this.#suppressClick) {
         this.#suppressClick = false;
@@ -818,7 +822,6 @@ export class AhMediaCarousel extends ElementBase {
 
     if (best !== this.#active && !this.#scrollRaf) {
       this.#active = best;
-      this.#targetIndex = best;
       this.#updateChrome();
       this.#syncPlayback();
     }
@@ -889,16 +892,17 @@ export class AhMediaCarousel extends ElementBase {
 
   #goTo(index: number) {
     if (!this.#items.length || !this.#track) return;
+    this.#layoutSlides();
     const clamped = Math.max(0, Math.min(this.#items.length - 1, index));
     const slide = this.#track.querySelector<HTMLElement>(
       `[data-slide="${clamped}"]`,
     );
     if (!slide) return;
     const targetLeft = this.#slideScrollLeft(slide);
-    if (
-      clamped === this.#targetIndex &&
-      Math.abs(this.#track.scrollLeft - targetLeft) < 6
-    ) {
+    if (Math.abs(this.#track.scrollLeft - targetLeft) < 6) {
+      this.#targetIndex = clamped;
+      this.#active = clamped;
+      this.#updateChrome();
       return;
     }
 
@@ -907,19 +911,13 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   #onSlideHover(index: number) {
-    if (this.#reduced || this.#dragging) return;
+    if (this.#reduced || this.#dragging || this.#lightboxOpen) return;
     if (this.#hoverTimer) window.clearTimeout(this.#hoverTimer);
     this.#hoverTimer = window.setTimeout(() => {
-      if (this.#dragging || index === this.#targetIndex) return;
-      this.#goTo(index);
-    }, 240);
-  }
-
-  #onSlideLeave() {
-    if (this.#hoverTimer) {
-      window.clearTimeout(this.#hoverTimer);
       this.#hoverTimer = null;
-    }
+      if (this.#dragging || this.#lightboxOpen) return;
+      this.#goTo(index);
+    }, 80);
   }
 }
 
@@ -933,15 +931,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v16": AhMediaCarousel;
+    "ah-media-gallery-v17": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v16")
+    !customElements.get("ah-media-gallery-v17")
   ) {
-    customElements.define("ah-media-gallery-v16", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v17", AhMediaCarousel);
   }
 }
