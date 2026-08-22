@@ -61,6 +61,8 @@ const STYLES = /* css */ `
   scroll-behavior: auto;
   -ms-overflow-style: none;
   scrollbar-width: none;
+  container-type: inline-size;
+  container-name: gallery;
 }
 
 .scroller::-webkit-scrollbar {
@@ -71,7 +73,6 @@ const STYLES = /* css */ `
   position: relative;
   display: flex;
   width: max-content;
-  min-width: 100%;
   gap: 0.75rem;
   transform-style: preserve-3d;
 }
@@ -101,7 +102,8 @@ const STYLES = /* css */ `
 .slide {
   position: relative;
   z-index: 1;
-  width: 76%;
+  flex: 0 0 76cqw;
+  width: 76cqw;
   max-width: 42rem;
   flex-shrink: 0;
   cursor: pointer;
@@ -127,7 +129,8 @@ const STYLES = /* css */ `
 
 @media (min-width: 768px) {
   .slide {
-    width: 68%;
+    flex-basis: 68cqw;
+    width: 68cqw;
   }
 }
 
@@ -137,7 +140,8 @@ const STYLES = /* css */ `
   }
 
   .slide {
-    width: 62%;
+    flex-basis: 62cqw;
+    width: 62cqw;
     max-width: 52rem;
   }
 }
@@ -148,7 +152,8 @@ const STYLES = /* css */ `
   }
 
   .slide {
-    width: 58%;
+    flex-basis: 58cqw;
+    width: 58cqw;
     max-width: 58rem;
   }
 }
@@ -273,9 +278,7 @@ export class AhMediaCarousel extends ElementBase {
   #pullMap = new WeakMap<HTMLElement, MousePullState>();
   #motionRaf: number | null = null;
   #lastMotionNow = 0;
-  #inView = false;
-  #started = false;
-  #hasLaidOut = false;
+  #wasVisible = false;
   #animating = false;
   #hoverTimer: number | null = null;
   #ro: ResizeObserver | null = null;
@@ -295,9 +298,9 @@ export class AhMediaCarousel extends ElementBase {
     this.#targetIndex = 0;
     this.#active = 0;
     this.#autoDir = 1;
-    this.#hasLaidOut = false;
-    this.#started = false;
+    this.#wasVisible = false;
     this.#render();
+    this.#layoutSlides();
     this.#resetToStart();
     this.#restartAutoplay();
     if (this.isConnected) this.#watchView();
@@ -358,12 +361,13 @@ export class AhMediaCarousel extends ElementBase {
   };
 
   #onResize = () => {
-    this.#refreshView();
+    this.#layoutSlides();
+    this.#syncVisibility();
     this.#syncFocus();
   };
 
   #onPageScroll = () => {
-    this.#refreshView();
+    this.#syncVisibility();
   };
 
   #onScroll = () => {
@@ -387,6 +391,28 @@ export class AhMediaCarousel extends ElementBase {
     return Math.max(0, this.#scroller.scrollWidth - this.#scroller.clientWidth);
   }
 
+  #slideBasisPx() {
+    if (!this.#scroller) return 0;
+    const style = getComputedStyle(this.#scroller);
+    const pad =
+      parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+    const inner = Math.max(0, this.#scroller.clientWidth - pad);
+    if (inner < 768) return inner * 0.76;
+    if (inner < 1280) return inner * 0.68;
+    if (inner < 1536) return inner * 0.62;
+    return inner * 0.58;
+  }
+
+  #layoutSlides() {
+    if (!this.#scroller || !this.#track) return;
+    const basis = this.#slideBasisPx();
+    if (basis < 1) return;
+    this.#track.querySelectorAll<HTMLElement>(".slide").forEach((slide) => {
+      slide.style.flex = `0 0 ${basis}px`;
+      slide.style.width = `${basis}px`;
+    });
+  }
+
   #resetToStart() {
     this.#cancelScrollAnimation();
     this.#active = 0;
@@ -398,7 +424,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#updateChrome();
   }
 
-  #isOnScreen() {
+  #isVisibleEnough() {
     const rect = this.getBoundingClientRect();
     if (rect.width < 16 || rect.height < 16) return false;
     const viewH = window.visualViewport?.height ?? window.innerHeight;
@@ -409,48 +435,27 @@ export class AhMediaCarousel extends ElementBase {
       Math.min(rect.bottom, viewTop + viewH) - Math.max(rect.top, viewTop);
     const overlapX =
       Math.min(rect.right, viewLeft + viewW) - Math.max(rect.left, viewLeft);
-    const threshold = this.#inView ? 8 : 64;
-    return overlapY > threshold && overlapX > threshold;
+    return overlapY > 48 && overlapX > 48;
   }
 
-  #isPainted() {
-    if (!this.#isOnScreen()) return false;
-    let node: HTMLElement | null = this;
-    for (let i = 0; i < 10 && node; i += 1) {
-      const style = getComputedStyle(node);
-      if (style.visibility === "hidden" || parseFloat(style.opacity) < 0.35) {
-        return false;
-      }
-      node = node.parentElement;
-    }
-    return true;
-  }
-
-  #refreshView() {
-    const visible = this.#isOnScreen();
-    if (visible === this.#inView) return;
-    this.#inView = visible;
-    if (visible) this.#started = false;
+  #syncVisibility() {
+    const visible = this.#isVisibleEnough();
+    if (visible && !this.#wasVisible) this.#resetToStart();
+    this.#wasVisible = visible;
   }
 
   #watchView() {
     this.#ro?.disconnect();
     this.#ro = new ResizeObserver(() => {
-      if (!this.#track) return;
-      const ready =
-        this.#items.length > 1 &&
-        this.#maxScroll() > 4;
-      if (ready && !this.#hasLaidOut) {
-        this.#hasLaidOut = true;
-        this.#resetToStart();
-        this.#restartAutoplay();
-      }
-      this.#refreshView();
+      this.#layoutSlides();
+      this.#syncVisibility();
     });
     if (this.#scroller) this.#ro.observe(this.#scroller);
-    if (this.#track) this.#ro.observe(this.#track);
     this.#ro.observe(this);
-    requestAnimationFrame(() => this.#refreshView());
+    requestAnimationFrame(() => {
+      this.#layoutSlides();
+      this.#syncVisibility();
+    });
   }
 
   #syncAutoPause() {
@@ -460,8 +465,8 @@ export class AhMediaCarousel extends ElementBase {
       this.#userPaused ||
       this.#dragging ||
       this.#animating ||
-      this.#items.length < 2 ||
-      Boolean(this.#scrollRaf);
+      !this.#wasVisible ||
+      this.#items.length < 2;
   }
 
   #cancelScrollAnimation() {
@@ -562,21 +567,17 @@ export class AhMediaCarousel extends ElementBase {
       this.#autoRaf = window.requestAnimationFrame(tick);
       const dt = Math.min(0.048, (now - this.#lastAutoNow) / 1000);
       this.#lastAutoNow = now;
+      this.#syncVisibility();
       this.#syncAutoPause();
       if (this.#autoPaused || !this.#scroller) return;
 
-      if (!this.#started) {
-        if (!this.#isPainted()) return;
-        this.#started = true;
-        this.#resetToStart();
+      if (this.#maxScroll() < 1) {
+        this.#layoutSlides();
         return;
       }
 
-      const maxLeft = this.#maxScroll();
-      if (maxLeft < 1) return;
-
       let next = this.#scroller.scrollLeft + AUTO_PX_PER_SEC * dt;
-      if (next >= maxLeft) {
+      if (next >= this.#maxScroll()) {
         next = 0;
         this.#active = 0;
         this.#targetIndex = 0;
@@ -667,6 +668,8 @@ export class AhMediaCarousel extends ElementBase {
     });
 
     this.#updateChrome();
+    this.#layoutSlides();
+    if (this.isConnected) this.#watchView();
   }
 
   #createSlide(item: CarouselMediaItem, index: number) {
@@ -691,6 +694,7 @@ export class AhMediaCarousel extends ElementBase {
 
       const markLoaded = () => {
         video.classList.add("is-loaded");
+        this.#layoutSlides();
         if (index === 0 && this.#targetIndex === 0) this.#centerSlide(0, false);
       };
       video.addEventListener("loadeddata", markLoaded);
@@ -710,6 +714,7 @@ export class AhMediaCarousel extends ElementBase {
       img.src = item.src;
       const markLoaded = () => {
         img.classList.add("is-loaded");
+        this.#layoutSlides();
         if (index === 0 && this.#targetIndex === 0) this.#centerSlide(0, false);
       };
       img.addEventListener("load", markLoaded);
@@ -847,11 +852,7 @@ export class AhMediaCarousel extends ElementBase {
       slide.style.zIndex = index === best ? "2" : "1";
     });
 
-    if (
-      this.#hasLaidOut &&
-      !this.#animating &&
-      best !== this.#active
-    ) {
+    if (!this.#animating && best !== this.#active) {
       this.#active = best;
       this.#targetIndex = best;
       this.#updateChrome();
@@ -963,15 +964,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v13": AhMediaCarousel;
+    "ah-media-gallery-v14": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v13")
+    !customElements.get("ah-media-gallery-v14")
   ) {
-    customElements.define("ah-media-gallery-v13", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v14", AhMediaCarousel);
   }
 }
