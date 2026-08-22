@@ -801,6 +801,8 @@ body {
 /* —— Velvet field + single scroll-linked spotlight —— */
 .site-atmosphere {
   inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .velvet-field {
