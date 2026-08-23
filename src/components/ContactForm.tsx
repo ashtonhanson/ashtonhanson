@@ -17,7 +17,7 @@ export function ContactForm() {
   if (state.ok) {
     return (
       <p className="contact-form-thanks" role="status">
-        Thanks — I’ll be in touch soon.
+        Thanks, I’ll be in touch soon.
       </p>
     );
   }
