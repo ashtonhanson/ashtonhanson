@@ -547,6 +547,7 @@ export class AhMediaCarousel extends ElementBase {
       layoutFrame = window.requestAnimationFrame(() => {
         layoutFrame = null;
         this.#layoutSlides();
+        this.#normalizeLoop();
       });
     });
     if (this.#track) this.#ro.observe(this.#track);
@@ -583,6 +584,7 @@ export class AhMediaCarousel extends ElementBase {
 
   #onResize = () => {
     this.#layoutSlides();
+    this.#normalizeLoop();
     this.#syncFocus();
   };
 
@@ -599,52 +601,57 @@ export class AhMediaCarousel extends ElementBase {
     });
   };
 
-  /** Width of one slide set — offset of the primary originals. */
-  #loopSpan() {
+  /** Distance from an original slide to its trailing clone — one full set. */
+  #loopPeriod() {
     if (this.#items.length < 2 || !this.#track) return 0;
-    const firstOriginal = this.#slideEl(0);
-    return firstOriginal?.offsetLeft ?? 0;
+    const original = this.#slideEl(0);
+    const clones = this.#track.querySelectorAll<HTMLElement>(
+      '[data-slide="0"][data-clone="1"]',
+    );
+    const trailing = clones.length ? clones[clones.length - 1] : null;
+    if (!original || !trailing) return 0;
+    return trailing.offsetLeft - original.offsetLeft;
+  }
+
+  /** ScrollLeft that centers the first original — start of the seamless band. */
+  #loopBandStart() {
+    const original = this.#slideEl(0);
+    if (!original) return 0;
+    return this.#slideScrollLeft(original);
+  }
+
+  #wrapScrollLeft(target: number) {
+    const maxLeft = this.#maxScroll();
+    const period = this.#loopPeriod();
+    if (period < 1) return Math.max(0, Math.min(maxLeft, target));
+
+    const start = this.#loopBandStart();
+    const offset = ((((target - start) % period) + period) % period);
+    return Math.max(0, Math.min(maxLeft, start + offset));
   }
 
   #setScrollLeft(target: number) {
     if (!this.#track) return;
-    const span = this.#loopSpan();
-    const maxLeft = this.#maxScroll();
-
-    if (span < 1 || this.#items.length < 2) {
-      this.#loopAdjusting = true;
-      this.#track.scrollLeft = Math.max(0, Math.min(maxLeft, target));
-      this.#loopAdjusting = false;
-      return;
-    }
-
-    let left = Math.max(0, Math.min(maxLeft, target));
-    if (left >= span * 2) left -= span;
-    else if (left < span) left += span;
-
     this.#loopAdjusting = true;
-    this.#track.scrollLeft = left;
+    this.#track.scrollLeft = this.#wrapScrollLeft(target);
     this.#loopAdjusting = false;
   }
 
   #normalizeLoop() {
     if (!this.#track || this.#loopAdjusting) return;
-    const span = this.#loopSpan();
-    if (span < 1) return;
+    const period = this.#loopPeriod();
+    if (period < 1) return;
+    const start = this.#loopBandStart();
     const left = this.#track.scrollLeft;
-    if (left >= span * 2 || left < span) {
+    if (left < start || left >= start + period) {
       this.#setScrollLeft(left);
     }
   }
 
   #ensureLoopAnchor() {
     if (!this.#track || this.#items.length < 2) return;
-    const span = this.#loopSpan();
-    if (span < 1) return;
-    const left = this.#track.scrollLeft;
-    if (left < span || left >= span * 2) {
-      this.#setScrollLeft(span);
-    }
+    if (this.#loopPeriod() < 1) return;
+    this.#setScrollLeft(this.#loopBandStart());
   }
 
   #slideEl(index: number) {
@@ -849,7 +856,7 @@ export class AhMediaCarousel extends ElementBase {
     const slide = this.#hoverTargetSlide;
     if (!slide) return;
 
-    const targetLeft = this.#slideScrollLeft(slide);
+    const targetLeft = this.#wrapScrollLeft(this.#slideScrollLeft(slide));
     const current = this.#track.scrollLeft;
     const delta = targetLeft - current;
 
@@ -1232,7 +1239,7 @@ export class AhMediaCarousel extends ElementBase {
   #centerSlide(index: number, animated: boolean) {
     const slide = this.#slideEl(index);
     if (!slide) return;
-    const targetLeft = this.#slideScrollLeft(slide);
+    const targetLeft = this.#wrapScrollLeft(this.#slideScrollLeft(slide));
     if (animated && !this.#reduced) {
       this.#animateScrollTo(targetLeft, FOCUS_GLIDE_MS, index);
     } else {
@@ -1621,7 +1628,7 @@ export class AhMediaCarousel extends ElementBase {
     const slide = this.#slideEl(clamped);
     if (!slide) return;
     this.#layoutSlides();
-    const targetLeft = this.#slideScrollLeft(slide);
+    const targetLeft = this.#wrapScrollLeft(this.#slideScrollLeft(slide));
     if (
       clamped === this.#targetIndex &&
       Math.abs(this.#track.scrollLeft - targetLeft) < 8
