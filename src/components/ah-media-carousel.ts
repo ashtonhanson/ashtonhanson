@@ -25,9 +25,10 @@ const FOCUS_GLIDE_MS = 2400;
 const HOVER_SCROLL_TAU_MS = 680;
 const FOCUS_LERP_MS = 320;
 const FOCUS_FALLOFF = 0.58;
-const MOMENTUM_MIN_VELOCITY = 0.015;
-const MOMENTUM_FRICTION_TAU_MS = 520;
-const DRAG_SAMPLE_MS = 120;
+const MOMENTUM_MIN_VELOCITY = 0.004;
+const MOMENTUM_FRICTION_TAU_MS = 1180;
+const MOMENTUM_RELEASE_BOOST = 1.16;
+const DRAG_SAMPLE_MS = 180;
 
 const STYLES = /* css */ `
 :host {
@@ -712,7 +713,7 @@ export class AhMediaCarousel extends ElementBase {
     const last = samples[samples.length - 1];
     const dt = last.t - first.t;
     if (dt < 8) return 0;
-    return -(last.x - first.x) / dt;
+    return (-(last.x - first.x) / dt) * MOMENTUM_RELEASE_BOOST;
   }
 
   #startMomentum(initialVelocity: number) {
@@ -742,7 +743,7 @@ export class AhMediaCarousel extends ElementBase {
 
       if (next <= 0 || next >= maxLeft) {
         next = Math.max(0, Math.min(maxLeft, next));
-        this.#momentumVelocity = 0;
+        this.#momentumVelocity *= 0.22;
       }
 
       this.#track.scrollLeft = next;
