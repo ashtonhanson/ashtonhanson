@@ -280,6 +280,7 @@ export class AhMediaCarousel extends ElementBase {
   #lastAutoNow = 0;
   #autoCarry = 0;
   #hoverTargetIndex = -1;
+  #hoverTargetSlide: HTMLElement | null = null;
   #hoverScrollCarry = 0;
   #io: IntersectionObserver | null = null;
   #ro: ResizeObserver | null = null;
@@ -301,6 +302,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#inView = false;
     this.#autoCarry = 0;
     this.#hoverTargetIndex = -1;
+    this.#hoverTargetSlide = null;
     this.#hoverScrollCarry = 0;
     this.#render();
     this.#layoutSlides();
@@ -427,6 +429,7 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   #normalizeLoop() {
+    if (this.#hoverTargetSlide || this.#hoverTargetIndex >= 0) return;
     const span = this.#loopSpan();
     if (span < 1 || !this.#track) return;
     if (this.#track.scrollLeft >= span) {
@@ -479,6 +482,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#cancelScrollAnimation();
     this.#autoCarry = 0;
     this.#hoverTargetIndex = -1;
+    this.#hoverTargetSlide = null;
     this.#hoverScrollCarry = 0;
     this.#active = 0;
     this.#targetIndex = 0;
@@ -518,6 +522,7 @@ export class AhMediaCarousel extends ElementBase {
 
     this.#cancelScrollAnimation();
     this.#hoverTargetIndex = -1;
+    this.#hoverTargetSlide = null;
     this.#hoverScrollCarry = 0;
     this.#dragging = true;
     this.#dragMoved = false;
@@ -611,7 +616,7 @@ export class AhMediaCarousel extends ElementBase {
       return;
     }
 
-    const slide = this.#slideEl(this.#hoverTargetIndex);
+    const slide = this.#hoverTargetSlide;
     if (!slide) return;
 
     const maxLeft = this.#maxScroll();
@@ -639,7 +644,6 @@ export class AhMediaCarousel extends ElementBase {
         0,
         Math.min(maxLeft, current + step),
       );
-      this.#normalizeLoop();
     }
   }
 
@@ -836,6 +840,7 @@ export class AhMediaCarousel extends ElementBase {
     const item = this.#items[index];
     if (!item) return;
     this.#hoverTargetIndex = -1;
+    this.#hoverTargetSlide = null;
     this.#hoverScrollCarry = 0;
     this.pauseAutoplay();
     this.dispatchEvent(
@@ -860,37 +865,46 @@ export class AhMediaCarousel extends ElementBase {
     return slide.offsetLeft - (this.#track.clientWidth - slide.offsetWidth) / 2;
   }
 
-  /** Map cursor X across the full track — padding and clipped edges included. */
-  #slideIndexAtClientX(clientX: number) {
+  /** Pick the physical slide under the cursor — original or loop clone. */
+  #slideAtClientX(clientX: number) {
     const slides = Array.from(
       this.#track.querySelectorAll<HTMLElement>("[data-slide]"),
     );
-    if (!slides.length) return -1;
+    if (!slides.length) return null;
 
     const trackRect = this.#track.getBoundingClientRect();
-    if (clientX <= trackRect.left) {
-      return Number(slides[0]!.dataset.slide);
-    }
-    if (clientX >= trackRect.right) {
-      return Number(slides[slides.length - 1]!.dataset.slide);
-    }
+    if (clientX <= trackRect.left) return slides[0]!;
+    if (clientX >= trackRect.right) return slides[slides.length - 1]!;
 
-    const centers = slides.map((slide) => {
+    let hit: HTMLElement | null = null;
+    let hitDist = Infinity;
+    for (const slide of slides) {
       const rect = slide.getBoundingClientRect();
-      return {
-        center: rect.left + rect.width / 2,
-        index: Number(slide.dataset.slide),
-      };
-    });
+      const zoneLeft = Math.max(rect.left, trackRect.left);
+      const zoneRight = Math.min(rect.right, trackRect.right);
+      if (clientX < zoneLeft || clientX > zoneRight) continue;
+      const mid = rect.left + rect.width / 2;
+      const dist = Math.abs(clientX - mid);
+      if (dist < hitDist) {
+        hitDist = dist;
+        hit = slide;
+      }
+    }
+    if (hit) return hit;
 
-    if (clientX <= centers[0]!.center) return centers[0]!.index;
+    const centers = slides.map((slide) => ({
+      slide,
+      center: slide.getBoundingClientRect().left + slide.getBoundingClientRect().width / 2,
+    }));
+
+    if (clientX <= centers[0]!.center) return centers[0]!.slide;
 
     for (let i = 0; i < centers.length - 1; i++) {
       const boundary = (centers[i]!.center + centers[i + 1]!.center) / 2;
-      if (clientX < boundary) return centers[i]!.index;
+      if (clientX < boundary) return centers[i]!.slide;
     }
 
-    return centers[centers.length - 1]!.index;
+    return centers[centers.length - 1]!.slide;
   }
 
   #centerSlide(index: number, animated: boolean) {
@@ -1110,6 +1124,7 @@ export class AhMediaCarousel extends ElementBase {
     if (!this.#items.length || !this.#track) return;
 
     this.#hoverTargetIndex = -1;
+    this.#hoverTargetSlide = null;
     this.#hoverScrollCarry = 0;
     const clamped = Math.max(0, Math.min(this.#items.length - 1, index));
     const slide = this.#slideEl(clamped);
@@ -1131,18 +1146,21 @@ export class AhMediaCarousel extends ElementBase {
     if (!this.#isDesktop() || this.#dragging || this.#lightboxOpen) {
       return;
     }
-    const index = this.#slideIndexAtClientX(event.clientX);
-    if (index < 0 || index === this.#hoverTargetIndex) return;
+    const slide = this.#slideAtClientX(event.clientX);
+    if (!slide || slide === this.#hoverTargetSlide) return;
 
     this.#cancelScrollAnimation();
-    this.#hoverTargetIndex = index;
-    this.#targetIndex = index;
+    this.#hoverTargetSlide = slide;
+    this.#hoverTargetIndex = Number(slide.dataset.slide);
+    this.#targetIndex = this.#hoverTargetIndex;
     this.#syncAutoPause();
   };
 
   #onTrackMouseLeave = () => {
     this.#hoverTargetIndex = -1;
+    this.#hoverTargetSlide = null;
     this.#hoverScrollCarry = 0;
+    this.#normalizeLoop();
     this.#syncAutoPause();
   };
 }
@@ -1157,15 +1175,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v26": AhMediaCarousel;
+    "ah-media-gallery-v27": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v26")
+    !customElements.get("ah-media-gallery-v27")
   ) {
-    customElements.define("ah-media-gallery-v26", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v27", AhMediaCarousel);
   }
 }
