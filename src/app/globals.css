@@ -653,6 +653,10 @@ body {
   }
 }
 
+.site-nav-desktop {
+  display: none;
+}
+
 .nav-burger {
   position: relative;
   display: inline-flex;
@@ -661,11 +665,27 @@ body {
   width: 2.4rem;
   height: 2.4rem;
   margin-right: -0.35rem;
+  margin-left: auto;
   padding: 0;
   border: 0;
   background: transparent;
   cursor: pointer;
   transform-style: preserve-3d;
+}
+
+@media (min-width: 768px) {
+  .site-nav-desktop {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-left: auto;
+    gap: 1.75rem;
+  }
+
+  .nav-burger,
+  .site-header-panel {
+    display: none !important;
+  }
 }
 
 .nav-burger-bars {
