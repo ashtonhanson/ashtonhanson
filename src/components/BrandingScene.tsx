@@ -656,14 +656,14 @@ export function BrandingScene({
             ) : null}
 
             {introForm ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-end px-3 pb-[6vh] pt-[22vh] md:justify-center md:pb-8 md:pt-[18vh]">
+              <div className="absolute inset-0 flex flex-col items-center justify-center overflow-y-auto px-3 py-6 md:py-8">
                 <div
                   ref={formLockupRef}
                   className="flex w-full max-w-lg flex-col items-center will-change-transform"
                   style={{
                     opacity: 0,
                     visibility: "hidden",
-                    transformOrigin: "50% 40%",
+                    transformOrigin: "50% 50%",
                   }}
                 >
                   <TitleShine as="p" className={FORM_TITLE_CLASS}>
