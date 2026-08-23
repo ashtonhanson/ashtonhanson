@@ -1,3 +1,14 @@
+import {
+  ABOUT_INTRO,
+  aboutZoomPath,
+  bodyZoomPath,
+  introElementPath,
+  sampleBezierPath,
+  sampleIntroPose,
+  type BezierPath,
+  type PathPose,
+} from "@/lib/cinematicDepth";
+
 export function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
 }
@@ -55,6 +66,8 @@ export type HandoffTiming = {
   span: number;
   finish: number;
 };
+
+export const BRANDING_LEAN = 1.42;
 
 export const BRANDING_INTRO: IntroTiming = {
   pinHeightVh: "520vh",
@@ -151,6 +164,7 @@ export function finaleExitPose(
   exitT: number,
   angle: ArriveAngle,
   kind: ArriveKind,
+  leanStrength = 1,
 ) {
   const e = easeInOutCubic(clamp(exitT, 0, 1));
   const fadeAt = PAGE_FINALE.fadeZoomT;
@@ -168,12 +182,16 @@ export function finaleExitPose(
   const scale = 1 + (peak - 1) * zoom;
   const z = PAGE_FINALE.peakZ * zoom;
   const u = 1 - vis;
+  const dirX = angle.x >= 0 ? 1 : -1;
+  const leanZ = dirX * (8.4 + Math.abs(angle.rot) * 0.35) * e * leanStrength;
+  const pitch =
+    (angle.y >= 0 ? -1 : 1) * (5.6 + Math.abs(angle.x) * 0.12) * e * leanStrength;
   return {
     opacity: vis,
     blur: PAGE_FINALE.blurPx * u,
     travelT: e,
     origin: "50% 50%",
-    transform: `translate3d(${(angle.x * 0.1 * e).toFixed(2)}vw, ${(angle.y * 0.06 * e).toFixed(2)}vh, ${z.toFixed(1)}px) rotateZ(${(angle.rot * 0.22 * e).toFixed(2)}deg) scale(${scale.toFixed(4)})`,
+    transform: `translate3d(${(angle.x * 0.1 * e).toFixed(2)}vw, ${(angle.y * 0.06 * e).toFixed(2)}vh, ${z.toFixed(1)}px) rotateX(${pitch.toFixed(2)}deg) rotateZ(${(angle.rot * 0.22 * e + leanZ).toFixed(2)}deg) scale(${scale.toFixed(4)})`,
   };
 }
 
@@ -226,18 +244,21 @@ export function arriveGrowTransform(
   t: number,
   angle: ArriveAngle,
   kind: ArriveKind,
+  leanStrength = 1,
 ) {
   const e = easeOutCubic(t);
   const u = 1 - e;
   const startScale = kind === "title" ? 0.28 : 0.36;
   const blur = (kind === "title" ? 16 : 11) * u;
   const dirX = angle.x >= 0 ? 1 : -1;
-  const lean = dirX * (5.2 + Math.abs(angle.rot) * 0.25) * u;
+  const lean = dirX * (5.2 + Math.abs(angle.rot) * 0.25) * u * leanStrength;
+  const pitch =
+    (angle.y >= 0 ? 1 : -1) * (4.4 + Math.abs(angle.x) * 0.09) * u * leanStrength;
   return {
     opacity: e,
     blur,
     origin: "50% 50%",
-    transform: `translate3d(${(angle.x * 0.7 * u).toFixed(2)}vw, ${(angle.y * 0.7 * u).toFixed(2)}vh, 0) rotateZ(${(angle.rot * u + lean).toFixed(2)}deg) scale(${(startScale + (1 - startScale) * e).toFixed(4)})`,
+    transform: `translate3d(${(angle.x * 0.7 * u).toFixed(2)}vw, ${(angle.y * 0.7 * u).toFixed(2)}vh, 0) rotateX(${pitch.toFixed(2)}deg) rotateZ(${(angle.rot * u + lean).toFixed(2)}deg) scale(${(startScale + (1 - startScale) * e).toFixed(4)})`,
   };
 }
 
@@ -245,31 +266,92 @@ export function arriveTransform(
   t: number,
   angle: ArriveAngle,
   kind: ArriveKind,
+  leanStrength = 1,
 ) {
   const u = 1 - easeOutCubic(t);
   const extra = kind === "title" ? 2.4 : kind === "media" ? 1.35 : 1.15;
   const scale = 1 + extra * u;
   const blur = (kind === "title" ? 20 : 14) * u;
   const dirX = angle.x >= 0 ? 1 : -1;
-  const lean = dirX * (6.4 + Math.abs(angle.rot) * 0.3) * u;
+  const lean = dirX * (6.4 + Math.abs(angle.rot) * 0.3) * u * leanStrength;
+  const pitch =
+    (angle.y >= 0 ? 1 : -1) * (5.2 + Math.abs(angle.x) * 0.1) * u * leanStrength;
   return {
     opacity: easeOutCubic(t),
     blur,
     origin: `${angle.x >= 0 ? "82%" : "18%"} ${angle.y >= 0 ? "78%" : "22%"}`,
-    transform: `translate3d(${(angle.x * u).toFixed(2)}vw, ${(angle.y * u).toFixed(2)}vh, 0) rotateZ(${(angle.rot * u + lean).toFixed(2)}deg) scale(${scale.toFixed(4)})`,
+    transform: `translate3d(${(angle.x * u).toFixed(2)}vw, ${(angle.y * u).toFixed(2)}vh, 0) rotateX(${pitch.toFixed(2)}deg) rotateZ(${(angle.rot * u + lean).toFixed(2)}deg) scale(${scale.toFixed(4)})`,
   };
 }
 
 /** Shrink + fade in the travel direction, leaning into the path. */
-export function shrinkOutPose(exitT: number, angle: ArriveAngle) {
+export function shrinkOutPose(
+  exitT: number,
+  angle: ArriveAngle,
+  leanStrength = 1,
+) {
   const e = easeInOutCubic(clamp(exitT, 0, 1));
   const dirX = angle.x >= 0 ? 1 : -1;
-  const tilt = dirX * (7.2 + Math.abs(angle.rot) * 0.35) * e;
+  const tilt = dirX * (7.2 + Math.abs(angle.rot) * 0.35) * e * leanStrength;
+  const pitch =
+    (angle.y >= 0 ? -1 : 1) * (4.8 + Math.abs(angle.x) * 0.1) * e * leanStrength;
   return {
     opacity: 1 - e,
     blur: 16 * e,
     travelT: e,
     origin: `${angle.x >= 0 ? "18%" : "82%"} ${angle.y >= 0 ? "22%" : "78%"}`,
-    transform: `translate3d(${(angle.x * 0.58 * e).toFixed(2)}vw, ${(angle.y * 0.58 * e).toFixed(2)}vh, 0) rotateZ(${tilt.toFixed(2)}deg) scale(${(1 - 0.84 * e).toFixed(4)})`,
+    transform: `translate3d(${(angle.x * 0.58 * e).toFixed(2)}vw, ${(angle.y * 0.58 * e).toFixed(2)}vh, 0) rotateX(${pitch.toFixed(2)}deg) rotateZ(${tilt.toFixed(2)}deg) scale(${(1 - 0.84 * e).toFixed(4)})`,
+  };
+}
+
+/** Branding page intro — title arrives from the left, rests right, exits lower. */
+export function brandingIntroElementPath(content: number): BezierPath {
+  switch (content) {
+    case 0:
+      return {
+        p0: { x: -12, y: 8, z: 0, scale: 1, rot: -5 },
+        p1: { x: 2, y: 4, z: 0, scale: 1, rot: 1.8 },
+        p2: { x: 10, y: 5, z: 0, scale: 1, rot: 4.2 },
+        p3: { x: 16, y: 12, z: 0, scale: 1, rot: 6.8 },
+      };
+    case 1:
+      return {
+        p0: { x: -10, y: 10, z: 0, scale: 1, rot: -2.5 },
+        p1: { x: 1, y: 5, z: 0, scale: 1, rot: 0.8 },
+        p2: { x: 6, y: 7, z: 0, scale: 1, rot: 2.2 },
+        p3: { x: 11, y: 15, z: 0, scale: 1, rot: 3.8 },
+      };
+    default:
+      return introElementPath(content);
+  }
+}
+
+/** Branding intro pin poses — cue unchanged; title/body use branding lateral paths. */
+export function sampleBrandingIntroPose(
+  index: number,
+  zoomT: number,
+  lifeT = zoomT,
+): PathPose {
+  if (index === 0) {
+    return sampleIntroPose(0, zoomT, lifeT);
+  }
+  const content = index - 1;
+  const lateral = sampleBezierPath(zoomT, brandingIntroElementPath(content));
+  const zoom =
+    content >= 2
+      ? sampleBezierPath(zoomT, bodyZoomPath())
+      : sampleBezierPath(zoomT, aboutZoomPath());
+  const scaleDelta = zoom.scale - 1;
+  const leanZ =
+    lateral.x >= 0 ? 1 : -1;
+  const leanRot = leanZ * scaleDelta * 4.8;
+  const leanPitch = (lateral.y >= 0 ? 1 : -1) * scaleDelta * 3.6;
+  return {
+    x: lateral.x,
+    y: lateral.y + ABOUT_INTRO.zoomAnchorY * zoomT,
+    z: zoom.z,
+    scale: zoom.scale,
+    rot: lateral.rot + leanRot,
+    rotX: leanPitch,
   };
 }

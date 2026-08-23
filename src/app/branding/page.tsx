@@ -15,6 +15,7 @@ export default function BrandingPage() {
         introLines={brandingIntroLines}
         cases={brandingCases}
         menu
+        brandingMotion
       />
     </>
   );

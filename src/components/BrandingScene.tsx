@@ -14,6 +14,7 @@ import {
   arriveT,
   arriveTransform,
   BRANDING_INTRO,
+  BRANDING_LEAN,
   clamp,
   easeInOutCubic,
   finaleExitPose,
@@ -22,6 +23,7 @@ import {
   HUB_HANDOFF,
   hubHandoffT,
   PAGE_FINALE,
+  sampleBrandingIntroPose,
   type ArriveKind,
   type HandoffTiming,
   type IntroTiming,
@@ -101,6 +103,8 @@ type BrandingSceneProps = {
   cases: CaseStudyType[];
   /** Last lockup — SEE MENU / FOR OTHER / WORK. Uses the same arrive as cases. */
   menu?: boolean;
+  /** Branding page — right-biased intro + stronger directional lean on text. */
+  brandingMotion?: boolean;
 };
 
 function paint(
@@ -132,6 +136,7 @@ export function BrandingScene({
   handoff: handoffOverride,
   cases,
   menu = false,
+  brandingMotion = false,
 }: BrandingSceneProps) {
   const pinRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -264,7 +269,9 @@ export function BrandingScene({
         );
         const lifeT =
           handoffIndex === 0 ? cueLifeT(progress, win) : vis.zoomT;
-        const pose = sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
+        const pose = brandingMotion
+          ? sampleBrandingIntroPose(handoffIndex, vis.zoomT, lifeT)
+          : sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
         if (handoffIndex === 0) {
           pose.y += cueArriveY(now - born);
         }
@@ -383,6 +390,7 @@ export function BrandingScene({
         ? [...finalePin.querySelectorAll<HTMLElement>("[data-arrive]")]
         : [];
       const finaleOuts = finaleWindows(finaleNodes.length);
+      const lean = brandingMotion ? BRANDING_LEAN : 1;
       nodes.forEach((el) => {
         const kind = (el.dataset.kind || "copy") as ArriveKind;
         const lag = Number(el.dataset.lag || 0);
@@ -435,6 +443,7 @@ export function BrandingScene({
             finaleExitT(finaleProgress, finaleWin),
             arriveAngle(index),
             kind,
+            lean,
           );
           poseEl.style.transformOrigin = out.origin;
           paintIdle(
@@ -454,8 +463,8 @@ export function BrandingScene({
           return;
         }
         const pose = el.hasAttribute("data-grow")
-          ? arriveGrowTransform(t, arriveAngle(index), kind)
-          : arriveTransform(t, arriveAngle(index), kind);
+          ? arriveGrowTransform(t, arriveAngle(index), kind, lean)
+          : arriveTransform(t, arriveAngle(index), kind, lean);
         poseEl.style.transformOrigin = pose.origin;
         paintIdle(
           poseEl,
@@ -503,7 +512,7 @@ export function BrandingScene({
       window.visualViewport?.removeEventListener("scroll", onScroll);
       window.visualViewport?.removeEventListener("resize", onScroll);
     };
-  }, [introLines.length, introTags.length, introSubtitle, introEmail, introForm, finale, cases.length, intro.pinHeightVh, intro.linesStart, intro.lineSpan, intro.holdAfter, intro.exitSpan, handoff.lead, handoff.span, handoff.finish]);
+  }, [introLines.length, introTags.length, introSubtitle, introEmail, introForm, finale, cases.length, brandingMotion, intro.pinHeightVh, intro.linesStart, intro.lineSpan, intro.holdAfter, intro.exitSpan, handoff.lead, handoff.span, handoff.finish]);
 
   let angleCursor =
     (introLines.length ? 1 : 0) +
