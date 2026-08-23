@@ -1396,19 +1396,32 @@ export class AhMediaCarousel extends ElementBase {
       });
   }
 
+  #playTargetIndex() {
+    if (!this.#inView || this.#lightboxOpen) return -1;
+    if (this.#isDesktop() && this.#hoverTargetIndex >= 0) {
+      return this.#hoverTargetIndex;
+    }
+    return -1;
+  }
+
   #syncPlayback() {
+    const playTarget = this.#playTargetIndex();
     const slides = this.#track.querySelectorAll<HTMLElement>("[data-slide]");
     slides.forEach((slide) => {
       const slideIndex = Number(slide.dataset.slide);
       const isClone = slide.dataset.clone === "1";
-      const video = slide.querySelector("video");
+      const video = slide.querySelector<HTMLVideoElement>("video");
       const active = !isClone && slideIndex === this.#active;
       slide.setAttribute("aria-hidden", active ? "false" : "true");
-      if (video) {
-        video.controls = false;
-        if (!active || !this.#inView || this.#lightboxOpen) {
-          video.pause();
-        }
+      if (!video) return;
+      video.controls = false;
+      video.muted = true;
+
+      const shouldPlay = !isClone && slideIndex === playTarget;
+      if (shouldPlay) {
+        void video.play().catch(() => undefined);
+      } else {
+        video.pause();
       }
     });
     this.#syncMediaSources();
@@ -1417,6 +1430,7 @@ export class AhMediaCarousel extends ElementBase {
 
   #primeVisibleVideos() {
     if (!this.#inView || !this.#track) return;
+    const playTarget = this.#playTargetIndex();
 
     this.#track
       .querySelectorAll<HTMLElement>('[data-slide]:not([data-clone="1"])')
@@ -1425,6 +1439,7 @@ export class AhMediaCarousel extends ElementBase {
         if (Number.isNaN(slideIndex)) return;
         const video = slide.querySelector<HTMLVideoElement>("video");
         if (!video || video.dataset.hydrated !== "1") return;
+        if (slideIndex === playTarget) return;
         const dist = Math.abs(slideIndex - this.#active);
         if (dist <= 2) this.#primeVideoFrame(video);
       });
@@ -1526,6 +1541,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#hoverTargetIndex = Number(slide.dataset.slide);
     this.#targetIndex = this.#hoverTargetIndex;
     this.#syncAutoPause();
+    this.#syncPlayback();
   };
 
   #onTrackMouseLeave = () => {
@@ -1534,6 +1550,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#hoverScrollCarry = 0;
     this.#normalizeLoop();
     this.#syncAutoPause();
+    this.#syncPlayback();
   };
 }
 
