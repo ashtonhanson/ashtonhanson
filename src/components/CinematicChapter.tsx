@@ -46,7 +46,7 @@ function paint(
   el.style.transform = transform;
   el.style.visibility = opacity < 0.02 ? "hidden" : "visible";
   el.style.pointerEvents =
-    opacity > (el.dataset.kind === "media" ? 0.15 : 0.65) ? "auto" : "none";
+    opacity > (el.dataset.kind === "media" ? 0.05 : 0.65) ? "auto" : "none";
 }
 
 

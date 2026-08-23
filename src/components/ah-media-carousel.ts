@@ -31,6 +31,7 @@ const STYLES = /* css */ `
   display: block;
   width: 100%;
   min-width: 0;
+  pointer-events: auto;
   color: #d2d2d2;
   font-family: var(--font-display, "Montserrat", system-ui, sans-serif);
 }
@@ -219,6 +220,100 @@ const STYLES = /* css */ `
 }
 `;
 
+const LIGHTBOX_STYLE_ID = "ah-media-lightbox-styles";
+
+const LIGHTBOX_STYLES = /* css */ `
+.ah-media-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+}
+
+.ah-media-lightbox__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgb(0 0 0 / 0.72);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  cursor: default;
+}
+
+.ah-media-lightbox__frame {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: min(72rem, 100%);
+  outline: none;
+}
+
+.ah-media-lightbox__close {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid rgb(214 208 186 / 0.45);
+  border-radius: 999px;
+  background: rgb(8 8 9 / 0.92);
+  color: rgb(232 223 196);
+  font-family: var(--font-display, "Montserrat", system-ui, sans-serif);
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 0 28px rgb(0 0 0 / 0.55);
+  transition: opacity 160ms ease;
+}
+
+.ah-media-lightbox__close:hover {
+  opacity: 0.8;
+}
+
+.ah-media-lightbox__media-wrap {
+  overflow: hidden;
+  border: 1px solid rgb(214 208 186 / 0.38);
+  border-radius: 1.25rem;
+  background: #080809;
+  box-shadow: 0 0 56px rgb(0 0 0 / 0.72);
+}
+
+.ah-media-lightbox__media {
+  display: block;
+  width: 100%;
+  max-height: min(78vh, 52rem);
+  object-fit: contain;
+  background: #000;
+}
+
+@media (min-width: 768px) {
+  .ah-media-lightbox {
+    padding: 2.5rem;
+  }
+
+  .ah-media-lightbox__close {
+    top: -0.75rem;
+    right: -0.75rem;
+  }
+}
+`;
+
+function ensureLightboxStyles() {
+  if (typeof document === "undefined") return;
+  if (document.getElementById(LIGHTBOX_STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = LIGHTBOX_STYLE_ID;
+  style.textContent = LIGHTBOX_STYLES;
+  document.head.appendChild(style);
+}
+
 function isVideo(item: CarouselMediaItem) {
   return item.type === "video" || /\.(mp4|webm|mov)$/i.test(item.src);
 }
@@ -288,6 +383,9 @@ export class AhMediaCarousel extends ElementBase {
   #hoverScrollCarry = 0;
   #io: IntersectionObserver | null = null;
   #ro: ResizeObserver | null = null;
+  #lightboxRoot: HTMLElement | null = null;
+  #lightboxKeyHandler: ((event: KeyboardEvent) => void) | null = null;
+  #bodyOverflow = "";
 
   constructor() {
     super();
@@ -389,6 +487,7 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   disconnectedCallback() {
+    this.#hideLightbox();
     this.#mq?.removeEventListener("change", this.#onReducedChange);
     window.removeEventListener("resize", this.#onResize);
     this.#track?.removeEventListener("scroll", this.#onScroll);
@@ -866,6 +965,7 @@ export class AhMediaCarousel extends ElementBase {
     slide.appendChild(frame);
 
     const openSlide = (event: Event) => {
+      event.preventDefault();
       event.stopPropagation();
       if (this.#suppressClick) {
         this.#suppressClick = false;
@@ -909,6 +1009,7 @@ export class AhMediaCarousel extends ElementBase {
     this.pauseAutoplay();
 
     const detail: GalleryOpenDetail = { ...item, index };
+    this.#showLightbox(detail);
     this.#onMediaOpen?.(detail);
     this.dispatchEvent(
       new CustomEvent<GalleryOpenDetail>("ah-media-open", {
@@ -917,6 +1018,69 @@ export class AhMediaCarousel extends ElementBase {
         detail,
       }),
     );
+  }
+
+  #showLightbox(detail: GalleryOpenDetail) {
+    if (typeof document === "undefined") return;
+    ensureLightboxStyles();
+    this.#hideLightbox(false);
+
+    const video = isVideo(detail);
+    const root = document.createElement("div");
+    root.className = "ah-media-lightbox";
+    root.setAttribute("role", "dialog");
+    root.setAttribute("aria-modal", "true");
+    root.setAttribute("aria-label", detail.alt);
+    root.innerHTML = `
+      <button type="button" class="ah-media-lightbox__backdrop" aria-label="Close media viewer"></button>
+      <div class="ah-media-lightbox__frame">
+        <button type="button" class="ah-media-lightbox__close" aria-label="Close">×</button>
+        <div class="ah-media-lightbox__media-wrap">
+          ${
+            video
+              ? `<video class="ah-media-lightbox__media" src="${escapeAttr(detail.src)}" controls autoplay playsinline aria-label="${escapeAttr(detail.alt)}"></video>`
+              : `<img class="ah-media-lightbox__media" src="${escapeAttr(detail.src)}" alt="${escapeAttr(detail.alt)}" />`
+          }
+        </div>
+      </div>
+    `;
+
+    const close = () => this.#hideLightbox();
+    root
+      .querySelector(".ah-media-lightbox__backdrop")
+      ?.addEventListener("click", close);
+    root
+      .querySelector(".ah-media-lightbox__close")
+      ?.addEventListener("click", close);
+    root
+      .querySelector(".ah-media-lightbox__media-wrap")
+      ?.addEventListener("click", (event) => event.stopPropagation());
+
+    this.#lightboxKeyHandler = (event) => {
+      if (event.key === "Escape") close();
+    };
+    window.addEventListener("keydown", this.#lightboxKeyHandler);
+
+    this.#bodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.body.appendChild(root);
+    this.#lightboxRoot = root;
+    (
+      root.querySelector(".ah-media-lightbox__close") as HTMLButtonElement | null
+    )?.focus();
+  }
+
+  #hideLightbox(resume = true) {
+    if (this.#lightboxKeyHandler) {
+      window.removeEventListener("keydown", this.#lightboxKeyHandler);
+      this.#lightboxKeyHandler = null;
+    }
+    this.#lightboxRoot?.remove();
+    this.#lightboxRoot = null;
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = this.#bodyOverflow;
+    }
+    if (resume && this.#lightboxOpen) this.resumeAutoplay();
   }
 
   #scheduleFocus(centerActive = false) {
@@ -1242,15 +1406,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v30": AhMediaCarousel;
+    "ah-media-gallery-v31": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v30")
+    !customElements.get("ah-media-gallery-v31")
   ) {
-    customElements.define("ah-media-gallery-v30", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v31", AhMediaCarousel);
   }
 }
