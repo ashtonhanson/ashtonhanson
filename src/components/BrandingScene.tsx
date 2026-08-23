@@ -24,6 +24,7 @@ import {
   hubHandoffT,
   PAGE_FINALE,
   sampleBrandingIntroPose,
+  TEXT_DIRECTIONAL_LEAN,
   type ArriveKind,
   type HandoffTiming,
   type IntroTiming,
@@ -390,7 +391,7 @@ export function BrandingScene({
         ? [...finalePin.querySelectorAll<HTMLElement>("[data-arrive]")]
         : [];
       const finaleOuts = finaleWindows(finaleNodes.length);
-      const lean = brandingMotion ? BRANDING_LEAN : 1;
+      const lean = brandingMotion ? BRANDING_LEAN : TEXT_DIRECTIONAL_LEAN;
       nodes.forEach((el) => {
         const kind = (el.dataset.kind || "copy") as ArriveKind;
         const lag = Number(el.dataset.lag || 0);

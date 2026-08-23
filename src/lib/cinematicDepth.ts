@@ -391,12 +391,17 @@ export function sampleIntroPose(
     content >= 2
       ? sampleBezierPath(zoomT, bodyZoomPath())
       : sampleBezierPath(zoomT, aboutZoomPath());
+  const scaleDelta = zoom.scale - 1;
+  const leanSign = lateral.x >= 0 ? 1 : -1;
+  const leanRot = leanSign * scaleDelta * 3.4;
+  const leanPitch = (lateral.y >= 0 ? 1 : -1) * scaleDelta * 2.6;
   return {
     x: lateral.x,
     y: lateral.y + ABOUT_INTRO.zoomAnchorY * zoomT,
     z: zoom.z,
     scale: zoom.scale,
-    rot: lateral.rot,
+    rot: lateral.rot + leanRot,
+    rotX: leanPitch,
   };
 }
 

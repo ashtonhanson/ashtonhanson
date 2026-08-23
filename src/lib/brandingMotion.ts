@@ -67,7 +67,11 @@ export type HandoffTiming = {
   finish: number;
 };
 
-export const BRANDING_LEAN = 1.42;
+/** Subtle directional pitch/lean on titles and body copy — noticeable, not exaggerated. */
+export const TEXT_DIRECTIONAL_LEAN = 1.28;
+
+/** Branding page intro gets a touch more bias on top of the global lean. */
+export const BRANDING_LEAN = 1.36;
 
 export const BRANDING_INTRO: IntroTiming = {
   pinHeightVh: "520vh",
@@ -164,7 +168,7 @@ export function finaleExitPose(
   exitT: number,
   angle: ArriveAngle,
   kind: ArriveKind,
-  leanStrength = 1,
+  leanStrength = TEXT_DIRECTIONAL_LEAN,
 ) {
   const e = easeInOutCubic(clamp(exitT, 0, 1));
   const fadeAt = PAGE_FINALE.fadeZoomT;
@@ -182,10 +186,11 @@ export function finaleExitPose(
   const scale = 1 + (peak - 1) * zoom;
   const z = PAGE_FINALE.peakZ * zoom;
   const u = 1 - vis;
+  const lean = textLean(kind, leanStrength);
   const dirX = angle.x >= 0 ? 1 : -1;
-  const leanZ = dirX * (8.4 + Math.abs(angle.rot) * 0.35) * e * leanStrength;
+  const leanZ = dirX * (8.4 + Math.abs(angle.rot) * 0.35) * e * lean;
   const pitch =
-    (angle.y >= 0 ? -1 : 1) * (5.6 + Math.abs(angle.x) * 0.12) * e * leanStrength;
+    (angle.y >= 0 ? -1 : 1) * (5.6 + Math.abs(angle.x) * 0.12) * e * lean;
   return {
     opacity: vis,
     blur: PAGE_FINALE.blurPx * u,
@@ -196,6 +201,10 @@ export function finaleExitPose(
 }
 
 export type ArriveKind = "title" | "copy" | "media";
+
+function textLean(kind: ArriveKind, strength: number) {
+  return kind === "media" ? 1 : strength;
+}
 
 /**
  * 0 = offstage (large + blurred), 1 = rest.
@@ -244,21 +253,22 @@ export function arriveGrowTransform(
   t: number,
   angle: ArriveAngle,
   kind: ArriveKind,
-  leanStrength = 1,
+  leanStrength = TEXT_DIRECTIONAL_LEAN,
 ) {
   const e = easeOutCubic(t);
   const u = 1 - e;
   const startScale = kind === "title" ? 0.28 : 0.36;
   const blur = (kind === "title" ? 16 : 11) * u;
+  const lean = textLean(kind, leanStrength);
   const dirX = angle.x >= 0 ? 1 : -1;
-  const lean = dirX * (5.2 + Math.abs(angle.rot) * 0.25) * u * leanStrength;
+  const leanZ = dirX * (5.2 + Math.abs(angle.rot) * 0.25) * u * lean;
   const pitch =
-    (angle.y >= 0 ? 1 : -1) * (4.4 + Math.abs(angle.x) * 0.09) * u * leanStrength;
+    (angle.y >= 0 ? 1 : -1) * (4.4 + Math.abs(angle.x) * 0.09) * u * lean;
   return {
     opacity: e,
     blur,
     origin: "50% 50%",
-    transform: `translate3d(${(angle.x * 0.7 * u).toFixed(2)}vw, ${(angle.y * 0.7 * u).toFixed(2)}vh, 0) rotateX(${pitch.toFixed(2)}deg) rotateZ(${(angle.rot * u + lean).toFixed(2)}deg) scale(${(startScale + (1 - startScale) * e).toFixed(4)})`,
+    transform: `translate3d(${(angle.x * 0.7 * u).toFixed(2)}vw, ${(angle.y * 0.7 * u).toFixed(2)}vh, 0) rotateX(${pitch.toFixed(2)}deg) rotateZ(${(angle.rot * u + leanZ).toFixed(2)}deg) scale(${(startScale + (1 - startScale) * e).toFixed(4)})`,
   };
 }
 
@@ -266,21 +276,22 @@ export function arriveTransform(
   t: number,
   angle: ArriveAngle,
   kind: ArriveKind,
-  leanStrength = 1,
+  leanStrength = TEXT_DIRECTIONAL_LEAN,
 ) {
   const u = 1 - easeOutCubic(t);
   const extra = kind === "title" ? 2.4 : kind === "media" ? 1.35 : 1.15;
   const scale = 1 + extra * u;
   const blur = (kind === "title" ? 20 : 14) * u;
+  const lean = textLean(kind, leanStrength);
   const dirX = angle.x >= 0 ? 1 : -1;
-  const lean = dirX * (6.4 + Math.abs(angle.rot) * 0.3) * u * leanStrength;
+  const leanZ = dirX * (6.4 + Math.abs(angle.rot) * 0.3) * u * lean;
   const pitch =
-    (angle.y >= 0 ? 1 : -1) * (5.2 + Math.abs(angle.x) * 0.1) * u * leanStrength;
+    (angle.y >= 0 ? 1 : -1) * (5.2 + Math.abs(angle.x) * 0.1) * u * lean;
   return {
     opacity: easeOutCubic(t),
     blur,
     origin: `${angle.x >= 0 ? "82%" : "18%"} ${angle.y >= 0 ? "78%" : "22%"}`,
-    transform: `translate3d(${(angle.x * u).toFixed(2)}vw, ${(angle.y * u).toFixed(2)}vh, 0) rotateX(${pitch.toFixed(2)}deg) rotateZ(${(angle.rot * u + lean).toFixed(2)}deg) scale(${scale.toFixed(4)})`,
+    transform: `translate3d(${(angle.x * u).toFixed(2)}vw, ${(angle.y * u).toFixed(2)}vh, 0) rotateX(${pitch.toFixed(2)}deg) rotateZ(${(angle.rot * u + leanZ).toFixed(2)}deg) scale(${scale.toFixed(4)})`,
   };
 }
 
@@ -288,7 +299,7 @@ export function arriveTransform(
 export function shrinkOutPose(
   exitT: number,
   angle: ArriveAngle,
-  leanStrength = 1,
+  leanStrength = TEXT_DIRECTIONAL_LEAN,
 ) {
   const e = easeInOutCubic(clamp(exitT, 0, 1));
   const dirX = angle.x >= 0 ? 1 : -1;
