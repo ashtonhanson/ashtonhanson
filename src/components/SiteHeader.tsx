@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { navLinks } from "@/lib/content";
+import { withIdleHover } from "@/lib/idleHover";
+import { createMousePullState, stepMousePull } from "@/lib/mousePull";
 
 function AhMark() {
   return (
@@ -34,6 +36,7 @@ function NavGlowLink({
   return (
     <Link
       href={href}
+      data-nav-pull=""
       className={`nav-glow ${active ? "is-active" : ""} ${className}`.trim()}
       style={style}
       onClick={onClick}
@@ -50,12 +53,55 @@ function NavGlowLink({
 export function SiteHeader() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (mq.matches) return;
+
+    const pulls = new WeakMap<HTMLElement, ReturnType<typeof createMousePullState>>();
+    let lastNow = performance.now();
+    let frame = 0;
+
+    const loop = (now: number) => {
+      frame = window.requestAnimationFrame(loop);
+      const dt = Math.min(48, now - lastNow);
+      lastNow = now;
+      if (document.hidden) return;
+      const root = rootRef.current;
+      if (!root) return;
+      root.querySelectorAll<HTMLElement>("[data-nav-pull]").forEach((el) => {
+        let state = pulls.get(el);
+        if (!state) {
+          state = createMousePullState();
+          pulls.set(el, state);
+        }
+        const pulled = stepMousePull(state, el, now, dt, "subtitle", 0.72);
+        el.style.transformStyle = "preserve-3d";
+        el.style.transform = withIdleHover("none", {
+          x: pulled.x,
+          y: pulled.y,
+          z: pulled.z,
+          rot: 0,
+          rotX: pulled.rotX,
+          rotY: pulled.rotY,
+        });
+      });
+    };
+
+    frame = window.requestAnimationFrame(loop);
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-line bg-nav/95 backdrop-blur-sm">
+    <header
+      ref={rootRef}
+      className="site-header sticky top-0 z-50 border-b border-line"
+    >
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-5 py-3 md:px-8 xl:max-w-7xl xl:px-12 2xl:px-16">
         <Link
           href="/"
+          data-nav-pull=""
           className="nav-glow is-active shrink-0 text-[1.45rem] font-semibold leading-none tracking-[0.06em]"
           style={
             {
@@ -97,6 +143,7 @@ export function SiteHeader() {
 
         <button
           type="button"
+          data-nav-pull=""
           className={`nav-burger md:hidden ${open ? "is-open" : ""}`.trim()}
           aria-expanded={open}
           aria-controls="mobile-nav"
@@ -114,7 +161,7 @@ export function SiteHeader() {
       {open ? (
         <nav
           id="mobile-nav"
-          className="border-t border-line bg-nav px-5 py-4 md:hidden"
+          className="site-header-panel border-t border-line px-5 py-4 md:hidden"
           aria-label="Mobile"
         >
           <ul className="flex flex-col gap-4">

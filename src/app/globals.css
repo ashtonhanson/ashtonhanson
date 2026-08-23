@@ -518,6 +518,18 @@ body {
   cursor: wait;
 }
 
+.site-header {
+  background: rgb(12 12 13 / 0.48);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+}
+
+.site-header-panel {
+  background: rgb(12 12 13 / 0.42);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+}
+
 /* Nav links — living uneven glow on active + hover */
 .nav-glow {
   position: relative;
@@ -631,6 +643,7 @@ body {
   border: 0;
   background: transparent;
   cursor: pointer;
+  transform-style: preserve-3d;
 }
 
 .nav-burger-bars {
@@ -647,6 +660,17 @@ body {
   height: 1.5px;
   width: 100%;
   border-radius: 1px;
+  background: var(--muted);
+  transform-origin: 50% 50%;
+  transition:
+    transform 0.28s ease,
+    opacity 0.28s ease,
+    background 0.4s ease,
+    filter 0.4s ease;
+}
+
+.nav-burger:hover .nav-burger-bars span,
+.nav-burger.is-open .nav-burger-bars span {
   background-image: linear-gradient(
     105deg,
     #7a7a78 0%,
@@ -663,12 +687,11 @@ body {
   background-position: 0% 40%;
   filter: drop-shadow(0 0 6px rgb(255 255 255 / 0.28))
     drop-shadow(0 0 14px rgb(220 220 210 / 0.16));
-  transform-origin: 50% 50%;
-  transition: transform 0.28s ease, opacity 0.28s ease;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .nav-burger-bars span {
+  .nav-burger:hover .nav-burger-bars span,
+  .nav-burger.is-open .nav-burger-bars span {
     animation:
       nav-glow-drift 10.5s ease-in-out infinite alternate,
       nav-glow-pulse 6.2s ease-in-out infinite;
