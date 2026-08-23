@@ -44,7 +44,7 @@ export const home = {
       type: "video" as const,
     },
     {
-      src: "/media/home/ai-animation/02-jax-and-the-angry-dog.mov?v=20260822",
+      src: "/media/home/ai-animation/02-jax-and-the-angry-dog-web.mp4",
       alt: "Jax and the Angry Dog",
       type: "video" as const,
     },
@@ -59,22 +59,22 @@ export const home = {
       type: "video" as const,
     },
     {
-      src: "/media/home/ai-animation/05-nike-ad.mov",
+      src: "/media/home/ai-animation/05-nike-ad-web.mp4",
       alt: "Nike Ad",
       type: "video" as const,
     },
     {
-      src: "/media/home/ai-animation/06-covert-auto-ad.mov",
+      src: "/media/home/ai-animation/06-covert-auto-ad-web.mp4",
       alt: "Covert Auto Ad",
       type: "video" as const,
     },
     {
-      src: "/media/home/ai-animation/07-bellas-hair-salon-ad.mov",
+      src: "/media/home/ai-animation/07-bellas-hair-salon-ad-web.mp4",
       alt: "Bellas Hair Salon Ad",
       type: "video" as const,
     },
     {
-      src: "/media/home/ai-animation/08-austin-rowing-club-ad.mov",
+      src: "/media/home/ai-animation/08-austin-rowing-club-ad-web.mp4",
       alt: "Austin Rowing Club Ad",
       type: "video" as const,
     },

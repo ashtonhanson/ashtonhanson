@@ -113,8 +113,6 @@ const STYLES = /* css */ `
 
 .slide-visual {
   transform-origin: 50% 50%;
-  transform-style: preserve-3d;
-  will-change: transform, opacity, filter;
   pointer-events: none;
 }
 
@@ -126,7 +124,6 @@ const STYLES = /* css */ `
   border-radius: 1.25rem;
   border: 1.5px solid rgb(214 208 186 / 0.38);
   background: #080809;
-  transform-style: preserve-3d;
   pointer-events: none;
 }
 
@@ -163,10 +160,13 @@ const STYLES = /* css */ `
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scale(1.08);
   transform-origin: center center;
   opacity: 1;
   pointer-events: none;
+}
+
+img.media {
+  transform: scale(1.08);
 }
 
 .controls {
@@ -1041,8 +1041,12 @@ export class AhMediaCarousel extends ElementBase {
       video.className = "media";
       video.playsInline = true;
       video.muted = true;
+      video.defaultMuted = true;
       video.loop = true;
-      video.preload = "none";
+      video.preload = "metadata";
+      video.setAttribute("playsinline", "");
+      video.setAttribute("webkit-playsinline", "");
+      video.setAttribute("muted", "");
       video.setAttribute("aria-label", item.alt);
       video.controls = false;
 
@@ -1147,7 +1151,7 @@ export class AhMediaCarousel extends ElementBase {
         <div class="ah-media-lightbox__media-wrap">
           ${
             video
-              ? `<video class="ah-media-lightbox__media" src="${escapeAttr(detail.src)}" controls autoplay playsinline aria-label="${escapeAttr(detail.alt)}"></video>`
+              ? `<video class="ah-media-lightbox__media" src="${escapeAttr(detail.src)}" controls autoplay muted playsinline webkit-playsinline aria-label="${escapeAttr(detail.alt)}"></video>`
               : `<img class="ah-media-lightbox__media" src="${escapeAttr(detail.src)}" alt="${escapeAttr(detail.alt)}" />`
           }
         </div>
@@ -1339,10 +1343,16 @@ export class AhMediaCarousel extends ElementBase {
       const blur = smoothed.blur;
       const pose = `scale(${scale.toFixed(4)})`;
       visual.style.transformOrigin = "50% 50%";
-      visual.style.transformStyle = "preserve-3d";
-      if (this.#reduced || !this.#isDesktop()) {
-        visual.style.transform = pose;
+      if (
+        this.#reduced ||
+        !this.#isDesktop() ||
+        window.matchMedia("(pointer: coarse)").matches
+      ) {
+        // Scale via transform blacks out <video> on Android Chrome.
+        visual.style.transform = "none";
+        visual.style.transformStyle = "flat";
       } else {
+        visual.style.transformStyle = "preserve-3d";
         const pull = stepMousePull(
           this.#pullFor(slide),
           visual,
@@ -1466,7 +1476,14 @@ export class AhMediaCarousel extends ElementBase {
     if (video.dataset.hydrated === "1" || !src) return;
     video.dataset.hydrated = "1";
     video.preload = "auto";
+    video.playsInline = true;
+    video.muted = true;
+    video.defaultMuted = true;
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
+    video.setAttribute("muted", "");
     video.src = src;
+    video.load();
   }
 
   #primeVideoFrame(video: HTMLVideoElement) {

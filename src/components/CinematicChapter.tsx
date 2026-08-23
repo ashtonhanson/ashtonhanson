@@ -40,14 +40,19 @@ function paint(
   opacity: number,
   blur: number,
   transform: string,
+  flat = false,
 ) {
   el.style.opacity = opacity.toFixed(3);
   el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none";
-  el.style.transformStyle = "preserve-3d";
+  el.style.transformStyle = flat ? "flat" : "preserve-3d";
   el.style.transform = transform;
   el.style.visibility = opacity < 0.02 ? "hidden" : "visible";
   el.style.pointerEvents =
     opacity > (el.dataset.kind === "media" ? 0.05 : 0.65) ? "auto" : "none";
+}
+
+function isCoarsePointer() {
+  return window.matchMedia("(pointer: coarse)").matches;
 }
 
 
@@ -105,6 +110,17 @@ export function CinematicChapter({
       ].sort(
         (a, b) => Number(a.dataset.index || 0) - Number(b.dataset.index || 0),
       );
+      const stage = stageRef.current;
+      if (stage) {
+        const use3d =
+          perspective &&
+          !(
+            isCoarsePointer() &&
+            nodes.some((node) => node.dataset.kind === "media")
+          );
+        stage.style.perspective = use3d ? "1180px" : "none";
+        stage.style.perspectiveOrigin = use3d ? "50% 42%" : "";
+      }
       if (!nodes.length) return;
 
       const progress = pinProgress(pin);
@@ -134,6 +150,11 @@ export function CinematicChapter({
           atRest: boolean,
           travelT: number,
         ) => {
+          // Android Chrome paints <video> black inside 3D / transformed ancestors.
+          if (kind === "media" && isCoarsePointer()) {
+            paint(el, opacity, atRest ? 0 : blur, "none", true);
+            return;
+          }
           const pull =
             pullKind && opacity > 0.04
               ? stepMousePull(
@@ -191,7 +212,7 @@ export function CinematicChapter({
 
     frame = window.requestAnimationFrame(loop);
     return () => window.cancelAnimationFrame(frame);
-  }, [angleOffset, exitMode]);
+  }, [angleOffset, exitMode, perspective]);
 
   const pinStyle: CSSProperties = {
     height: pinHeight,

@@ -41,8 +41,13 @@ yarn-error.log*
 
 # Local source masters — deploy compressed MP4s wired in content.ts
 /public/media/home/ai-animation/01-early-birds-intro.mov
+/public/media/home/ai-animation/02-jax-and-the-angry-dog.mov
 /public/media/home/ai-animation/03-man-wakes-up-on-moon.mov
 /public/media/home/ai-animation/04-manicure-for-strangers.mov
 /public/media/home/ai-animation/03-man-wakes-up-on-moon.mp4
 /public/media/home/ai-animation/04-manicure-for-strangers.mp4
+/public/media/home/ai-animation/05-nike-ad.mov
+/public/media/home/ai-animation/06-covert-auto-ad.mov
+/public/media/home/ai-animation/07-bellas-hair-salon-ad.mov
+/public/media/home/ai-animation/08-austin-rowing-club-ad.mov
 next-env.d.ts

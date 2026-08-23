@@ -199,6 +199,14 @@ export function BrandingScene({
       hideWhenGone = true,
     ) => {
       if (!el) return;
+      if (
+        pullKind === "gallery" &&
+        window.matchMedia("(pointer: coarse)").matches
+      ) {
+        paint(el, opacity, atRest ? 0 : blur, "none", hideWhenGone);
+        el.style.transformStyle = "flat";
+        return;
+      }
       const pull =
         pullKind && opacity > 0.04
           ? stepMousePull(
@@ -892,7 +900,7 @@ function ArriveMedia({
       data-kind="media"
       data-angle={angle}
       data-lag={lag}
-      className="mt-12 w-full max-w-5xl will-change-transform xl:mt-14 xl:max-w-6xl 2xl:max-w-7xl"
+      className="mt-12 w-full max-w-5xl md:will-change-transform xl:mt-14 xl:max-w-6xl 2xl:max-w-7xl"
       style={{ opacity: 0, transformOrigin: "50% 40%" }}
     >
       {plate ? (
