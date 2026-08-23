@@ -176,14 +176,18 @@ export function AboutIntroStage({
           handoffIndex === 0 && now - born < ABOUT_INTRO.cueArriveMs;
         const atRest = !arriving && opacity >= 0.98 && blur < 0.4;
         const travelT = 1 - opacity;
-        const pull = stepMousePull(
-          pullFor(el),
-          el,
-          now,
-          dt,
-          handoffIndex <= 2 ? "title" : "body",
-          1 - travelT,
-        );
+        const isBodyLine = handoffIndex >= 3;
+        const inBodyZoom = isBodyLine && vis.zoomT > 0.06 && vis.zoomT < 0.94;
+        const pull = inBodyZoom
+          ? undefined
+          : stepMousePull(
+              pullFor(el),
+              el,
+              now,
+              dt,
+              handoffIndex <= 2 ? "title" : "body",
+              1 - travelT,
+            );
         applyHandoffStyle(
           el,
           opacity,
@@ -194,9 +198,9 @@ export function AboutIntroStage({
             now,
             dt,
             handoffIndex + 3,
-            atRest,
+            atRest && !inBodyZoom,
             travelT,
-            handoffIndex === 0 ? (arriving ? 0 : 2.2) : 1,
+            isBodyLine ? 0 : handoffIndex === 0 ? (arriving ? 0 : 2.2) : 1,
             pull,
           ),
         );

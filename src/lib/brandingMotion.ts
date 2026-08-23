@@ -3,6 +3,7 @@ import {
   aboutZoomPath,
   bodyZoomPath,
   introElementPath,
+  introDirectionalLean,
   sampleBezierPath,
   sampleIntroPose,
   type BezierPath,
@@ -347,22 +348,19 @@ export function sampleBrandingIntroPose(
     return sampleIntroPose(0, zoomT, lifeT);
   }
   const content = index - 1;
-  const lateral = sampleBezierPath(zoomT, brandingIntroElementPath(content));
+  const lateralPath = brandingIntroElementPath(content);
+  const lateral = sampleBezierPath(zoomT, lateralPath);
   const zoom =
     content >= 2
       ? sampleBezierPath(zoomT, bodyZoomPath())
       : sampleBezierPath(zoomT, aboutZoomPath());
-  const scaleDelta = zoom.scale - 1;
-  const leanZ =
-    lateral.x >= 0 ? 1 : -1;
-  const leanRot = leanZ * scaleDelta * 4.8;
-  const leanPitch = (lateral.y >= 0 ? 1 : -1) * scaleDelta * 3.6;
+  const lean = introDirectionalLean(lateralPath, zoomT, zoom.scale, content);
   return {
     x: lateral.x,
     y: lateral.y + ABOUT_INTRO.zoomAnchorY * zoomT,
     z: zoom.z,
     scale: zoom.scale,
-    rot: lateral.rot + leanRot,
-    rotX: leanPitch,
+    rot: lateral.rot + lean.leanRot,
+    rotX: lean.rotX,
   };
 }

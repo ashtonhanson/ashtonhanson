@@ -233,14 +233,39 @@ function zoomProgress(progress: number, win: IntroHandoff) {
   if (progress <= start) return 0;
   if (progress >= gone) return 1;
 
-  if (progress <= fadeAt) {
-    const t = (progress - start) / Math.max(fadeAt - start, 0.0001);
-    const shaped = win.appearEnd <= win.appearStart ? t : easeInOutCubic(t);
+  const total = Math.max(gone - start, 0.0001);
+  const fadeAtU = clamp((fadeAt - start) / total, 0.0001, 0.999);
+  const u = clamp((progress - start) / total, 0, 1);
+
+  if (u <= fadeAtU) {
+    const t = u / fadeAtU;
+    const shaped = win.appearEnd <= win.appearStart ? t : smootherstep(t);
     return fadeZ * shaped;
   }
 
-  const t = (progress - fadeAt) / Math.max(gone - fadeAt, 0.0001);
-  return fadeZ + (1 - fadeZ) * t;
+  const t = (u - fadeAtU) / (1 - fadeAtU);
+  return fadeZ + (1 - fadeZ) * smootherstep(t);
+}
+
+/** Lean from path travel direction — stable sign, no mid-path flip. */
+export function introDirectionalLean(
+  path: BezierPath,
+  zoomT: number,
+  scale: number,
+  content: number,
+) {
+  if (content >= 2) {
+    return { rotX: 0, leanRot: 0 };
+  }
+  const eased = smootherstep(zoomT);
+  const scaleDelta = Math.max(0, scale - 1);
+  const dirX = path.p3.x - path.p0.x;
+  const dirY = path.p3.y - path.p0.y;
+  const leanSign = dirX >= 0 ? 1 : -1;
+  return {
+    leanRot: leanSign * scaleDelta * 2.8 * eased,
+    rotX: (dirY >= 0 ? 1 : -1) * scaleDelta * 2 * eased,
+  };
 }
 
 /**
@@ -386,22 +411,20 @@ export function sampleIntroPose(
     };
   }
   const content = index - 1;
-  const lateral = sampleBezierPath(zoomT, introElementPath(content));
+  const lateralPath = introElementPath(content);
+  const lateral = sampleBezierPath(zoomT, lateralPath);
   const zoom =
     content >= 2
       ? sampleBezierPath(zoomT, bodyZoomPath())
       : sampleBezierPath(zoomT, aboutZoomPath());
-  const scaleDelta = zoom.scale - 1;
-  const leanSign = lateral.x >= 0 ? 1 : -1;
-  const leanRot = leanSign * scaleDelta * 3.4;
-  const leanPitch = (lateral.y >= 0 ? 1 : -1) * scaleDelta * 2.6;
+  const lean = introDirectionalLean(lateralPath, zoomT, zoom.scale, content);
   return {
     x: lateral.x,
     y: lateral.y + ABOUT_INTRO.zoomAnchorY * zoomT,
     z: zoom.z,
     scale: zoom.scale,
-    rot: lateral.rot + leanRot,
-    rotX: leanPitch,
+    rot: lateral.rot + lean.leanRot,
+    rotX: lean.rotX,
   };
 }
 
