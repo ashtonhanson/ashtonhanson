@@ -417,6 +417,7 @@ export class AhMediaCarousel extends ElementBase {
   #lightboxKeyHandler: ((event: KeyboardEvent) => void) | null = null;
   #bodyOverflow = "";
   #loopAdjusting = false;
+  #lastCloneSync = 0;
 
   constructor() {
     super();
@@ -497,7 +498,7 @@ export class AhMediaCarousel extends ElementBase {
       this.#inView = true;
       this.#syncMediaSources();
       this.#primeVisibleVideos();
-      this.#mirrorCloneMedia();
+      this.#mirrorCloneMedia(true);
     } else if (!shouldBeInView && this.#inView) {
       this.#inView = false;
       this.#syncPlayback();
@@ -522,7 +523,7 @@ export class AhMediaCarousel extends ElementBase {
             this.#inView = true;
             this.#syncMediaSources();
             this.#primeVisibleVideos();
-            this.#mirrorCloneMedia();
+            this.#mirrorCloneMedia(true);
           } else {
             this.#syncMediaSources();
             this.#primeVisibleVideos();
@@ -628,6 +629,20 @@ export class AhMediaCarousel extends ElementBase {
     const start = this.#loopBandStart();
     const offset = ((((target - start) % period) + period) % period);
     return Math.max(0, Math.min(maxLeft, start + offset));
+  }
+
+  /**
+   * Signed distance to `to`, taking the shorter way around the seam. Every
+   * slide exists three times, so a raw subtraction can point a full set the
+   * wrong way and drag the track back over slides it just passed.
+   */
+  #shortestDelta(from: number, to: number) {
+    const period = this.#loopPeriod();
+    if (period < 1) return to - from;
+    let delta = (to - from) % period;
+    if (delta > period / 2) delta -= period;
+    if (delta < -period / 2) delta += period;
+    return delta;
   }
 
   #setScrollLeft(target: number) {
@@ -837,6 +852,7 @@ export class AhMediaCarousel extends ElementBase {
         this.#stepHoverFocus(dt);
       }
       this.#syncFocus(now, dt);
+      this.#mirrorCloneMedia();
     };
     this.#motionRaf = window.requestAnimationFrame(tick);
   }
@@ -858,7 +874,7 @@ export class AhMediaCarousel extends ElementBase {
 
     const targetLeft = this.#wrapScrollLeft(this.#slideScrollLeft(slide));
     const current = this.#track.scrollLeft;
-    const delta = targetLeft - current;
+    const delta = this.#shortestDelta(current, targetLeft);
 
     if (Math.abs(delta) < 0.35) {
       if (current !== targetLeft) this.#setScrollLeft(targetLeft);
@@ -1381,8 +1397,6 @@ export class AhMediaCarousel extends ElementBase {
         this.#syncPlayback();
       }
     }
-
-    this.#mirrorCloneMedia();
   }
 
   #mirrorCloneFocus() {
@@ -1401,7 +1415,15 @@ export class AhMediaCarousel extends ElementBase {
       });
   }
 
-  #mirrorCloneMedia() {
+  /**
+   * Seeking every clone on every frame stalls the decoder, so only reconcile
+   * periodically and only when a clone has actually drifted.
+   */
+  #mirrorCloneMedia(force = false) {
+    const now = performance.now();
+    if (!force && now - this.#lastCloneSync < 250) return;
+    this.#lastCloneSync = now;
+
     this.#track
       .querySelectorAll<HTMLElement>('[data-clone="1"]')
       .forEach((clone) => {
@@ -1425,6 +1447,11 @@ export class AhMediaCarousel extends ElementBase {
           if (originalVideo.readyState < 2) return;
           cloneVideo.classList.add("is-loaded");
           cloneVideo.dataset.primed = "1";
+          if (
+            Math.abs(cloneVideo.currentTime - originalVideo.currentTime) < 0.25
+          ) {
+            return;
+          }
           try {
             cloneVideo.currentTime = originalVideo.currentTime;
           } catch {
@@ -1547,15 +1574,8 @@ export class AhMediaCarousel extends ElementBase {
       if (Number.isNaN(slideIndex)) return;
       const video = slide.querySelector<HTMLVideoElement>("video");
       if (!video || video.dataset.hydrated !== "1") return;
-      if (!slide.dataset.clone && slideIndex === playTarget) return;
-      if (slide.dataset.clone) {
-        const original = this.#slideEl(slideIndex);
-        const originalVideo = original?.querySelector<HTMLVideoElement>("video");
-        if (originalVideo?.dataset.primed === "1") {
-          this.#mirrorCloneMedia();
-        }
-        return;
-      }
+      if (slide.dataset.clone) return;
+      if (slideIndex === playTarget) return;
       const dist = Math.abs(slideIndex - this.#active);
       if (dist <= 2) this.#primeVideoFrame(video);
     });
@@ -1586,7 +1606,7 @@ export class AhMediaCarousel extends ElementBase {
     if (this.#scrollRaf) window.cancelAnimationFrame(this.#scrollRaf);
 
     const start = this.#track.scrollLeft;
-    const delta = targetLeft - start;
+    const delta = this.#shortestDelta(start, targetLeft);
     if (Math.abs(delta) < 0.5) {
       this.#active = targetIndex;
       this.#targetIndex = targetIndex;
@@ -1631,7 +1651,7 @@ export class AhMediaCarousel extends ElementBase {
     const targetLeft = this.#wrapScrollLeft(this.#slideScrollLeft(slide));
     if (
       clamped === this.#targetIndex &&
-      Math.abs(this.#track.scrollLeft - targetLeft) < 8
+      Math.abs(this.#shortestDelta(this.#track.scrollLeft, targetLeft)) < 8
     ) {
       return;
     }
@@ -1645,12 +1665,14 @@ export class AhMediaCarousel extends ElementBase {
       return;
     }
     const slide = this.#slideAtClientX(event.clientX);
-    if (!slide || slide === this.#hoverTargetSlide) return;
+    if (!slide) return;
+    const index = Number(slide.dataset.slide);
+    if (Number.isNaN(index) || index === this.#hoverTargetIndex) return;
 
     this.#cancelScrollAnimation();
-    this.#hoverTargetSlide = slide;
-    this.#hoverTargetIndex = Number(slide.dataset.slide);
-    this.#targetIndex = this.#hoverTargetIndex;
+    this.#hoverTargetSlide = this.#slideEl(index) ?? slide;
+    this.#hoverTargetIndex = index;
+    this.#targetIndex = index;
     this.#syncAutoPause();
     this.#syncPlayback();
   };
