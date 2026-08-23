@@ -164,7 +164,7 @@ export function CinematicChapter({
           const pose =
             exitMode === "scale"
               ? finaleExitPose(exitT, angle, kind)
-              : shrinkOutPose(exitT, angle);
+              : shrinkOutPose(exitT, angle, kind);
           el.style.transformOrigin = pose.origin;
           paintItem(
             pose.opacity,
@@ -207,7 +207,7 @@ export function CinematicChapter({
         className="absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-clip px-5 md:px-8 xl:px-12 2xl:px-16"
         style={
           perspective
-            ? { perspective: "1400px", perspectiveOrigin: "50% 42%" }
+            ? { perspective: "1180px", perspectiveOrigin: "50% 42%" }
             : undefined
         }
       >

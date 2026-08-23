@@ -125,9 +125,9 @@ export const PAGE_FINALE = {
   overlap: 0.055,
   packTo: 1,
   fadeZoomT: 0.7,
-  peakScaleTitle: 2.7,
+  peakScaleTitle: 2.45,
   peakScaleMedia: 2.15,
-  peakScaleCopy: 2.35,
+  peakScaleCopy: 2.12,
   peakZ: 220,
   blurPx: 12,
   stageFadeStart: 0.9,
@@ -188,16 +188,13 @@ export function finaleExitPose(
   const z = PAGE_FINALE.peakZ * zoom;
   const u = 1 - vis;
   const lean = textLean(kind, leanStrength);
-  const dirX = angle.x >= 0 ? 1 : -1;
-  const leanZ = dirX * (8.4 + Math.abs(angle.rot) * 0.35) * e * lean;
-  const pitch =
-    (angle.y >= 0 ? -1 : 1) * (5.6 + Math.abs(angle.x) * 0.12) * e * lean;
+  const tilt = perspectiveTilt(angle, e, lean, "exit");
   return {
     opacity: vis,
     blur: PAGE_FINALE.blurPx * u,
     travelT: e,
     origin: "50% 50%",
-    transform: `translate3d(${(angle.x * 0.1 * e).toFixed(2)}vw, ${(angle.y * 0.06 * e).toFixed(2)}vh, ${z.toFixed(1)}px) rotateX(${pitch.toFixed(2)}deg) rotateZ(${(angle.rot * 0.22 * e + leanZ).toFixed(2)}deg) scale(${scale.toFixed(4)})`,
+    transform: `translate3d(${(angle.x * 0.1 * e).toFixed(2)}vw, ${(angle.y * 0.06 * e).toFixed(2)}vh, ${(z + tilt.depth).toFixed(1)}px) rotateY(${tilt.yaw.toFixed(2)}deg) rotateX(${tilt.pitch.toFixed(2)}deg) rotateZ(${(angle.rot * 0.22 * e + tilt.roll).toFixed(2)}deg) scale(${scale.toFixed(4)})`,
   };
 }
 
@@ -206,6 +203,25 @@ export type ArriveKind = "title" | "copy" | "media";
 function textLean(kind: ArriveKind, strength: number) {
   if (kind === "media") return 1;
   return kind === "title" ? strength * 1.08 : strength;
+}
+
+/** 3D tilt into the travel direction — separate from scale magnitude. */
+function perspectiveTilt(
+  angle: ArriveAngle,
+  travel: number,
+  lean: number,
+  mode: "arrive" | "exit" = "arrive",
+) {
+  const dirX = angle.x >= 0 ? 1 : -1;
+  const dirY = angle.y >= 0 ? 1 : -1;
+  const pitchSign = mode === "exit" ? -1 : 1;
+  const t = clamp(travel, 0, 1);
+  return {
+    pitch: pitchSign * dirY * (7.4 + Math.abs(angle.x) * 0.14) * t * lean,
+    yaw: dirX * (6.2 + Math.abs(angle.y) * 0.11) * t * lean,
+    roll: dirX * (8.6 + Math.abs(angle.rot) * 0.42) * t * lean,
+    depth: t * 32 * lean * (mode === "exit" ? -1 : 1),
+  };
 }
 
 /**
@@ -262,15 +278,12 @@ export function arriveGrowTransform(
   const startScale = kind === "title" ? 0.28 : 0.36;
   const blur = (kind === "title" ? 16 : 11) * u;
   const lean = textLean(kind, leanStrength);
-  const dirX = angle.x >= 0 ? 1 : -1;
-  const leanZ = dirX * (5.2 + Math.abs(angle.rot) * 0.25) * u * lean;
-  const pitch =
-    (angle.y >= 0 ? 1 : -1) * (4.4 + Math.abs(angle.x) * 0.09) * u * lean;
+  const tilt = perspectiveTilt(angle, u, lean);
   return {
     opacity: e,
     blur,
     origin: "50% 50%",
-    transform: `translate3d(${(angle.x * 0.7 * u).toFixed(2)}vw, ${(angle.y * 0.7 * u).toFixed(2)}vh, 0) rotateX(${pitch.toFixed(2)}deg) rotateZ(${(angle.rot * u + leanZ).toFixed(2)}deg) scale(${(startScale + (1 - startScale) * e).toFixed(4)})`,
+    transform: `translate3d(${(angle.x * 0.7 * u).toFixed(2)}vw, ${(angle.y * 0.7 * u).toFixed(2)}vh, ${tilt.depth.toFixed(1)}px) rotateY(${tilt.yaw.toFixed(2)}deg) rotateX(${tilt.pitch.toFixed(2)}deg) rotateZ(${(angle.rot * u + tilt.roll).toFixed(2)}deg) scale(${(startScale + (1 - startScale) * e).toFixed(4)})`,
   };
 }
 
@@ -285,15 +298,12 @@ export function arriveTransform(
   const scale = 1 + extra * u;
   const blur = (kind === "title" ? 20 : 14) * u;
   const lean = textLean(kind, leanStrength);
-  const dirX = angle.x >= 0 ? 1 : -1;
-  const leanZ = dirX * (6.4 + Math.abs(angle.rot) * 0.3) * u * lean;
-  const pitch =
-    (angle.y >= 0 ? 1 : -1) * (5.2 + Math.abs(angle.x) * 0.1) * u * lean;
+  const tilt = perspectiveTilt(angle, u, lean);
   return {
     opacity: easeOutCubic(t),
     blur,
     origin: `${angle.x >= 0 ? "82%" : "18%"} ${angle.y >= 0 ? "78%" : "22%"}`,
-    transform: `translate3d(${(angle.x * u).toFixed(2)}vw, ${(angle.y * u).toFixed(2)}vh, 0) rotateX(${pitch.toFixed(2)}deg) rotateZ(${(angle.rot * u + leanZ).toFixed(2)}deg) scale(${scale.toFixed(4)})`,
+    transform: `translate3d(${(angle.x * u).toFixed(2)}vw, ${(angle.y * u).toFixed(2)}vh, ${tilt.depth.toFixed(1)}px) rotateY(${tilt.yaw.toFixed(2)}deg) rotateX(${tilt.pitch.toFixed(2)}deg) rotateZ(${(angle.rot * u + tilt.roll).toFixed(2)}deg) scale(${scale.toFixed(4)})`,
   };
 }
 
@@ -301,19 +311,18 @@ export function arriveTransform(
 export function shrinkOutPose(
   exitT: number,
   angle: ArriveAngle,
+  kind: ArriveKind = "copy",
   leanStrength = TEXT_DIRECTIONAL_LEAN,
 ) {
   const e = easeInOutCubic(clamp(exitT, 0, 1));
-  const dirX = angle.x >= 0 ? 1 : -1;
-  const tilt = dirX * (7.2 + Math.abs(angle.rot) * 0.35) * e * leanStrength;
-  const pitch =
-    (angle.y >= 0 ? -1 : 1) * (4.8 + Math.abs(angle.x) * 0.1) * e * leanStrength;
+  const lean = textLean(kind, leanStrength);
+  const tilt = perspectiveTilt(angle, e, lean, "exit");
   return {
     opacity: 1 - e,
     blur: 16 * e,
     travelT: e,
     origin: `${angle.x >= 0 ? "18%" : "82%"} ${angle.y >= 0 ? "22%" : "78%"}`,
-    transform: `translate3d(${(angle.x * 0.58 * e).toFixed(2)}vw, ${(angle.y * 0.58 * e).toFixed(2)}vh, 0) rotateX(${pitch.toFixed(2)}deg) rotateZ(${tilt.toFixed(2)}deg) scale(${(1 - 0.84 * e).toFixed(4)})`,
+    transform: `translate3d(${(angle.x * 0.58 * e).toFixed(2)}vw, ${(angle.y * 0.58 * e).toFixed(2)}vh, ${tilt.depth.toFixed(1)}px) rotateY(${tilt.yaw.toFixed(2)}deg) rotateX(${tilt.pitch.toFixed(2)}deg) rotateZ(${tilt.roll.toFixed(2)}deg) scale(${(1 - 0.84 * e).toFixed(4)})`,
   };
 }
 
@@ -340,6 +349,7 @@ export function sampleIntroBodyPose(zoomT: number): PathPose {
     scale: zoom.scale,
     rot: lateral.rot + lean.leanRot,
     rotX: lean.rotX,
+    rotY: lean.rotY,
   };
 }
 
@@ -389,5 +399,6 @@ export function sampleBrandingIntroPose(
     scale: zoom.scale,
     rot: lateral.rot + lean.leanRot,
     rotX: lean.rotX,
+    rotY: lean.rotY,
   };
 }

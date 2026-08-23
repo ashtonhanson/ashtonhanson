@@ -98,6 +98,8 @@ export type PathPose = {
   rot: number;
   /** Pitch toward camera (deg). Omitted = 0. */
   rotX?: number;
+  /** Yaw for lateral depth (deg). Omitted = 0. */
+  rotY?: number;
 };
 
 export type BezierPath = {
@@ -247,7 +249,7 @@ function zoomProgress(progress: number, win: IntroHandoff) {
   return fadeZ + (1 - fadeZ) * smootherstep(t);
 }
 
-/** Lean from path travel direction — stable sign, no mid-path flip. */
+/** Lean from path travel direction — stable sign, perspective tied to motion not scale size. */
 export function introDirectionalLean(
   path: BezierPath,
   zoomT: number,
@@ -255,16 +257,18 @@ export function introDirectionalLean(
   content: number,
 ) {
   if (content >= 2) {
-    return { rotX: 0, leanRot: 0 };
+    return { rotX: 0, rotY: 0, leanRot: 0 };
   }
-  const eased = smootherstep(zoomT);
-  const scaleDelta = Math.max(0, scale - 1);
+  const travel = smootherstep(zoomT);
+  const scaleNudge = Math.min(Math.max(0, scale - 1), 1.4) * 0.28;
+  const perspective = travel * (0.72 + scaleNudge);
   const dirX = path.p3.x - path.p0.x;
   const dirY = path.p3.y - path.p0.y;
   const leanSign = dirX >= 0 ? 1 : -1;
   return {
-    leanRot: leanSign * scaleDelta * 3.3 * eased,
-    rotX: (dirY >= 0 ? 1 : -1) * scaleDelta * 2.4 * eased,
+    leanRot: leanSign * perspective * 12,
+    rotX: (dirY >= 0 ? 1 : -1) * perspective * 9,
+    rotY: leanSign * perspective * 6.5,
   };
 }
 
@@ -425,6 +429,7 @@ export function sampleIntroPose(
     scale: zoom.scale,
     rot: lateral.rot + lean.leanRot,
     rotX: lean.rotX,
+    rotY: lean.rotY,
   };
 }
 
@@ -464,7 +469,8 @@ export function sampleBezierPathEased(t: number, path: BezierPath): PathPose {
 
 export function poseToTransform(pose: PathPose) {
   const rotX = pose.rotX ?? 0;
-  return `translate3d(${pose.x.toFixed(2)}vw, ${pose.y.toFixed(2)}vh, ${pose.z.toFixed(1)}px) rotateX(${rotX.toFixed(2)}deg) rotateZ(${pose.rot.toFixed(2)}deg) scale(${pose.scale.toFixed(4)})`;
+  const rotY = pose.rotY ?? 0;
+  return `translate3d(${pose.x.toFixed(2)}vw, ${pose.y.toFixed(2)}vh, ${pose.z.toFixed(1)}px) rotateY(${rotY.toFixed(2)}deg) rotateX(${rotX.toFixed(2)}deg) rotateZ(${pose.rot.toFixed(2)}deg) scale(${pose.scale.toFixed(4)})`;
 }
 
 /** Fixed stage-light beam in viewport coordinates (for title shine). */

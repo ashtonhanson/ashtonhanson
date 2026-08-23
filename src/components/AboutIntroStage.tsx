@@ -231,7 +231,7 @@ export function AboutIntroStage({
         ref={stageRef}
         className="about-intro-stage absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] items-center justify-center overflow-visible px-5 md:px-8 xl:px-12"
         style={{
-          perspective: "1400px",
+          perspective: "1180px",
           perspectiveOrigin: "50% 54%",
           zIndex: 20,
         }}
