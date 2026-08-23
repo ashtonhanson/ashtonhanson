@@ -20,8 +20,10 @@ const OPACITY_MAX = 1;
 const BLUR_MAX = 4;
 const AUTO_PX_PER_SEC = 46;
 const USER_PAUSE_MS = 4200;
-const FOCUS_GLIDE_MS = 1300;
-const HOVER_DELAY_MS = 40;
+const FOCUS_GLIDE_MS = 2100;
+const HOVER_DELAY_MS = 70;
+const FOCUS_LERP_MS = 160;
+const FOCUS_GLIDE_LERP_MS = 70;
 
 const STYLES = /* css */ `
 :host {
@@ -218,8 +220,8 @@ function isVideo(item: CarouselMediaItem) {
   return item.type === "video" || /\.(mp4|webm|mov)$/i.test(item.src);
 }
 
-function easeOutCubic(t: number) {
-  return 1 - (1 - t) ** 3;
+function easeInOutCubic(t: number) {
+  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
 }
 
 const ElementBase =
@@ -262,6 +264,10 @@ export class AhMediaCarousel extends ElementBase {
   #prevBtn!: HTMLButtonElement;
   #nextBtn!: HTMLButtonElement;
   #pullMap = new WeakMap<HTMLElement, MousePullState>();
+  #focusMap = new WeakMap<
+    HTMLElement,
+    { scale: number; opacity: number; blur: number }
+  >();
   #motionRaf: number | null = null;
   #lastMotionNow = 0;
   #inView = false;
@@ -791,6 +797,8 @@ export class AhMediaCarousel extends ElementBase {
     const gliding = Boolean(this.#scrollRaf);
     const dt = Math.min(48, now - (this.#lastMotionNow || now));
     this.#lastMotionNow = now;
+    const focusTau = gliding ? FOCUS_GLIDE_LERP_MS : FOCUS_LERP_MS;
+    const focusK = 1 - Math.exp(-dt / focusTau);
 
     const trackRect = this.#track.getBoundingClientRect();
     const rootMid = trackRect.left + trackRect.width / 2;
@@ -808,9 +816,27 @@ export class AhMediaCarousel extends ElementBase {
       const amount = Math.max(0, Math.min(1, 1 - dist / falloff));
       const focus = 1 - (1 - amount) * (1 - amount);
 
-      const scale = SCALE_MIN + focus * (SCALE_MAX - SCALE_MIN);
-      const opacity = OPACITY_MIN + focus * (OPACITY_MAX - OPACITY_MIN);
-      const blur = BLUR_MAX * (1 - focus);
+      const targetScale = SCALE_MIN + focus * (SCALE_MAX - SCALE_MIN);
+      const targetOpacity = OPACITY_MIN + focus * (OPACITY_MAX - OPACITY_MIN);
+      const targetBlur = BLUR_MAX * (1 - focus);
+
+      let smoothed = this.#focusMap.get(slide);
+      if (!smoothed) {
+        smoothed = {
+          scale: targetScale,
+          opacity: targetOpacity,
+          blur: targetBlur,
+        };
+        this.#focusMap.set(slide, smoothed);
+      } else {
+        smoothed.scale += (targetScale - smoothed.scale) * focusK;
+        smoothed.opacity += (targetOpacity - smoothed.opacity) * focusK;
+        smoothed.blur += (targetBlur - smoothed.blur) * focusK;
+      }
+
+      const scale = smoothed.scale;
+      const opacity = smoothed.opacity;
+      const blur = smoothed.blur;
       const pose = `scale(${scale.toFixed(4)})`;
       slide.style.transformOrigin = "50% 50%";
       slide.style.transformStyle = "preserve-3d";
@@ -915,7 +941,7 @@ export class AhMediaCarousel extends ElementBase {
     const startTime = performance.now();
     const step = (now: number) => {
       const t = Math.min(1, (now - startTime) / duration);
-      this.#track.scrollLeft = Math.round(start + delta * easeOutCubic(t));
+      this.#track.scrollLeft = start + delta * easeInOutCubic(t);
       this.#syncFocus(now);
       if (t < 1) {
         this.#scrollRaf = window.requestAnimationFrame(step);
@@ -934,7 +960,6 @@ export class AhMediaCarousel extends ElementBase {
 
   #goTo(index: number) {
     if (!this.#items.length || !this.#track) return;
-    if (this.#scrollRaf) return;
 
     const clamped = Math.max(0, Math.min(this.#items.length - 1, index));
     const slide = this.#track.querySelector<HTMLElement>(
@@ -955,7 +980,7 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   #onTrackMouseMove = (event: MouseEvent) => {
-    if (!this.#isDesktop() || this.#dragging || this.#lightboxOpen || this.#scrollRaf) {
+    if (!this.#isDesktop() || this.#dragging || this.#lightboxOpen) {
       return;
     }
     const slide = (event.target as HTMLElement).closest<HTMLElement>("[data-slide]");
@@ -965,7 +990,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#hoverIndex = index;
     if (this.#hoverTimer) window.clearTimeout(this.#hoverTimer);
     this.#hoverTimer = window.setTimeout(() => {
-      if (this.#scrollRaf || this.#dragging) return;
+      if (this.#dragging) return;
       this.#goTo(index);
     }, HOVER_DELAY_MS);
   };
@@ -989,15 +1014,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v22": AhMediaCarousel;
+    "ah-media-gallery-v23": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v22")
+    !customElements.get("ah-media-gallery-v23")
   ) {
-    customElements.define("ah-media-gallery-v22", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v23", AhMediaCarousel);
   }
 }
