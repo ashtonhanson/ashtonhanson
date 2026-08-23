@@ -17,7 +17,7 @@ const SCALE_MIN = 0.9;
 const SCALE_MAX = 1.08;
 const OPACITY_MIN = 0.5;
 const OPACITY_MAX = 1;
-const BLUR_MAX = 4;
+const BLUR_MAX = 3;
 const AUTO_PX_PER_SEC = 46;
 const USER_PAUSE_MS = 4200;
 const FOCUS_GLIDE_MS = 2400;
@@ -832,6 +832,32 @@ export class AhMediaCarousel extends ElementBase {
     return slide.offsetLeft - (this.#track.clientWidth - slide.offsetWidth) / 2;
   }
 
+  /** Map cursor X across the full track — padding and clipped edges included. */
+  #slideIndexAtClientX(clientX: number) {
+    const slides = Array.from(
+      this.#track.querySelectorAll<HTMLElement>("[data-slide]"),
+    );
+    if (!slides.length) return -1;
+
+    const trackRect = this.#track.getBoundingClientRect();
+    if (clientX <= trackRect.left) return 0;
+    if (clientX >= trackRect.right) return slides.length - 1;
+
+    const centers = slides.map((slide) => {
+      const rect = slide.getBoundingClientRect();
+      return rect.left + rect.width / 2;
+    });
+
+    if (clientX <= centers[0]!) return 0;
+
+    for (let i = 0; i < centers.length - 1; i++) {
+      const boundary = (centers[i]! + centers[i + 1]!) / 2;
+      if (clientX < boundary) return i;
+    }
+
+    return slides.length - 1;
+  }
+
   #centerSlide(index: number, animated: boolean) {
     const slide = this.#track.querySelector<HTMLElement>(
       `[data-slide="${index}"]`,
@@ -879,10 +905,12 @@ export class AhMediaCarousel extends ElementBase {
       const dist = Math.abs(mid - rootMid);
       const amount = Math.max(0, Math.min(1, 1 - dist / falloff));
       const focus = smoothstep(amount);
+      const centerClearPx = Math.max(10, slide.offsetWidth * 0.045);
+      const isCentered = dist <= centerClearPx;
 
       const targetScale = SCALE_MIN + focus * (SCALE_MAX - SCALE_MIN);
       const targetOpacity = OPACITY_MIN + focus * (OPACITY_MAX - OPACITY_MIN);
-      const targetBlur = BLUR_MAX * (1 - focus);
+      const targetBlur = isCentered ? 0 : BLUR_MAX * (1 - focus);
 
       let smoothed = this.#focusMap.get(slide);
       if (!smoothed) {
@@ -892,6 +920,10 @@ export class AhMediaCarousel extends ElementBase {
           blur: targetBlur,
         };
         this.#focusMap.set(slide, smoothed);
+      } else if (isCentered) {
+        smoothed.scale += (SCALE_MAX - smoothed.scale) * focusK;
+        smoothed.opacity = OPACITY_MAX;
+        smoothed.blur = 0;
       } else {
         smoothed.scale += (targetScale - smoothed.scale) * focusK;
         smoothed.opacity += (targetOpacity - smoothed.opacity) * focusK;
@@ -925,7 +957,7 @@ export class AhMediaCarousel extends ElementBase {
         });
       }
       slide.style.opacity = String(opacity);
-      slide.style.filter = `blur(${blur.toFixed(2)}px)`;
+      slide.style.filter = blur < 0.08 ? "none" : `blur(${blur.toFixed(2)}px)`;
 
       if (amount > bestAmount) {
         bestAmount = amount;
@@ -1061,11 +1093,8 @@ export class AhMediaCarousel extends ElementBase {
     if (!this.#isDesktop() || this.#dragging || this.#lightboxOpen) {
       return;
     }
-    const slide = (event.target as HTMLElement).closest<HTMLElement>("[data-slide]");
-    if (!slide) return;
-    const index = Number(slide.dataset.slide);
-    if (Number.isNaN(index)) return;
-    if (index === this.#hoverTargetIndex) return;
+    const index = this.#slideIndexAtClientX(event.clientX);
+    if (index < 0 || index === this.#hoverTargetIndex) return;
 
     this.#cancelScrollAnimation();
     this.#hoverTargetIndex = index;
@@ -1090,15 +1119,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v24": AhMediaCarousel;
+    "ah-media-gallery-v25": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v24")
+    !customElements.get("ah-media-gallery-v25")
   ) {
-    customElements.define("ah-media-gallery-v24", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v25", AhMediaCarousel);
   }
 }
