@@ -425,6 +425,7 @@ export class AhMediaCarousel extends ElementBase {
   #lightboxRoot: HTMLElement | null = null;
   #lightboxKeyHandler: ((event: KeyboardEvent) => void) | null = null;
   #bodyOverflow = "";
+  #loopAdjusting = false;
 
   constructor() {
     super();
@@ -598,7 +599,7 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   #onScroll = () => {
-    if (this.#scrollFrame) return;
+    if (this.#loopAdjusting || this.#scrollFrame) return;
     this.#scrollFrame = window.requestAnimationFrame(() => {
       this.#scrollFrame = null;
       this.#normalizeLoop();
@@ -606,80 +607,46 @@ export class AhMediaCarousel extends ElementBase {
     });
   };
 
-  /** Width of the first full item set — used for seamless infinite scroll. */
+  /** Width of one full slide set — offset of the primary originals. */
   #loopSpan() {
     if (this.#items.length < 2 || !this.#track) return 0;
-    const clone = this.#track.querySelector<HTMLElement>('[data-clone="1"]');
-    return clone?.offsetLeft ?? 0;
+    const firstOriginal = this.#slideEl(0);
+    return firstOriginal?.offsetLeft ?? 0;
   }
 
-  #normalizeLoop() {
-    if (!this.#track) return;
-    const span = this.#loopSpan();
-    if (span < 1) return;
-    if (this.#track.scrollLeft >= span) {
-      this.#track.scrollLeft -= span;
-      this.#reconcileFocusAfterLoop();
-    }
-  }
-
-  #reconcileFocusAfterLoop() {
-    this.#track
-      .querySelectorAll<HTMLElement>('[data-clone="1"]')
-      .forEach((clone) => {
-        const index = Number(clone.dataset.slide);
-        if (Number.isNaN(index)) return;
-        const original = this.#slideEl(index);
-        if (!original) return;
-
-        const cloneFocus = this.#focusMap.get(clone);
-        if (cloneFocus) {
-          this.#focusMap.set(original, { ...cloneFocus });
-        }
-
-        const cloneVisual =
-          clone.querySelector<HTMLElement>(".slide-visual") ?? clone;
-        const originalVisual =
-          original.querySelector<HTMLElement>(".slide-visual") ?? original;
-        originalVisual.style.transform = cloneVisual.style.transform;
-        originalVisual.style.opacity = cloneVisual.style.opacity;
-        originalVisual.style.filter = cloneVisual.style.filter;
-
-        const cloneVideo = clone.querySelector<HTMLVideoElement>("video");
-        const originalVideo = original.querySelector<HTMLVideoElement>("video");
-        if (
-          cloneVideo &&
-          originalVideo &&
-          cloneVideo.dataset.hydrated === "1" &&
-          cloneVideo.readyState >= 2
-        ) {
-          if (originalVideo.dataset.hydrated !== "1" && originalVideo.dataset.src) {
-            this.#hydrateVideo(originalVideo, originalVideo.dataset.src);
-          }
-          try {
-            originalVideo.currentTime = cloneVideo.currentTime;
-          } catch {
-            /* ignore seek errors on some mobile browsers */
-          }
-        }
-      });
-  }
-
-  #commitScrollLeft(target: number) {
+  #setScrollLeft(target: number) {
     if (!this.#track) return;
     const span = this.#loopSpan();
     const maxLeft = this.#maxScroll();
 
     if (span < 1 || this.#items.length < 2) {
+      this.#loopAdjusting = true;
       this.#track.scrollLeft = Math.max(0, Math.min(maxLeft, target));
+      this.#loopAdjusting = false;
       return;
     }
 
     let left = Math.max(0, Math.min(maxLeft, target));
-    const wrapped = left >= span;
-    while (left >= span) left -= span;
+    if (left >= span * 2) left -= span;
+    else if (left < span) left += span;
+
+    this.#loopAdjusting = true;
     this.#track.scrollLeft = left;
-    if (wrapped) this.#reconcileFocusAfterLoop();
+    this.#loopAdjusting = false;
+  }
+
+  #normalizeLoop() {
+    if (!this.#track || this.#loopAdjusting) return;
+    const span = this.#loopSpan();
+    if (span < 1) return;
+    const left = this.#track.scrollLeft;
+    if (left >= span * 2 || left < span) {
+      this.#setScrollLeft(left);
+    }
+  }
+
+  #commitScrollLeft(target: number) {
+    this.#setScrollLeft(target);
   }
 
   #slideEl(index: number) {
@@ -732,9 +699,9 @@ export class AhMediaCarousel extends ElementBase {
     this.#active = 0;
     this.#targetIndex = 0;
     this.#autoDir = 1;
-    if (this.#track) this.#track.scrollLeft = 0;
     this.#layoutSlides();
     this.#centerSlide(0, false);
+    this.#normalizeLoop();
     this.#updateChrome();
     this.#syncPlayback();
   }
@@ -1013,15 +980,7 @@ export class AhMediaCarousel extends ElementBase {
       this.#autoCarry -= step;
 
       let next = this.#track.scrollLeft + step;
-      const span = this.#loopSpan();
-      if (span >= 1) {
-        while (next >= span) next -= span;
-        const wrapped = next < this.#track.scrollLeft;
-        this.#track.scrollLeft = next;
-        if (wrapped) this.#reconcileFocusAfterLoop();
-      } else {
-        this.#commitScrollLeft(next);
-      }
+      this.#setScrollLeft(next);
     };
 
     this.#autoRaf = window.requestAnimationFrame(tick);
@@ -1092,6 +1051,12 @@ export class AhMediaCarousel extends ElementBase {
 
     this.#track.innerHTML = "";
     this.#dots.innerHTML = "";
+
+    if (this.#items.length > 1) {
+      this.#items.forEach((item, index) => {
+        this.#track.appendChild(this.#createSlide(item, index, true));
+      });
+    }
 
     this.#items.forEach((item, index) => {
       this.#track.appendChild(this.#createSlide(item, index));
@@ -1356,19 +1321,15 @@ export class AhMediaCarousel extends ElementBase {
     if (animated && !this.#reduced) {
       this.#animateScrollTo(targetLeft, FOCUS_GLIDE_MS, index);
     } else {
-      this.#track.scrollLeft = Math.max(
-        0,
-        Math.min(
-          Math.max(0, this.#track.scrollWidth - this.#track.clientWidth),
-          targetLeft,
-        ),
-      );
+      this.#setScrollLeft(targetLeft);
     }
   }
 
   #syncFocus(now = performance.now(), dtOverride?: number) {
     const slides = Array.from(
-      this.#track.querySelectorAll<HTMLElement>("[data-slide]"),
+      this.#track.querySelectorAll<HTMLElement>(
+        '[data-slide]:not([data-clone="1"])',
+      ),
     );
     if (!slides.length) return;
 
@@ -1456,16 +1417,10 @@ export class AhMediaCarousel extends ElementBase {
         bestAmount = amount;
         best = slideIndex;
         bestSlide = slide;
-      } else if (
-        amount >= bestAmount - 0.001 &&
-        slide.dataset.clone !== "1" &&
-        bestSlide?.dataset.clone === "1"
-      ) {
-        bestAmount = amount;
-        best = slideIndex;
-        bestSlide = slide;
       }
     });
+
+    this.#mirrorCloneFocus();
 
     slides.forEach((slide) => {
       slide.style.zIndex = slide === bestSlide ? "2" : "1";
@@ -1490,6 +1445,23 @@ export class AhMediaCarousel extends ElementBase {
         this.#syncPlayback();
       }
     }
+  }
+
+  #mirrorCloneFocus() {
+    this.#track
+      .querySelectorAll<HTMLElement>('[data-clone="1"]')
+      .forEach((clone) => {
+        const index = Number(clone.dataset.slide);
+        const original = this.#slideEl(index);
+        if (!original) return;
+        const originalVisual =
+          original.querySelector<HTMLElement>(".slide-visual") ?? original;
+        const cloneVisual =
+          clone.querySelector<HTMLElement>(".slide-visual") ?? clone;
+        cloneVisual.style.transform = originalVisual.style.transform;
+        cloneVisual.style.opacity = originalVisual.style.opacity;
+        cloneVisual.style.filter = originalVisual.style.filter;
+      });
   }
 
   #hydrateVideo(video: HTMLVideoElement, src: string) {
@@ -1674,9 +1646,8 @@ export class AhMediaCarousel extends ElementBase {
       if (t < 1) {
         this.#scrollRaf = window.requestAnimationFrame(step);
       } else {
-        this.#track.scrollLeft = end;
+        this.#setScrollLeft(end);
         this.#scrollRaf = null;
-        this.#normalizeLoop();
         this.#active = targetIndex;
         this.#targetIndex = targetIndex;
         this.#syncFocus(now);
