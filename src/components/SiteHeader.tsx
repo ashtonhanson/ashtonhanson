@@ -4,7 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { navLinks } from "@/lib/content";
-import { withIdleHover } from "@/lib/idleHover";
+import {
+  composeIdleTransform,
+  createIdleHoverState,
+  type IdleHoverState,
+} from "@/lib/idleHover";
 import { createMousePullState, stepMousePull } from "@/lib/mousePull";
 
 function AhMark() {
@@ -36,15 +40,16 @@ function NavGlowLink({
   return (
     <Link
       href={href}
-      data-nav-pull=""
       className={`nav-glow ${active ? "is-active" : ""} ${className}`.trim()}
       style={style}
       onClick={onClick}
       aria-current={active ? "page" : undefined}
     >
-      <span className="nav-glow-base">{label}</span>
-      <span aria-hidden className="nav-glow-live">
-        {label}
+      <span data-nav-pull="" className="relative inline-block [transform-style:preserve-3d]">
+        <span className="nav-glow-base">{label}</span>
+        <span aria-hidden className="nav-glow-live">
+          {label}
+        </span>
       </span>
     </Link>
   );
@@ -59,7 +64,11 @@ export function SiteHeader() {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (mq.matches) return;
 
-    const pulls = new WeakMap<HTMLElement, ReturnType<typeof createMousePullState>>();
+    const pulls = new WeakMap<
+      HTMLElement,
+      ReturnType<typeof createMousePullState>
+    >();
+    const idles = new WeakMap<HTMLElement, IdleHoverState>();
     let lastNow = performance.now();
     let frame = 0;
 
@@ -70,22 +79,30 @@ export function SiteHeader() {
       if (document.hidden) return;
       const root = rootRef.current;
       if (!root) return;
-      root.querySelectorAll<HTMLElement>("[data-nav-pull]").forEach((el) => {
-        let state = pulls.get(el);
-        if (!state) {
-          state = createMousePullState();
-          pulls.set(el, state);
+      root.querySelectorAll<HTMLElement>("[data-nav-pull]").forEach((el, index) => {
+        let pull = pulls.get(el);
+        if (!pull) {
+          pull = createMousePullState();
+          pulls.set(el, pull);
         }
-        const pulled = stepMousePull(state, el, now, dt, "subtitle", 0.72);
+        let idle = idles.get(el);
+        if (!idle) {
+          idle = createIdleHoverState();
+          idles.set(el, idle);
+        }
+        const pulled = stepMousePull(pull, el, now, dt, "title");
         el.style.transformStyle = "preserve-3d";
-        el.style.transform = withIdleHover("none", {
-          x: pulled.x,
-          y: pulled.y,
-          z: pulled.z,
-          rot: 0,
-          rotX: pulled.rotX,
-          rotY: pulled.rotY,
-        });
+        el.style.transform = composeIdleTransform(
+          idle,
+          "none",
+          now,
+          dt,
+          index + 3,
+          true,
+          0,
+          1.55,
+          pulled,
+        );
       });
     };
 
@@ -98,10 +115,9 @@ export function SiteHeader() {
       ref={rootRef}
       className="site-header sticky top-0 z-50 border-b border-line"
     >
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-5 py-3 md:px-8 xl:max-w-7xl xl:px-12 2xl:px-16">
+      <div className="site-header-row mx-auto flex max-w-6xl items-center justify-between gap-6 px-5 py-3 md:px-8 xl:max-w-7xl xl:px-12 2xl:px-16">
         <Link
           href="/"
-          data-nav-pull=""
           className="nav-glow is-active shrink-0 text-[1.45rem] font-semibold leading-none tracking-[0.06em]"
           style={
             {
@@ -113,7 +129,9 @@ export function SiteHeader() {
           aria-label="Ashton Hanson Design home"
           onClick={() => setOpen(false)}
         >
-          <AhMark />
+          <span data-nav-pull="" className="relative inline-block [transform-style:preserve-3d]">
+            <AhMark />
+          </span>
         </Link>
 
         <nav className="hidden items-center gap-7 md:flex" aria-label="Primary">
@@ -143,17 +161,18 @@ export function SiteHeader() {
 
         <button
           type="button"
-          data-nav-pull=""
           className={`nav-burger md:hidden ${open ? "is-open" : ""}`.trim()}
           aria-expanded={open}
           aria-controls="mobile-nav"
           aria-label={open ? "Close menu" : "Open menu"}
           onClick={() => setOpen((v) => !v)}
         >
-          <span className="nav-burger-bars" aria-hidden="true">
-            <span />
-            <span />
-            <span />
+          <span data-nav-pull="" className="relative inline-block [transform-style:preserve-3d]">
+            <span className="nav-burger-bars" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </span>
           </span>
         </button>
       </div>
