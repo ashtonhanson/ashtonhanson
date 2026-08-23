@@ -127,6 +127,10 @@ const STYLES = /* css */ `
   pointer-events: none;
 }
 
+:host(.is-stills) .frame {
+  aspect-ratio: 1 / 1;
+}
+
 @media (min-width: 768px) {
   .slide {
     max-width: 42rem;
@@ -932,6 +936,10 @@ export class AhMediaCarousel extends ElementBase {
   #render() {
     this.#stopAutoplay();
     this.#cancelScrollAnimation();
+    this.classList.toggle(
+      "is-stills",
+      this.#items.length > 0 && this.#items.every((item) => !isVideo(item)),
+    );
     const label = this.#label();
 
     this.#root.innerHTML = `
@@ -1063,7 +1071,7 @@ export class AhMediaCarousel extends ElementBase {
       const img = document.createElement("img");
       img.className = "media";
       img.decoding = "async";
-      img.loading = index > 0 ? "lazy" : "eager";
+      img.loading = "eager";
       img.alt = item.alt;
       img.src = item.src;
       const markLoaded = () => {
