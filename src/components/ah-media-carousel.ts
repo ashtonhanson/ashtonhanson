@@ -236,88 +236,106 @@ const LIGHTBOX_STYLES = /* css */ `
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.25rem;
+  padding: 1.75rem 1.25rem;
 }
 
 .ah-media-lightbox__backdrop {
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgb(0 0 0 / 0.72);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  background: rgb(0 0 0 / 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   cursor: default;
 }
 
 .ah-media-lightbox__frame {
   position: relative;
   z-index: 1;
-  width: 100%;
-  max-width: min(72rem, 100%);
+  width: fit-content;
+  max-width: min(48rem, 86vw);
   outline: none;
 }
 
 .ah-media-lightbox__close {
   position: absolute;
-  top: -0.5rem;
-  right: -0.5rem;
+  top: -0.55rem;
+  right: -0.55rem;
   z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  border: 1px solid rgb(214 208 186 / 0.45);
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid rgb(214 208 186 / 0.4);
   border-radius: 999px;
-  background: rgb(8 8 9 / 0.92);
+  background: rgb(8 8 9 / 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: rgb(232 223 196);
   font-family: var(--font-display, "Montserrat", system-ui, sans-serif);
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 0 28px rgb(0 0 0 / 0.55);
+  box-shadow: 0 0 20px rgb(0 0 0 / 0.4);
   transition: opacity 160ms ease;
 }
 
 .ah-media-lightbox__close:hover {
-  opacity: 0.8;
+  opacity: 0.82;
 }
 
 .ah-media-lightbox__media-wrap {
   overflow: hidden;
-  border: 1px solid rgb(214 208 186 / 0.38);
-  border-radius: 1.25rem;
-  background: #080809;
-  box-shadow: 0 0 56px rgb(0 0 0 / 0.72);
+  border: 1px solid rgb(214 208 186 / 0.34);
+  border-radius: 1.15rem;
+  background: rgb(8 8 9 / 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow:
+    0 0 36px rgb(0 0 0 / 0.42),
+    0 0 12px rgb(232 223 196 / 0.1);
 }
 
 .ah-media-lightbox__media {
   display: block;
-  width: 100%;
-  max-height: min(78vh, 52rem);
+  width: auto;
+  max-width: min(48rem, 86vw);
+  max-height: min(56vh, 34rem);
   object-fit: contain;
-  background: #000;
+  background: transparent;
 }
 
 @media (min-width: 768px) {
   .ah-media-lightbox {
-    padding: 2.5rem;
+    padding: 2.25rem 1.75rem;
+  }
+
+  .ah-media-lightbox__frame {
+    max-width: min(52rem, 78vw);
+  }
+
+  .ah-media-lightbox__media {
+    max-width: min(52rem, 78vw);
+    max-height: min(58vh, 36rem);
   }
 
   .ah-media-lightbox__close {
-    top: -0.75rem;
-    right: -0.75rem;
+    top: -0.65rem;
+    right: -0.65rem;
   }
 }
 `;
 
 function ensureLightboxStyles() {
   if (typeof document === "undefined") return;
-  if (document.getElementById(LIGHTBOX_STYLE_ID)) return;
-  const style = document.createElement("style");
-  style.id = LIGHTBOX_STYLE_ID;
+  let style = document.getElementById(LIGHTBOX_STYLE_ID) as HTMLStyleElement | null;
+  if (!style) {
+    style = document.createElement("style");
+    style.id = LIGHTBOX_STYLE_ID;
+    document.head.appendChild(style);
+  }
   style.textContent = LIGHTBOX_STYLES;
-  document.head.appendChild(style);
 }
 
 function isVideo(item: CarouselMediaItem) {
