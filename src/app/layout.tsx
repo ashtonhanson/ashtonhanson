@@ -37,12 +37,13 @@ export default function RootLayout({
         />
       </head>
       <body className="relative w-full max-w-full bg-background font-display text-foreground antialiased">
+        <div className="site-header-frost" aria-hidden="true" />
         <ScrollRestore />
         <AmbientOrbs />
         <SiteHeader />
         <div className="site-header-slot" aria-hidden="true" />
-        <div className="relative z-10 w-full max-w-full overflow-x-clip">
-          <main className="w-full max-w-full overflow-x-clip">{children}</main>
+        <div className="relative z-10 w-full max-w-full">
+          <main className="w-full max-w-full">{children}</main>
           <SiteFooter />
         </div>
       </body>

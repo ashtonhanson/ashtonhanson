@@ -136,9 +136,28 @@ export function SiteHeader() {
     return () => mq.removeEventListener("change", closeOnDesktop);
   }, []);
 
+  useEffect(() => {
+    const header = document.querySelector("header");
+    if (!header) return;
+    const sync = () => {
+      document.documentElement.style.setProperty(
+        "--site-header-frost-height",
+        `${Math.ceil(header.getBoundingClientRect().height)}px`,
+      );
+    };
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(header);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty(
+        "--site-header-frost-height",
+      );
+    };
+  }, [open]);
+
   return (
     <div className="site-header-shell">
-      <div className="site-header-frost" aria-hidden="true" />
       <header className="site-header border-b border-line">
       <div className="site-header-row mx-auto flex max-w-6xl items-center px-5 py-3 md:px-8 xl:max-w-7xl xl:px-12 2xl:px-16">
         <Link

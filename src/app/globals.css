@@ -19,6 +19,7 @@
   --velvet-deep: #0a0507;
   --velvet-mid: #1a0c10;
   --velvet-lit: #3a1c22;
+  --site-header-frost-height: 3.6rem;
 }
 
 @theme inline {
@@ -133,7 +134,7 @@ body {
 /* Home cinematic Z-scroll panels */
 .home-depth-scene {
   position: relative;
-  overflow-x: clip;
+  overflow-x: visible;
   overflow-y: visible;
 }
 
@@ -541,13 +542,16 @@ body {
 }
 
 .site-header-frost {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 49;
+  height: var(--site-header-frost-height, 3.6rem);
   pointer-events: none;
-  background: rgb(12 12 13 / 0.28);
-  backdrop-filter: blur(28px) saturate(1.6);
-  -webkit-backdrop-filter: blur(28px) saturate(1.6);
+  background: rgb(18 16 17 / 0.48);
+  backdrop-filter: blur(40px) saturate(1.8);
+  -webkit-backdrop-filter: blur(40px) saturate(1.8);
 }
 
 .site-header-panel {
