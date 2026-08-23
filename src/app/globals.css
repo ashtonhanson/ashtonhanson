@@ -520,13 +520,14 @@ body {
 
 .site-header {
   position: sticky;
+  top: 0;
+  z-index: 50;
+  overflow: visible;
   background: transparent;
 }
 
-/* Blur lives on a sibling layer so 3D hover on the links is not flattened. */
-.site-header::before,
-.site-header-panel::before {
-  content: "";
+.site-header-frost,
+.site-header-panel-frost {
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -538,17 +539,15 @@ body {
 
 .site-header-panel {
   position: relative;
+  overflow: visible;
   background: transparent;
 }
 
-.site-header > *,
-.site-header-panel > * {
+.site-header-row,
+.site-header-panel > ul {
   position: relative;
   z-index: 1;
-}
-
-.site-header-row {
-  perspective: 920px;
+  perspective: 720px;
   perspective-origin: 50% 40%;
 }
 

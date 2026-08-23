@@ -39,8 +39,8 @@ export default function RootLayout({
       <body className="relative w-full max-w-full bg-background font-display text-foreground antialiased">
         <ScrollRestore />
         <AmbientOrbs />
+        <SiteHeader />
         <div className="relative z-10 w-full max-w-full overflow-x-clip">
-          <SiteHeader />
           <main className="w-full max-w-full overflow-x-clip">{children}</main>
           <SiteFooter />
         </div>
