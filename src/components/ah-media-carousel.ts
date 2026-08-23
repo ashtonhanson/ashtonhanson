@@ -100,7 +100,7 @@ const STYLES = /* css */ `
   width: auto;
   max-width: 42rem;
   flex-shrink: 0;
-  cursor: pointer;
+  cursor: default;
   overflow: visible;
   transform-origin: 50% 50%;
   transform-style: preserve-3d;
@@ -772,6 +772,13 @@ export class AhMediaCarousel extends ElementBase {
     slide.className = "slide";
     slide.dataset.slide = String(index);
     if (clone) slide.dataset.clone = "1";
+    if (!clone) {
+      slide.tabIndex = 0;
+      slide.setAttribute("role", "button");
+      slide.setAttribute("aria-label", `${item.alt}. Click to view larger.`);
+    } else {
+      slide.tabIndex = -1;
+    }
     slide.setAttribute(
       "aria-hidden",
       clone || index !== 0 ? "true" : "false",
@@ -829,8 +836,13 @@ export class AhMediaCarousel extends ElementBase {
         event.stopPropagation();
         return;
       }
-      this.#pauseForUser();
-      this.#openItem(index);
+      this.#handleSlideActivate(slide, index);
+    });
+
+    slide.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      this.#handleSlideActivate(slide, index);
     });
 
     return slide;
@@ -863,6 +875,30 @@ export class AhMediaCarousel extends ElementBase {
 
   #slideScrollLeft(slide: HTMLElement) {
     return slide.offsetLeft - (this.#track.clientWidth - slide.offsetWidth) / 2;
+  }
+
+  #isSlideFocused(slide: HTMLElement) {
+    if (!this.#track) return false;
+    const trackRect = this.#track.getBoundingClientRect();
+    const rootMid = trackRect.left + trackRect.width / 2;
+    const rect = slide.getBoundingClientRect();
+    const mid = rect.left + rect.width / 2;
+    const clearPx = Math.max(10, slide.offsetWidth * 0.045);
+    return Math.abs(mid - rootMid) <= clearPx;
+  }
+
+  #handleSlideActivate(slide: HTMLElement, index: number) {
+    if (Number.isNaN(index)) return;
+    this.#pauseForUser();
+    if (!this.#isSlideFocused(slide)) {
+      this.#cancelScrollAnimation();
+      this.#hoverTargetSlide = slide;
+      this.#hoverTargetIndex = index;
+      this.#targetIndex = index;
+      this.#syncAutoPause();
+      return;
+    }
+    this.#openItem(index);
   }
 
   /** Pick the physical slide under the cursor — original or loop clone. */
@@ -1007,6 +1043,7 @@ export class AhMediaCarousel extends ElementBase {
       }
       slide.style.opacity = String(opacity);
       slide.style.filter = blur < 0.08 ? "none" : `blur(${blur.toFixed(2)}px)`;
+      slide.style.cursor = isCentered ? "pointer" : "";
 
       if (amount > bestAmount) {
         bestAmount = amount;
@@ -1175,15 +1212,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v27": AhMediaCarousel;
+    "ah-media-gallery-v28": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v27")
+    !customElements.get("ah-media-gallery-v28")
   ) {
-    customElements.define("ah-media-gallery-v27", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v28", AhMediaCarousel);
   }
 }

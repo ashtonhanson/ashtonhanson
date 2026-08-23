@@ -53,7 +53,7 @@ export function MediaLightbox({ item, onClose }: MediaLightboxProps) {
     >
       <button
         type="button"
-        className="media-lightbox-backdrop absolute inset-0 cursor-default border-0 bg-black/70 backdrop-blur-lg"
+        className="media-lightbox-backdrop absolute inset-0 cursor-default border-0 bg-black/72 backdrop-blur-xl"
         aria-label="Close media viewer"
         onClick={onClose}
       />
@@ -65,14 +65,14 @@ export function MediaLightbox({ item, onClose }: MediaLightboxProps) {
         <button
           ref={closeRef}
           type="button"
-          className="absolute -top-3 -right-3 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-line/70 bg-surface/95 font-display text-2xl leading-none text-ink/75 shadow-[0_0_24px_rgb(0_0_0_/_0.45)] transition-colors hover:text-ink md:-top-4 md:-right-4"
+          className="absolute -top-2 -right-2 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-[rgb(214_208_186_/_0.45)] bg-[rgb(8_8_9_/_0.92)] font-display text-[1.75rem] leading-none text-[rgb(232_223_196)] shadow-[0_0_28px_rgb(0_0_0_/_0.55)] transition-opacity hover:opacity-80 md:-top-3 md:-right-3"
           aria-label="Close"
           onClick={onClose}
         >
           ×
         </button>
         <div
-          className="overflow-hidden rounded-[1.25rem] border border-line bg-surface shadow-[0_0_48px_rgb(0_0_0_/_0.62)]"
+          className="overflow-hidden rounded-[1.25rem] border border-[rgb(214_208_186_/_0.38)] bg-[#080809] shadow-[0_0_56px_rgb(0_0_0_/_0.72)]"
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >

@@ -10,8 +10,8 @@ export const HOME_CHAPTER = {
    * without a blank pause — extra is small so arrivals aren’t rushed.
    */
   overlapAbout: "calc(-100dvh - 14vh)",
-  /** Pull SEE MENU up so it starts as the previous lockup leaves. */
-  overlapGallery: "calc(-28vh)",
+  /** Pull SEE MENU up so it starts as the gallery lockup leaves. */
+  overlapGallery: "calc(-100dvh - 10vh)",
   enterStart: 0.03,
   itemSpan: 0.18,
   /** Next piece starts before the previous finishes arriving. */
