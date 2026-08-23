@@ -549,9 +549,16 @@ body {
   z-index: 49;
   height: var(--site-header-frost-height, 3.6rem);
   pointer-events: none;
-  background: rgb(18 16 17 / 0.48);
-  backdrop-filter: blur(40px) saturate(1.8);
-  -webkit-backdrop-filter: blur(40px) saturate(1.8);
+  background:
+    linear-gradient(
+      180deg,
+      rgb(232 223 196 / 0.1),
+      rgb(12 12 13 / 0.42) 42%,
+      rgb(12 12 13 / 0.5)
+    );
+  backdrop-filter: blur(22px) saturate(1.7);
+  -webkit-backdrop-filter: blur(22px) saturate(1.7);
+  box-shadow: inset 0 -1px 0 rgb(214 208 186 / 0.16);
 }
 
 .site-header-panel {
@@ -973,16 +980,13 @@ body {
     0 0 60px rgb(232 214 180 / 0.14),
     0 0 140px rgb(180 120 100 / 0.12),
     0 0 220px rgb(60 30 35 / 0.18);
-  filter: blur(48px);
   opacity: 0.8;
-  will-change: transform;
 }
 
 @media (min-width: 1280px) {
   .spotlight {
     width: min(190vw, 3800px);
     height: min(190vw, 3800px);
-    filter: blur(56px);
   }
 }
 
@@ -997,7 +1001,6 @@ body {
   .spotlight {
     width: 280vw;
     height: 280vw;
-    filter: blur(44px);
     opacity: 0.85;
   }
 
