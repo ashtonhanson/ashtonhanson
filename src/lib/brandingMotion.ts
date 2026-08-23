@@ -69,10 +69,10 @@ export type HandoffTiming = {
 };
 
 /** Subtle directional pitch/lean on titles and body copy — noticeable, not exaggerated. */
-export const TEXT_DIRECTIONAL_LEAN = 1.28;
+export const TEXT_DIRECTIONAL_LEAN = 1.42;
 
 /** Branding page intro gets a touch more bias on top of the global lean. */
-export const BRANDING_LEAN = 1.36;
+export const BRANDING_LEAN = 1.52;
 
 export const BRANDING_INTRO: IntroTiming = {
   pinHeightVh: "520vh",
@@ -204,7 +204,8 @@ export function finaleExitPose(
 export type ArriveKind = "title" | "copy" | "media";
 
 function textLean(kind: ArriveKind, strength: number) {
-  return kind === "media" ? 1 : strength;
+  if (kind === "media") return 1;
+  return kind === "title" ? strength * 1.08 : strength;
 }
 
 /**

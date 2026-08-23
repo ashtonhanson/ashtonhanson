@@ -263,8 +263,8 @@ export function introDirectionalLean(
   const dirY = path.p3.y - path.p0.y;
   const leanSign = dirX >= 0 ? 1 : -1;
   return {
-    leanRot: leanSign * scaleDelta * 2.8 * eased,
-    rotX: (dirY >= 0 ? 1 : -1) * scaleDelta * 2 * eased,
+    leanRot: leanSign * scaleDelta * 3.3 * eased,
+    rotX: (dirY >= 0 ? 1 : -1) * scaleDelta * 2.4 * eased,
   };
 }
 
