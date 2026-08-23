@@ -20,10 +20,11 @@ const OPACITY_MAX = 1;
 const BLUR_MAX = 4;
 const AUTO_PX_PER_SEC = 46;
 const USER_PAUSE_MS = 4200;
-const FOCUS_GLIDE_MS = 2100;
-const HOVER_DELAY_MS = 70;
-const FOCUS_LERP_MS = 160;
-const FOCUS_GLIDE_LERP_MS = 70;
+const FOCUS_GLIDE_MS = 2400;
+/** Time constant for hover scroll pursuit — higher = softer glide. */
+const HOVER_SCROLL_TAU_MS = 680;
+const FOCUS_LERP_MS = 320;
+const FOCUS_FALLOFF = 0.58;
 
 const STYLES = /* css */ `
 :host {
@@ -224,6 +225,11 @@ function easeInOutCubic(t: number) {
   return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
 }
 
+function smoothstep(t: number) {
+  const x = Math.max(0, Math.min(1, t));
+  return x * x * (3 - 2 * x);
+}
+
 const ElementBase =
   typeof HTMLElement !== "undefined"
     ? HTMLElement
@@ -243,7 +249,6 @@ export class AhMediaCarousel extends ElementBase {
   #active = 0;
   #targetIndex = 0;
   #reduced = false;
-  #hoverTimer: number | null = null;
   #scrollRaf: number | null = null;
   #scrollFrame: number | null = null;
   #autoRaf: number | null = null;
@@ -270,10 +275,12 @@ export class AhMediaCarousel extends ElementBase {
   >();
   #motionRaf: number | null = null;
   #lastMotionNow = 0;
+  #lastFocusNow = 0;
   #inView = false;
   #lastAutoNow = 0;
   #autoCarry = 0;
-  #hoverIndex = -1;
+  #hoverTargetIndex = -1;
+  #hoverScrollCarry = 0;
   #io: IntersectionObserver | null = null;
   #ro: ResizeObserver | null = null;
 
@@ -293,6 +300,8 @@ export class AhMediaCarousel extends ElementBase {
     this.#autoDir = 1;
     this.#inView = false;
     this.#autoCarry = 0;
+    this.#hoverTargetIndex = -1;
+    this.#hoverScrollCarry = 0;
     this.#render();
     this.#layoutSlides();
     this.#resetToStart();
@@ -375,7 +384,6 @@ export class AhMediaCarousel extends ElementBase {
     this.#ro = null;
     this.#stopAutoplay();
     this.#stopMotion();
-    if (this.#hoverTimer) window.clearTimeout(this.#hoverTimer);
     if (this.#userPauseTimer) window.clearTimeout(this.#userPauseTimer);
     if (this.#scrollRaf) window.cancelAnimationFrame(this.#scrollRaf);
     if (this.#scrollFrame) window.cancelAnimationFrame(this.#scrollFrame);
@@ -448,6 +456,8 @@ export class AhMediaCarousel extends ElementBase {
   #resetToStart() {
     this.#cancelScrollAnimation();
     this.#autoCarry = 0;
+    this.#hoverTargetIndex = -1;
+    this.#hoverScrollCarry = 0;
     this.#active = 0;
     this.#targetIndex = 0;
     this.#autoDir = 1;
@@ -464,7 +474,8 @@ export class AhMediaCarousel extends ElementBase {
       this.#userPaused ||
       this.#dragMoved ||
       !this.#isVisibleEnough() ||
-      this.#items.length < 2;
+      this.#items.length < 2 ||
+      (this.#hoverTargetIndex >= 0 && this.#isDesktop());
   }
 
   #cancelScrollAnimation() {
@@ -484,6 +495,8 @@ export class AhMediaCarousel extends ElementBase {
     if (!this.#track || this.#items.length < 2) return;
 
     this.#cancelScrollAnimation();
+    this.#hoverTargetIndex = -1;
+    this.#hoverScrollCarry = 0;
     this.#dragging = true;
     this.#dragMoved = false;
     this.#suppressClick = false;
@@ -553,10 +566,60 @@ export class AhMediaCarousel extends ElementBase {
     this.#lastMotionNow = performance.now();
     const tick = (now: number) => {
       this.#motionRaf = window.requestAnimationFrame(tick);
-      if (document.hidden || this.#scrollRaf) return;
-      this.#syncFocus(now);
+      if (document.hidden) return;
+      const dt = Math.min(48, now - this.#lastMotionNow);
+      this.#lastMotionNow = now;
+      if (!this.#scrollRaf) {
+        this.#stepHoverFocus(dt);
+      }
+      this.#syncFocus(now, dt);
     };
     this.#motionRaf = window.requestAnimationFrame(tick);
+  }
+
+  /** Softly pursue the hovered slide instead of jumping with a timed animation. */
+  #stepHoverFocus(dt: number) {
+    if (
+      !this.#track ||
+      !this.#isDesktop() ||
+      this.#dragging ||
+      this.#lightboxOpen ||
+      this.#hoverTargetIndex < 0
+    ) {
+      return;
+    }
+
+    const slide = this.#track.querySelector<HTMLElement>(
+      `[data-slide="${this.#hoverTargetIndex}"]`,
+    );
+    if (!slide) return;
+
+    const maxLeft = this.#maxScroll();
+    const targetLeft = Math.max(
+      0,
+      Math.min(maxLeft, this.#slideScrollLeft(slide)),
+    );
+    const current = this.#track.scrollLeft;
+    const delta = targetLeft - current;
+
+    if (Math.abs(delta) < 0.35) {
+      if (current !== targetLeft) this.#track.scrollLeft = targetLeft;
+      this.#hoverScrollCarry = 0;
+      return;
+    }
+
+    const tau = this.#reduced ? HOVER_SCROLL_TAU_MS * 0.45 : HOVER_SCROLL_TAU_MS;
+    const k = 1 - Math.exp(-dt / tau);
+    this.#hoverScrollCarry += delta * k;
+
+    if (Math.abs(this.#hoverScrollCarry) >= 0.5) {
+      const step = Math.round(this.#hoverScrollCarry);
+      this.#hoverScrollCarry -= step;
+      this.#track.scrollLeft = Math.max(
+        0,
+        Math.min(maxLeft, current + step),
+      );
+    }
   }
 
   #restartAutoplay() {
@@ -788,21 +851,22 @@ export class AhMediaCarousel extends ElementBase {
     }
   }
 
-  #syncFocus(now = performance.now()) {
+  #syncFocus(now = performance.now(), dtOverride?: number) {
     const slides = Array.from(
       this.#track.querySelectorAll<HTMLElement>("[data-slide]"),
     );
     if (!slides.length) return;
 
-    const gliding = Boolean(this.#scrollRaf);
-    const dt = Math.min(48, now - (this.#lastMotionNow || now));
-    this.#lastMotionNow = now;
-    const focusTau = gliding ? FOCUS_GLIDE_LERP_MS : FOCUS_LERP_MS;
-    const focusK = 1 - Math.exp(-dt / focusTau);
+    const gliding = Boolean(this.#scrollRaf) || this.#hoverTargetIndex >= 0;
+    const dt =
+      dtOverride ??
+      Math.min(48, now - (this.#lastFocusNow || now - 16));
+    this.#lastFocusNow = now;
+    const focusK = 1 - Math.exp(-dt / FOCUS_LERP_MS);
 
     const trackRect = this.#track.getBoundingClientRect();
     const rootMid = trackRect.left + trackRect.width / 2;
-    const falloff = Math.max(trackRect.width * 0.42, 1);
+    const falloff = Math.max(trackRect.width * FOCUS_FALLOFF, 1);
 
     let best = 0;
     let bestAmount = -1;
@@ -814,7 +878,7 @@ export class AhMediaCarousel extends ElementBase {
         slide.offsetWidth / 2;
       const dist = Math.abs(mid - rootMid);
       const amount = Math.max(0, Math.min(1, 1 - dist / falloff));
-      const focus = 1 - (1 - amount) * (1 - amount);
+      const focus = smoothstep(amount);
 
       const targetScale = SCALE_MIN + focus * (SCALE_MAX - SCALE_MIN);
       const targetOpacity = OPACITY_MIN + focus * (OPACITY_MAX - OPACITY_MIN);
@@ -873,11 +937,23 @@ export class AhMediaCarousel extends ElementBase {
       slide.style.zIndex = index === best ? "2" : "1";
     });
 
-    if (!gliding && best !== this.#active) {
-      this.#active = best;
-      this.#targetIndex = best;
-      this.#updateChrome();
-      this.#syncPlayback();
+    if (best !== this.#active) {
+      const bestSlide = slides[best];
+      const bestMid =
+        trackRect.left +
+        (bestSlide.offsetLeft - this.#track.scrollLeft) +
+        bestSlide.offsetWidth / 2;
+      const bestDist = Math.abs(bestMid - rootMid);
+      const bestAmount = Math.max(0, Math.min(1, 1 - bestDist / falloff));
+      const shouldCommit =
+        !gliding || bestAmount > 0.72 || best === this.#hoverTargetIndex;
+
+      if (shouldCommit) {
+        this.#active = best;
+        this.#targetIndex = best;
+        this.#updateChrome();
+        this.#syncPlayback();
+      }
     }
   }
 
@@ -942,7 +1018,7 @@ export class AhMediaCarousel extends ElementBase {
     const step = (now: number) => {
       const t = Math.min(1, (now - startTime) / duration);
       this.#track.scrollLeft = start + delta * easeInOutCubic(t);
-      this.#syncFocus(now);
+      this.#syncFocus(now, Math.min(48, now - startTime));
       if (t < 1) {
         this.#scrollRaf = window.requestAnimationFrame(step);
       } else {
@@ -961,6 +1037,8 @@ export class AhMediaCarousel extends ElementBase {
   #goTo(index: number) {
     if (!this.#items.length || !this.#track) return;
 
+    this.#hoverTargetIndex = -1;
+    this.#hoverScrollCarry = 0;
     const clamped = Math.max(0, Math.min(this.#items.length - 1, index));
     const slide = this.#track.querySelector<HTMLElement>(
       `[data-slide="${clamped}"]`,
@@ -986,21 +1064,19 @@ export class AhMediaCarousel extends ElementBase {
     const slide = (event.target as HTMLElement).closest<HTMLElement>("[data-slide]");
     if (!slide) return;
     const index = Number(slide.dataset.slide);
-    if (Number.isNaN(index) || index === this.#hoverIndex) return;
-    this.#hoverIndex = index;
-    if (this.#hoverTimer) window.clearTimeout(this.#hoverTimer);
-    this.#hoverTimer = window.setTimeout(() => {
-      if (this.#dragging) return;
-      this.#goTo(index);
-    }, HOVER_DELAY_MS);
+    if (Number.isNaN(index)) return;
+    if (index === this.#hoverTargetIndex) return;
+
+    this.#cancelScrollAnimation();
+    this.#hoverTargetIndex = index;
+    this.#targetIndex = index;
+    this.#syncAutoPause();
   };
 
   #onTrackMouseLeave = () => {
-    this.#hoverIndex = -1;
-    if (this.#hoverTimer) {
-      window.clearTimeout(this.#hoverTimer);
-      this.#hoverTimer = null;
-    }
+    this.#hoverTargetIndex = -1;
+    this.#hoverScrollCarry = 0;
+    this.#syncAutoPause();
   };
 }
 
@@ -1014,15 +1090,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v23": AhMediaCarousel;
+    "ah-media-gallery-v24": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v23")
+    !customElements.get("ah-media-gallery-v24")
   ) {
-    customElements.define("ah-media-gallery-v23", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v24", AhMediaCarousel);
   }
 }
