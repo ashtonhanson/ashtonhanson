@@ -57,9 +57,6 @@ const STYLES = /* css */ `
   cursor: pointer;
   border: 1.5px solid rgb(214 208 186 / 0.42);
   border-radius: 1.35rem;
-  box-shadow:
-    0 0 14px rgb(232 223 196 / 0.2),
-    inset 0 0 0 1px rgb(255 255 255 / 0.08);
 }
 
 /* Must stay flat — preserve-3d here makes overflow compute to visible,
@@ -128,9 +125,6 @@ const STYLES = /* css */ `
   border-radius: 1.25rem;
   border: 1.5px solid rgb(214 208 186 / 0.38);
   background: #080809;
-  box-shadow:
-    0 0 16px rgb(232 223 196 / 0.18),
-    inset 0 0 0 1px rgb(255 255 255 / 0.08);
   transform-style: preserve-3d;
   pointer-events: none;
 }
