@@ -332,13 +332,13 @@ export function shrinkOutPose(
   };
 }
 
-/** ADS / LOGOS intro copy — exits slightly lower on scroll-out. */
+/** ADS / LOGOS intro copy — stays a bit higher as it scales out. */
 export function pageIntroBodyElementPath(): BezierPath {
   return {
     p0: { x: -8, y: 8, z: 0, scale: 1, rot: -2 },
-    p1: { x: 0, y: 4, z: 0, scale: 1, rot: 0.6 },
-    p2: { x: 5, y: 6, z: 0, scale: 1, rot: 1.8 },
-    p3: { x: 9, y: 11, z: 0, scale: 1, rot: 3.2 },
+    p1: { x: 0, y: 2, z: 0, scale: 1, rot: 0.6 },
+    p2: { x: 5, y: 1, z: 0, scale: 1, rot: 1.8 },
+    p3: { x: 9, y: 3, z: 0, scale: 1, rot: 3.2 },
   };
 }
 
@@ -353,7 +353,7 @@ export function sampleIntroBodyPose(zoomT: number): PathPose {
   const lean = introDirectionalLean(lateralPath, zoomT, zoom.scale, 1);
   return {
     x: lateral.x,
-    y: lateral.y + ABOUT_INTRO.zoomAnchorY * zoomT,
+    y: lateral.y + ABOUT_INTRO.zoomAnchorY * zoomT * 0.15 - 4 * zoomT,
     z: zoom.z,
     scale: zoom.scale,
     rot: lateral.rot + lean.leanRot,
@@ -374,10 +374,10 @@ export function brandingIntroElementPath(content: number): BezierPath {
       };
     case 1:
       return {
-        p0: { x: -10, y: 10, z: 0, scale: 1, rot: -2.5 },
-        p1: { x: 1, y: 5, z: 0, scale: 1, rot: 0.8 },
-        p2: { x: 6, y: 7, z: 0, scale: 1, rot: 2.2 },
-        p3: { x: 11, y: 15, z: 0, scale: 1, rot: 3.8 },
+        p0: { x: -10, y: 8, z: 0, scale: 1, rot: -2.5 },
+        p1: { x: 1, y: 2, z: 0, scale: 1, rot: 0.8 },
+        p2: { x: 6, y: 1, z: 0, scale: 1, rot: 2.2 },
+        p3: { x: 11, y: 4, z: 0, scale: 1, rot: 3.8 },
       };
     default:
       return introElementPath(content);
@@ -407,7 +407,10 @@ export function sampleBrandingIntroPose(
   const lean = introDirectionalLean(lateralPath, zoomT, zoom.scale, content);
   return {
     x: lateral.x,
-    y: lateral.y + ABOUT_INTRO.zoomAnchorY * zoomT,
+    y:
+      content >= 1
+        ? lateral.y + ABOUT_INTRO.zoomAnchorY * zoomT * 0.15 - 4 * zoomT
+        : lateral.y + ABOUT_INTRO.zoomAnchorY * zoomT,
     z: zoom.z,
     scale: zoom.scale,
     rot: lateral.rot + lean.leanRot,

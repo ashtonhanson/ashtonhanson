@@ -40,6 +40,7 @@ export default function RootLayout({
         <ScrollRestore />
         <AmbientOrbs />
         <SiteHeader />
+        <div className="site-header-slot" aria-hidden="true" />
         <div className="relative z-10 w-full max-w-full overflow-x-clip">
           <main className="w-full max-w-full overflow-x-clip">{children}</main>
           <SiteFooter />

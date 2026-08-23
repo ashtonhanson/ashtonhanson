@@ -519,26 +519,37 @@ body {
 }
 
 .site-header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 50;
   overflow: visible;
-  background: rgb(12 12 13 / 0.38);
-  backdrop-filter: blur(20px) saturate(1.25);
-  -webkit-backdrop-filter: blur(20px) saturate(1.25);
+  background: transparent;
+}
+
+.site-header-slot {
+  height: 3.6rem;
+  width: 100%;
+  pointer-events: none;
 }
 
 .site-header-frost,
 .site-header-panel-frost {
-  display: none;
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: rgb(12 12 13 / 0.2);
+  backdrop-filter: blur(24px) saturate(1.45);
+  -webkit-backdrop-filter: blur(24px) saturate(1.45);
 }
 
 .site-header-panel {
   position: relative;
   overflow: visible;
-  background: rgb(12 12 13 / 0.38);
-  backdrop-filter: blur(20px) saturate(1.25);
-  -webkit-backdrop-filter: blur(20px) saturate(1.25);
+  background: transparent;
 }
 
 .site-header-row,
