@@ -48,6 +48,7 @@ const STYLES = /* css */ `
 .viewport {
   width: 100%;
   min-width: 0;
+  cursor: pointer;
   border: 1.5px solid rgb(214 208 186 / 0.42);
   border-radius: 1.35rem;
   box-shadow:
@@ -80,7 +81,7 @@ const STYLES = /* css */ `
   .track {
     gap: 1rem;
     padding: 2.5rem 18%;
-    cursor: default;
+    cursor: pointer;
     touch-action: pan-y;
   }
 
@@ -104,9 +105,13 @@ const STYLES = /* css */ `
   flex-shrink: 0;
   cursor: pointer;
   overflow: visible;
+}
+
+.slide-visual {
   transform-origin: 50% 50%;
   transform-style: preserve-3d;
   will-change: transform, opacity, filter;
+  pointer-events: none;
 }
 
 .frame {
@@ -121,6 +126,7 @@ const STYLES = /* css */ `
     0 0 16px rgb(232 223 196 / 0.18),
     inset 0 0 0 1px rgb(255 255 255 / 0.08);
   transform-style: preserve-3d;
+  pointer-events: none;
 }
 
 @media (min-width: 768px) {
@@ -159,7 +165,7 @@ const STYLES = /* css */ `
   transform: scale(1.08);
   transform-origin: center center;
   opacity: 1;
-  cursor: pointer;
+  pointer-events: none;
 }
 
 .controls {
@@ -918,7 +924,8 @@ export class AhMediaCarousel extends ElementBase {
 
     const frame = document.createElement("div");
     frame.className = "frame";
-    let mediaEl: HTMLVideoElement | HTMLImageElement;
+    const visual = document.createElement("div");
+    visual.className = "slide-visual";
 
     if (isVideo(item)) {
       const video = document.createElement("video");
@@ -928,7 +935,7 @@ export class AhMediaCarousel extends ElementBase {
       video.loop = true;
       video.preload = "auto";
       video.setAttribute("aria-label", item.alt);
-      video.controls = !clone && index === 0;
+      video.controls = false;
       video.src = item.src;
 
       const markLoaded = () => {
@@ -943,7 +950,6 @@ export class AhMediaCarousel extends ElementBase {
       }
       if (video.readyState >= 2) markLoaded();
       frame.appendChild(video);
-      mediaEl = video;
     } else {
       const img = document.createElement("img");
       img.className = "media";
@@ -959,10 +965,10 @@ export class AhMediaCarousel extends ElementBase {
       if (img.complete) markLoaded();
       void img.decode?.().then(markLoaded).catch(markLoaded);
       frame.appendChild(img);
-      mediaEl = img;
     }
 
-    slide.appendChild(frame);
+    visual.appendChild(frame);
+    slide.appendChild(visual);
 
     const openSlide = (event: Event) => {
       event.preventDefault();
@@ -974,8 +980,6 @@ export class AhMediaCarousel extends ElementBase {
       this.#openItem(index);
     };
     slide.addEventListener("click", openSlide, true);
-    frame.addEventListener("click", openSlide, true);
-    mediaEl.addEventListener("click", openSlide, true);
 
     slide.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
@@ -991,9 +995,9 @@ export class AhMediaCarousel extends ElementBase {
       this.#suppressClick = false;
       return;
     }
-    const slide = (event.target as HTMLElement).closest<HTMLElement>(
-      "[data-slide]",
-    );
+    const slide =
+      (event.target as HTMLElement).closest<HTMLElement>("[data-slide]") ??
+      this.#slideAtClientX(event.clientX);
     if (!slide) return;
     const index = Number(slide.dataset.slide);
     if (Number.isNaN(index)) return;
@@ -1177,6 +1181,8 @@ export class AhMediaCarousel extends ElementBase {
     let bestSlide: HTMLElement | null = null;
 
     slides.forEach((slide) => {
+      const visual =
+        slide.querySelector<HTMLElement>(".slide-visual") ?? slide;
       const slideIndex = Number(slide.dataset.slide);
       const mid =
         trackRect.left +
@@ -1214,20 +1220,20 @@ export class AhMediaCarousel extends ElementBase {
       const opacity = smoothed.opacity;
       const blur = smoothed.blur;
       const pose = `scale(${scale.toFixed(4)})`;
-      slide.style.transformOrigin = "50% 50%";
-      slide.style.transformStyle = "preserve-3d";
+      visual.style.transformOrigin = "50% 50%";
+      visual.style.transformStyle = "preserve-3d";
       if (this.#reduced || !this.#isDesktop()) {
-        slide.style.transform = pose;
+        visual.style.transform = pose;
       } else {
         const pull = stepMousePull(
           this.#pullFor(slide),
-          slide,
+          visual,
           now,
           dt,
           "gallery",
           0.5,
         );
-        slide.style.transform = withIdleHover(pose, {
+        visual.style.transform = withIdleHover(pose, {
           x: pull.x,
           y: pull.y,
           z: pull.z,
@@ -1236,8 +1242,8 @@ export class AhMediaCarousel extends ElementBase {
           rotY: pull.rotY,
         });
       }
-      slide.style.opacity = String(opacity);
-      slide.style.filter = blur < 0.08 ? "none" : `blur(${blur.toFixed(2)}px)`;
+      visual.style.opacity = String(opacity);
+      visual.style.filter = blur < 0.08 ? "none" : `blur(${blur.toFixed(2)}px)`;
 
       if (amount > bestAmount) {
         bestAmount = amount;
@@ -1280,7 +1286,7 @@ export class AhMediaCarousel extends ElementBase {
       const active = !isClone && slideIndex === this.#active;
       slide.setAttribute("aria-hidden", active ? "false" : "true");
       if (!video) return;
-      video.controls = active;
+      video.controls = false;
       if (active && !this.#lightboxOpen) {
         void video.play().catch(() => undefined);
       } else {
@@ -1406,15 +1412,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v31": AhMediaCarousel;
+    "ah-media-gallery-v32": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v31")
+    !customElements.get("ah-media-gallery-v32")
   ) {
-    customElements.define("ah-media-gallery-v31", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v32", AhMediaCarousel);
   }
 }
