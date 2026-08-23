@@ -55,8 +55,8 @@ const STYLES = /* css */ `
   max-width: 100%;
   overflow: hidden;
   cursor: pointer;
-  border: 1.5px solid rgb(214 208 186 / 0.42);
-  border-radius: 1.35rem;
+  border: 0;
+  background: transparent;
 }
 
 /* Must stay flat — preserve-3d here makes overflow compute to visible,
