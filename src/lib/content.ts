@@ -44,7 +44,7 @@ export const home = {
       type: "video" as const,
     },
     {
-      src: "/media/home/ai-animation/02-jax-and-the-angry-dog.mov",
+      src: "/media/home/ai-animation/02-jax-and-the-angry-dog.mov?v=20260822",
       alt: "Jax and the Angry Dog",
       type: "video" as const,
     },

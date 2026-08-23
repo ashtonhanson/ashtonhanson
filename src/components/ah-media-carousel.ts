@@ -439,7 +439,6 @@ export class AhMediaCarousel extends ElementBase {
     this.#targetIndex = 0;
     this.#active = 0;
     this.#autoDir = 1;
-    this.#inView = false;
     this.#autoCarry = 0;
     this.#hoverTargetIndex = -1;
     this.#hoverTargetSlide = null;
@@ -451,6 +450,7 @@ export class AhMediaCarousel extends ElementBase {
     if (this.isConnected) {
       this.#watchLayout();
       this.#watchView();
+      this.#syncViewState();
     }
   }
 
@@ -476,6 +476,33 @@ export class AhMediaCarousel extends ElementBase {
     this.#startMotion();
     this.#watchLayout();
     this.#watchView();
+    this.#syncViewState();
+  }
+
+  #visibleRatio() {
+    const rect = this.getBoundingClientRect();
+    if (rect.width < 1 || rect.height < 1) return 0;
+    const vh = window.innerHeight;
+    const visibleHeight =
+      Math.min(rect.bottom, vh) - Math.max(rect.top, 0);
+    if (visibleHeight <= 0) return 0;
+    return visibleHeight / rect.height;
+  }
+
+  #syncViewState() {
+    const ratio = this.#visibleRatio();
+    const shouldBeInView = ratio >= 0.05;
+    if (shouldBeInView && !this.#inView) {
+      this.#inView = true;
+      this.#resetToStart();
+    } else if (!shouldBeInView && this.#inView) {
+      this.#inView = false;
+      this.#syncPlayback();
+    } else if (shouldBeInView) {
+      this.#syncMediaSources();
+      this.#primeVisibleVideos();
+    }
+    this.#syncAutoPause();
   }
 
   #watchView() {
@@ -487,21 +514,24 @@ export class AhMediaCarousel extends ElementBase {
         const entry = entries[0];
         if (!entry) return;
         const ratio = entry.intersectionRatio;
-        if (entry.isIntersecting && ratio >= 0.2) {
+        if (entry.isIntersecting && ratio >= 0.05) {
           if (!this.#inView) {
             this.#inView = true;
             this.#resetToStart();
+          } else {
+            this.#syncMediaSources();
+            this.#primeVisibleVideos();
           }
-          this.#syncMediaSources();
-        } else if (!entry.isIntersecting || ratio < 0.05) {
+        } else if (!entry.isIntersecting || ratio < 0.02) {
           this.#inView = false;
           this.#syncPlayback();
         }
         this.#syncAutoPause();
       },
-      { threshold: [0, 0.05, 0.2, 0.45] },
+      { threshold: [0, 0.02, 0.05, 0.15, 0.35] },
     );
     this.#io.observe(this);
+    this.#syncViewState();
   }
 
   #watchLayout() {
@@ -1304,8 +1334,53 @@ export class AhMediaCarousel extends ElementBase {
   #hydrateVideo(video: HTMLVideoElement, src: string) {
     if (video.dataset.hydrated === "1" || !src) return;
     video.dataset.hydrated = "1";
-    video.preload = "metadata";
+    video.preload = "auto";
     video.src = src;
+  }
+
+  #primeVideoFrame(video: HTMLVideoElement) {
+    if (video.dataset.primed === "1") return;
+
+    const markPrimed = () => {
+      if (video.dataset.primed === "1") return;
+      video.dataset.primed = "1";
+      video.classList.add("is-loaded");
+    };
+
+    const prime = () => {
+      void video
+        .play()
+        .then(() => {
+          video.pause();
+          try {
+            video.currentTime = 0;
+          } catch {
+            /* ignore seek errors on some mobile browsers */
+          }
+          markPrimed();
+        })
+        .catch(() => {
+          try {
+            video.currentTime = 0.001;
+          } catch {
+            /* ignore */
+          }
+          markPrimed();
+        });
+    };
+
+    if (video.readyState >= 2) {
+      prime();
+      return;
+    }
+
+    video.addEventListener(
+      "loadeddata",
+      () => {
+        prime();
+      },
+      { once: true },
+    );
   }
 
   #syncMediaSources() {
@@ -1314,13 +1389,10 @@ export class AhMediaCarousel extends ElementBase {
     this.#track
       .querySelectorAll<HTMLElement>('[data-slide]:not([data-clone="1"])')
       .forEach((slide) => {
-        const slideIndex = Number(slide.dataset.slide);
-        if (Number.isNaN(slideIndex)) return;
         const video = slide.querySelector<HTMLVideoElement>("video");
         const src = video?.dataset.src;
         if (!video || !src) return;
-        const dist = Math.abs(slideIndex - this.#active);
-        if (dist <= 2) this.#hydrateVideo(video, src);
+        this.#hydrateVideo(video, src);
       });
   }
 
@@ -1334,10 +1406,28 @@ export class AhMediaCarousel extends ElementBase {
       slide.setAttribute("aria-hidden", active ? "false" : "true");
       if (video) {
         video.controls = false;
-        video.pause();
+        if (!active || !this.#inView || this.#lightboxOpen) {
+          video.pause();
+        }
       }
     });
     this.#syncMediaSources();
+    this.#primeVisibleVideos();
+  }
+
+  #primeVisibleVideos() {
+    if (!this.#inView || !this.#track) return;
+
+    this.#track
+      .querySelectorAll<HTMLElement>('[data-slide]:not([data-clone="1"])')
+      .forEach((slide) => {
+        const slideIndex = Number(slide.dataset.slide);
+        if (Number.isNaN(slideIndex)) return;
+        const video = slide.querySelector<HTMLVideoElement>("video");
+        if (!video || video.dataset.hydrated !== "1") return;
+        const dist = Math.abs(slideIndex - this.#active);
+        if (dist <= 2) this.#primeVideoFrame(video);
+      });
   }
 
   #updateChrome() {
