@@ -503,7 +503,8 @@ export class AhMediaCarousel extends ElementBase {
     const shouldBeInView = ratio >= 0.05;
     if (shouldBeInView && !this.#inView) {
       this.#inView = true;
-      this.#resetToStart();
+      this.#syncMediaSources();
+      this.#primeVisibleVideos();
     } else if (!shouldBeInView && this.#inView) {
       this.#inView = false;
       this.#syncPlayback();
@@ -526,7 +527,8 @@ export class AhMediaCarousel extends ElementBase {
         if (entry.isIntersecting && ratio >= 0.05) {
           if (!this.#inView) {
             this.#inView = true;
-            this.#resetToStart();
+            this.#syncMediaSources();
+            this.#primeVisibleVideos();
           } else {
             this.#syncMediaSources();
             this.#primeVisibleVideos();
@@ -613,22 +615,25 @@ export class AhMediaCarousel extends ElementBase {
 
   #normalizeLoop() {
     if (!this.#track) return;
-    this.#applyLoopScroll(this.#track.scrollLeft);
+    const span = this.#loopSpan();
+    if (span < 1) return;
+    if (this.#track.scrollLeft >= span) {
+      this.#track.scrollLeft -= span;
+    }
   }
 
-  #applyLoopScroll(target: number) {
+  #commitScrollLeft(target: number) {
     if (!this.#track) return;
     const span = this.#loopSpan();
+    const maxLeft = this.#maxScroll();
+
     if (span < 1 || this.#items.length < 2) {
-      this.#track.scrollLeft = Math.max(0, Math.min(this.#maxScroll(), target));
+      this.#track.scrollLeft = Math.max(0, Math.min(maxLeft, target));
       return;
     }
 
-    let left = target;
-    if (left < 0) left += span;
-    while (left >= span) left -= span;
-
-    this.#track.scrollLeft = left;
+    this.#track.scrollLeft = Math.max(0, Math.min(maxLeft, target));
+    this.#normalizeLoop();
   }
 
   #slideEl(index: number) {
@@ -761,10 +766,9 @@ export class AhMediaCarousel extends ElementBase {
         }
         this.#track.scrollLeft = clamped;
       } else {
-        this.#applyLoopScroll(next);
+        this.#commitScrollLeft(next);
       }
 
-      this.#normalizeLoop();
       this.#syncFocus(now, dt);
       this.#syncMediaSources();
 
@@ -835,8 +839,7 @@ export class AhMediaCarousel extends ElementBase {
 
     this.#trackDragSample(event.clientX);
 
-    this.#applyLoopScroll(this.#dragStartScroll - dx);
-    this.#normalizeLoop();
+    this.#commitScrollLeft(this.#dragStartScroll - dx);
     this.#syncFocus();
     this.#syncMediaSources();
   };
@@ -924,9 +927,8 @@ export class AhMediaCarousel extends ElementBase {
     const delta = targetLeft - current;
 
     if (Math.abs(delta) < 0.35) {
-      if (current !== targetLeft) this.#applyLoopScroll(targetLeft);
+      if (current !== targetLeft) this.#commitScrollLeft(targetLeft);
       this.#hoverScrollCarry = 0;
-      this.#normalizeLoop();
       return;
     }
 
@@ -937,8 +939,7 @@ export class AhMediaCarousel extends ElementBase {
     if (Math.abs(this.#hoverScrollCarry) >= 0.5) {
       const step = Math.round(this.#hoverScrollCarry);
       this.#hoverScrollCarry -= step;
-      this.#applyLoopScroll(current + step);
-      this.#normalizeLoop();
+      this.#commitScrollLeft(current + step);
     }
   }
 
@@ -966,8 +967,7 @@ export class AhMediaCarousel extends ElementBase {
       this.#autoCarry -= step;
 
       let next = this.#track.scrollLeft + step;
-      this.#applyLoopScroll(next);
-      this.#syncFocus(now);
+      this.#commitScrollLeft(next);
     };
 
     this.#autoRaf = window.requestAnimationFrame(tick);
