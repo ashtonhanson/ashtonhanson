@@ -55,7 +55,8 @@ const STYLES = /* css */ `
   max-width: 100%;
   overflow: hidden;
   cursor: pointer;
-  border: 0;
+  border: 1px solid rgb(214 208 186 / 0.42);
+  border-radius: 1.35rem;
   background: transparent;
 }
 
