@@ -39,8 +39,23 @@ export const home = {
   aiAnimationTitle: "AI ANIMATION",
   aiAnimations: [
     {
+      src: "/media/home/ai-animation/01-early-birds-intro.mov",
+      alt: "Early Birds Intro",
+      type: "video" as const,
+    },
+    {
       src: "/media/home/ai-animation/02-jax-and-the-angry-dog.mov",
       alt: "Jax and the Angry Dog",
+      type: "video" as const,
+    },
+    {
+      src: "/media/home/ai-animation/03-man-wakes-up-on-moon.mov",
+      alt: "Man Wakes Up on the Moon",
+      type: "video" as const,
+    },
+    {
+      src: "/media/home/ai-animation/04-manicure-for-strangers.mov",
+      alt: "Manicure for Strangers",
       type: "video" as const,
     },
     {
