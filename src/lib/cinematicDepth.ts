@@ -277,7 +277,7 @@ export function introDirectionalLean(
   path: BezierPath,
   zoomT: number,
   scale: number,
-  _content: number,
+  content: number,
 ) {
   const travel = smootherstep(zoomT);
   const scaleNudge = Math.min(Math.max(0, scale - 1), 1.4) * 0.28;
@@ -285,10 +285,11 @@ export function introDirectionalLean(
   const dirX = path.p3.x - path.p0.x;
   const dirY = path.p3.y - path.p0.y;
   const leanSign = dirX >= 0 ? 1 : -1;
+  const title = content < 2;
   return {
-    leanRot: leanSign * perspective * 12,
-    rotX: (dirY >= 0 ? 1 : -1) * perspective * 9,
-    rotY: leanSign * perspective * 6.5,
+    leanRot: leanSign * perspective * (title ? 6.4 : 12),
+    rotX: (dirY >= 0 ? 1 : -1) * perspective * (title ? 4.8 : 9),
+    rotY: leanSign * perspective * (title ? 3.4 : 6.5),
   };
 }
 
@@ -343,16 +344,16 @@ export function introElementPath(index: number): BezierPath {
     case 0: // ABOUT — rises, leans left, scales toward camera
       return {
         p0: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
-        p1: { x: -2.5, y: -2, z: 0, scale: 1, rot: -3.2 },
-        p2: { x: -6, y: -6, z: 0, scale: 1, rot: -8.5 },
-        p3: { x: -10, y: -16, z: 0, scale: 1, rot: -14 },
+        p1: { x: -2.5, y: -2, z: 0, scale: 1, rot: -1.6 },
+        p2: { x: -6, y: -6, z: 0, scale: 1, rot: -4.2 },
+        p3: { x: -10, y: -16, z: 0, scale: 1, rot: -7 },
       };
     case 1: // ME — rises, leans right, scales toward camera
       return {
         p0: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
-        p1: { x: 3.5, y: -2, z: 0, scale: 1, rot: 3.8 },
-        p2: { x: 9, y: -6, z: 0, scale: 1, rot: 10 },
-        p3: { x: 15, y: -18, z: 0, scale: 1, rot: 16 },
+        p1: { x: 3.5, y: -2, z: 0, scale: 1, rot: 1.8 },
+        p2: { x: 9, y: -6, z: 0, scale: 1, rot: 4.8 },
+        p3: { x: 15, y: -18, z: 0, scale: 1, rot: 8 },
       };
     case 2: // line 0 — from below-right
       return {
@@ -436,10 +437,12 @@ export function sampleIntroPose(
   }
   const content = index - 1;
   const titlePath = introElementPath(0);
-  const lateralPath =
-    content >= 2
-      ? towardOppositeSide(titlePath, introElementPath(content))
-      : introElementPath(content);
+  let lateralPath = introElementPath(content);
+  if (content >= 2) {
+    const oppositeTitle = towardOppositeSide(titlePath, lateralPath);
+    lateralPath =
+      (content - 2) % 2 === 0 ? oppositeTitle : flipPathX(oppositeTitle);
+  }
   const lateral = sampleBezierPath(zoomT, lateralPath);
   const zoom =
     content >= 2
