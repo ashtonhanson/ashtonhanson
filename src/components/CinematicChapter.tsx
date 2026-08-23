@@ -3,6 +3,7 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import {
   arriveAngle,
+  oppositeArriveAngle,
   arriveGrowTransform,
   arriveTransform,
   finaleExitPose,
@@ -108,10 +109,13 @@ export function CinematicChapter({
 
       const progress = pinProgress(pin);
       const { ins, outs } = chapterWindows(nodes.length);
+      let lastTitleAngle = arriveAngle(angleOffset);
 
       nodes.forEach((el, i) => {
         const kind = (el.dataset.kind || "copy") as ArriveKind;
-        const angle = arriveAngle(i + angleOffset);
+        let angle = arriveAngle(i + angleOffset);
+        if (kind === "title") lastTitleAngle = angle;
+        else if (kind === "copy") angle = oppositeArriveAngle(lastTitleAngle);
         const inn = ins[i];
         const out = outs[i];
         if (!inn || !out) return;

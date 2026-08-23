@@ -10,6 +10,7 @@ import { ScrollCue } from "@/components/ScrollCue";
 import { TitleShine } from "@/components/TitleShine";
 import {
   arriveAngle,
+  oppositeArriveAngle,
   arriveGrowTransform,
   arriveT,
   arriveTransform,
@@ -410,10 +411,16 @@ export function BrandingScene({
         : [];
       const finaleOuts = finaleWindows(finaleNodes.length);
       const lean = brandingMotion ? BRANDING_LEAN : TEXT_DIRECTIONAL_LEAN;
+      let lastTitleAngle = arriveAngle(0);
       nodes.forEach((el) => {
         const kind = (el.dataset.kind || "copy") as ArriveKind;
         const lag = Number(el.dataset.lag || 0);
         const index = Number(el.dataset.angle || 0);
+        let angle = arriveAngle(index);
+        if (kind === "title") lastTitleAngle = angle;
+        else if (kind === "copy" && !el.hasAttribute("data-still")) {
+          angle = oppositeArriveAngle(lastTitleAngle);
+        }
         const poseEl = (el.firstElementChild as HTMLElement) ?? el;
         el.style.transform = "none";
         el.style.filter = "none";
@@ -460,7 +467,7 @@ export function BrandingScene({
         if (finaleWin && finaleProgress >= finaleWin.start) {
           const out = finaleExitPose(
             finaleExitT(finaleProgress, finaleWin),
-            arriveAngle(index),
+            angle,
             kind,
             lean,
           );
@@ -482,8 +489,8 @@ export function BrandingScene({
           return;
         }
         const pose = el.hasAttribute("data-grow")
-          ? arriveGrowTransform(t, arriveAngle(index), kind, lean)
-          : arriveTransform(t, arriveAngle(index), kind, lean);
+          ? arriveGrowTransform(t, angle, kind, lean)
+          : arriveTransform(t, angle, kind, lean);
         poseEl.style.transformOrigin = pose.origin;
         paintIdle(
           poseEl,

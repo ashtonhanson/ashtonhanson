@@ -250,15 +250,35 @@ function zoomProgress(progress: number, win: IntroHandoff) {
 }
 
 /** Lean from path travel direction — stable sign, perspective tied to motion not scale size. */
+function flipPathX(path: BezierPath): BezierPath {
+  const flip = (p: PathPose): PathPose => ({
+    ...p,
+    x: -p.x,
+    rot: -p.rot,
+    rotY: p.rotY != null ? -p.rotY : undefined,
+  });
+  return {
+    p0: flip(path.p0),
+    p1: flip(path.p1),
+    p2: flip(path.p2),
+    p3: flip(path.p3),
+  };
+}
+
+/** Keep a path’s shape, but make it travel toward the opposite side from `title`. */
+export function towardOppositeSide(title: BezierPath, path: BezierPath): BezierPath {
+  const titleDir = title.p3.x - title.p0.x;
+  const pathDir = path.p3.x - path.p0.x;
+  if (titleDir === 0 || titleDir * pathDir < 0) return path;
+  return flipPathX(path);
+}
+
 export function introDirectionalLean(
   path: BezierPath,
   zoomT: number,
   scale: number,
-  content: number,
+  _content: number,
 ) {
-  if (content >= 2) {
-    return { rotX: 0, rotY: 0, leanRot: 0 };
-  }
   const travel = smootherstep(zoomT);
   const scaleNudge = Math.min(Math.max(0, scale - 1), 1.4) * 0.28;
   const perspective = travel * (0.72 + scaleNudge);
@@ -415,7 +435,11 @@ export function sampleIntroPose(
     };
   }
   const content = index - 1;
-  const lateralPath = introElementPath(content);
+  const titlePath = introElementPath(0);
+  const lateralPath =
+    content >= 2
+      ? towardOppositeSide(titlePath, introElementPath(content))
+      : introElementPath(content);
   const lateral = sampleBezierPath(zoomT, lateralPath);
   const zoom =
     content >= 2

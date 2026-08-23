@@ -4,6 +4,7 @@ import {
   bodyZoomPath,
   introElementPath,
   introDirectionalLean,
+  towardOppositeSide,
   sampleBezierPath,
   sampleIntroPose,
   type BezierPath,
@@ -44,6 +45,11 @@ export const ARRIVE_ANGLES: readonly ArriveAngle[] = [
 
 export function arriveAngle(index: number): ArriveAngle {
   return ARRIVE_ANGLES[index % ARRIVE_ANGLES.length]!;
+}
+
+/** Send body copy to the other side of the page from its title. */
+export function oppositeArriveAngle(angle: ArriveAngle): ArriveAngle {
+  return { x: -angle.x, y: angle.y, rot: -angle.rot };
 }
 
 export function splitSentences(text: string): string[] {
@@ -338,7 +344,10 @@ export function pageIntroBodyElementPath(): BezierPath {
 
 /** Intro paragraph pose for secondary pages (ADS, LOGOS). */
 export function sampleIntroBodyPose(zoomT: number): PathPose {
-  const lateralPath = pageIntroBodyElementPath();
+  const lateralPath = towardOppositeSide(
+    introElementPath(0),
+    pageIntroBodyElementPath(),
+  );
   const lateral = sampleBezierPath(zoomT, lateralPath);
   const zoom = sampleBezierPath(zoomT, aboutZoomPath());
   const lean = introDirectionalLean(lateralPath, zoomT, zoom.scale, 1);
@@ -385,7 +394,11 @@ export function sampleBrandingIntroPose(
     return sampleIntroPose(0, zoomT, lifeT);
   }
   const content = index - 1;
-  const lateralPath = brandingIntroElementPath(content);
+  const titlePath = brandingIntroElementPath(0);
+  const lateralPath =
+    content >= 1
+      ? towardOppositeSide(titlePath, brandingIntroElementPath(content))
+      : brandingIntroElementPath(content);
   const lateral = sampleBezierPath(zoomT, lateralPath);
   const zoom =
     content >= 2
