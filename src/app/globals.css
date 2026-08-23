@@ -40,7 +40,9 @@ html {
   color-scheme: dark;
   width: 100%;
   max-width: 100%;
+  overflow-x: clip;
   overscroll-behavior: none;
+  overscroll-behavior-x: none;
 }
 
 body {
@@ -53,7 +55,9 @@ body {
   letter-spacing: 0.01em;
   width: 100%;
   max-width: 100%;
+  overflow-x: clip;
   overscroll-behavior: none;
+  overscroll-behavior-x: none;
 }
 
 ::selection {
@@ -129,7 +133,8 @@ body {
 /* Home cinematic Z-scroll panels */
 .home-depth-scene {
   position: relative;
-  overflow: visible;
+  overflow-x: clip;
+  overflow-y: visible;
 }
 
 .home-depth-panel {

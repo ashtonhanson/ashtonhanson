@@ -30,9 +30,9 @@ export default function RootLayout({
     <html lang="en" className={`${display.variable} min-h-full`}>
       <body className="relative w-full max-w-full bg-background font-display text-foreground antialiased">
         <AmbientOrbs />
-        <div className="relative z-10 w-full max-w-full">
+        <div className="relative z-10 w-full max-w-full overflow-x-clip">
           <SiteHeader />
-          <main className="w-full max-w-full">{children}</main>
+          <main className="w-full max-w-full overflow-x-clip">{children}</main>
           <SiteFooter />
         </div>
       </body>

@@ -31,6 +31,8 @@ const STYLES = /* css */ `
   display: block;
   width: 100%;
   min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
   pointer-events: auto;
   color: #d2d2d2;
   font-family: var(--font-display, "Montserrat", system-ui, sans-serif);
@@ -43,11 +45,15 @@ const STYLES = /* css */ `
 .wrap {
   width: 100%;
   min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 .viewport {
   width: 100%;
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   cursor: pointer;
   border: 1.5px solid rgb(214 208 186 / 0.42);
   border-radius: 1.35rem;
@@ -486,8 +492,10 @@ export class AhMediaCarousel extends ElementBase {
             this.#inView = true;
             this.#resetToStart();
           }
+          this.#syncMediaSources();
         } else if (!entry.isIntersecting || ratio < 0.05) {
           this.#inView = false;
+          this.#syncPlayback();
         }
         this.#syncAutoPause();
       },
@@ -951,20 +959,18 @@ export class AhMediaCarousel extends ElementBase {
       video.playsInline = true;
       video.muted = true;
       video.loop = true;
-      video.preload = "auto";
+      video.preload = "none";
       video.setAttribute("aria-label", item.alt);
       video.controls = false;
-      video.src = item.src;
 
       const markLoaded = () => {
         video.classList.add("is-loaded");
       };
       video.addEventListener("loadeddata", markLoaded);
       video.addEventListener("canplay", markLoaded);
-      video.addEventListener("playing", markLoaded);
       video.addEventListener("error", markLoaded);
       if (!clone) {
-        void video.play().then(markLoaded).catch(() => undefined);
+        video.dataset.src = item.src;
       }
       if (video.readyState >= 2) markLoaded();
       frame.appendChild(video);
@@ -972,7 +978,7 @@ export class AhMediaCarousel extends ElementBase {
       const img = document.createElement("img");
       img.className = "media";
       img.decoding = "async";
-      img.loading = "eager";
+      img.loading = index > 0 ? "lazy" : "eager";
       img.alt = item.alt;
       img.src = item.src;
       const markLoaded = () => {
@@ -1295,6 +1301,29 @@ export class AhMediaCarousel extends ElementBase {
     }
   }
 
+  #hydrateVideo(video: HTMLVideoElement, src: string) {
+    if (video.dataset.hydrated === "1" || !src) return;
+    video.dataset.hydrated = "1";
+    video.preload = "metadata";
+    video.src = src;
+  }
+
+  #syncMediaSources() {
+    if (!this.#inView || !this.#track) return;
+
+    this.#track
+      .querySelectorAll<HTMLElement>('[data-slide]:not([data-clone="1"])')
+      .forEach((slide) => {
+        const slideIndex = Number(slide.dataset.slide);
+        if (Number.isNaN(slideIndex)) return;
+        const video = slide.querySelector<HTMLVideoElement>("video");
+        const src = video?.dataset.src;
+        if (!video || !src) return;
+        const dist = Math.abs(slideIndex - this.#active);
+        if (dist <= 2) this.#hydrateVideo(video, src);
+      });
+  }
+
   #syncPlayback() {
     const slides = this.#track.querySelectorAll<HTMLElement>("[data-slide]");
     slides.forEach((slide) => {
@@ -1303,14 +1332,12 @@ export class AhMediaCarousel extends ElementBase {
       const video = slide.querySelector("video");
       const active = !isClone && slideIndex === this.#active;
       slide.setAttribute("aria-hidden", active ? "false" : "true");
-      if (!video) return;
-      video.controls = false;
-      if (active && !this.#lightboxOpen) {
-        void video.play().catch(() => undefined);
-      } else {
+      if (video) {
+        video.controls = false;
         video.pause();
       }
     });
+    this.#syncMediaSources();
   }
 
   #updateChrome() {
