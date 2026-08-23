@@ -22,7 +22,7 @@ type MediaCarouselProps = {
 declare module "react" {
   namespace JSX {
     interface IntrinsicElements {
-      "ah-media-gallery-v25": React.DetailedHTMLProps<
+      "ah-media-gallery-v26": React.DetailedHTMLProps<
         React.HTMLAttributes<AhMediaCarousel> & { label?: string },
         AhMediaCarousel
       >;
@@ -32,53 +32,50 @@ declare module "react" {
 
 /** React bridge that mounts the native gallery web component + lightbox. */
 export function MediaCarousel({ items, label = "Gallery" }: MediaCarouselProps) {
-  const ref = useRef<AhMediaCarousel | null>(null);
+  const galleryRef = useRef<AhMediaCarousel | null>(null);
   const [lightbox, setLightbox] = useState<LightboxMedia | null>(null);
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    let cancelled = false;
-    const apply = () => {
-      if (cancelled || !ref.current) return;
-      ref.current.items = items;
-    };
-    apply();
-    void customElements.whenDefined("ah-media-gallery-v25").then(apply);
-    return () => {
-      cancelled = true;
-    };
-  }, [items]);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const onOpen = (event: Event) => {
-      const detail = (event as CustomEvent<GalleryOpenDetail>).detail;
-      if (!detail?.src) return;
-      setLightbox({
-        src: detail.src,
-        alt: detail.alt,
-        type: detail.type,
-      });
-      el.pauseAutoplay();
-    };
-
-    el.addEventListener("ah-media-open", onOpen);
-    return () => el.removeEventListener("ah-media-open", onOpen);
-  }, [items]);
+  const handleOpen = useCallback((event: Event) => {
+    const detail = (event as CustomEvent<GalleryOpenDetail>).detail;
+    if (!detail?.src) return;
+    setLightbox({
+      src: detail.src,
+      alt: detail.alt,
+      type: detail.type,
+    });
+    galleryRef.current?.pauseAutoplay();
+  }, []);
 
   const onClose = useCallback(() => {
     setLightbox(null);
-    ref.current?.resumeAutoplay();
+    galleryRef.current?.resumeAutoplay();
   }, []);
+
+  const setGalleryRef = useCallback(
+    (node: AhMediaCarousel | null) => {
+      if (galleryRef.current) {
+        galleryRef.current.removeEventListener("ah-media-open", handleOpen);
+      }
+      galleryRef.current = node;
+      if (node) {
+        node.addEventListener("ah-media-open", handleOpen);
+        node.items = items;
+      }
+    },
+    [items, handleOpen],
+  );
+
+  useEffect(() => {
+    if (galleryRef.current) {
+      galleryRef.current.items = items;
+    }
+  }, [items]);
 
   if (!items.length) return null;
 
   return (
     <>
-      <ah-media-gallery-v25 ref={ref} label={label} className="block w-full" />
+      <ah-media-gallery-v26 ref={setGalleryRef} label={label} className="block w-full" />
       <MediaLightbox item={lightbox} onClose={onClose} />
     </>
   );

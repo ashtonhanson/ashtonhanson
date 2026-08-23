@@ -53,7 +53,7 @@ export function MediaLightbox({ item, onClose }: MediaLightboxProps) {
     >
       <button
         type="button"
-        className="media-lightbox-backdrop absolute inset-0 cursor-default border-0 bg-black/65 backdrop-blur-md"
+        className="media-lightbox-backdrop absolute inset-0 cursor-default border-0 bg-black/70 backdrop-blur-lg"
         aria-label="Close media viewer"
         onClick={onClose}
       />
@@ -65,13 +65,14 @@ export function MediaLightbox({ item, onClose }: MediaLightboxProps) {
         <button
           ref={closeRef}
           type="button"
-          className="absolute -top-10 right-0 font-display text-[0.65rem] tracking-[0.18em] text-ink/70 uppercase transition-colors hover:text-ink md:-top-11"
+          className="absolute -top-3 -right-3 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-line/70 bg-surface/95 font-display text-2xl leading-none text-ink/75 shadow-[0_0_24px_rgb(0_0_0_/_0.45)] transition-colors hover:text-ink md:-top-4 md:-right-4"
+          aria-label="Close"
           onClick={onClose}
         >
-          Close
+          ×
         </button>
         <div
-          className="overflow-hidden rounded-[1.25rem] border border-line bg-surface shadow-[0_0_40px_rgb(0_0_0_/_0.55)]"
+          className="overflow-hidden rounded-[1.25rem] border border-line bg-surface shadow-[0_0_48px_rgb(0_0_0_/_0.62)]"
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >

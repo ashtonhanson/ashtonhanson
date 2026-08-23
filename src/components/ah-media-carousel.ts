@@ -414,9 +414,31 @@ export class AhMediaCarousel extends ElementBase {
     if (this.#scrollFrame) return;
     this.#scrollFrame = window.requestAnimationFrame(() => {
       this.#scrollFrame = null;
+      this.#normalizeLoop();
       this.#syncFocus();
     });
   };
+
+  /** Width of the first full item set — used for seamless infinite scroll. */
+  #loopSpan() {
+    if (this.#items.length < 2 || !this.#track) return 0;
+    const clone = this.#track.querySelector<HTMLElement>('[data-clone="1"]');
+    return clone?.offsetLeft ?? 0;
+  }
+
+  #normalizeLoop() {
+    const span = this.#loopSpan();
+    if (span < 1 || !this.#track) return;
+    if (this.#track.scrollLeft >= span) {
+      this.#track.scrollLeft -= span;
+    }
+  }
+
+  #slideEl(index: number) {
+    return this.#track.querySelector<HTMLElement>(
+      `[data-slide="${index}"]:not([data-clone])`,
+    );
+  }
 
   #label() {
     return this.getAttribute("label") || "Gallery";
@@ -589,9 +611,7 @@ export class AhMediaCarousel extends ElementBase {
       return;
     }
 
-    const slide = this.#track.querySelector<HTMLElement>(
-      `[data-slide="${this.#hoverTargetIndex}"]`,
-    );
+    const slide = this.#slideEl(this.#hoverTargetIndex);
     if (!slide) return;
 
     const maxLeft = this.#maxScroll();
@@ -619,6 +639,7 @@ export class AhMediaCarousel extends ElementBase {
         0,
         Math.min(maxLeft, current + step),
       );
+      this.#normalizeLoop();
     }
   }
 
@@ -646,14 +667,8 @@ export class AhMediaCarousel extends ElementBase {
       this.#autoCarry -= step;
 
       let next = this.#track.scrollLeft + step;
-      if (next >= this.#maxScroll()) {
-        next = 0;
-        this.#autoCarry = 0;
-        this.#active = 0;
-        this.#targetIndex = 0;
-        this.#updateChrome();
-      }
       this.#track.scrollLeft = next;
+      this.#normalizeLoop();
     };
 
     this.#autoRaf = window.requestAnimationFrame(tick);
@@ -738,15 +753,25 @@ export class AhMediaCarousel extends ElementBase {
       this.#dots.appendChild(dot);
     });
 
+    if (this.#items.length > 1) {
+      this.#items.forEach((item, index) => {
+        this.#track.appendChild(this.#createSlide(item, index, true));
+      });
+    }
+
     this.#updateChrome();
     this.#layoutSlides();
   }
 
-  #createSlide(item: CarouselMediaItem, index: number) {
+  #createSlide(item: CarouselMediaItem, index: number, clone = false) {
     const slide = document.createElement("article");
     slide.className = "slide";
     slide.dataset.slide = String(index);
-    slide.setAttribute("aria-hidden", index === 0 ? "false" : "true");
+    if (clone) slide.dataset.clone = "1";
+    slide.setAttribute(
+      "aria-hidden",
+      clone || index !== 0 ? "true" : "false",
+    );
 
     const frame = document.createElement("div");
     frame.className = "frame";
@@ -759,7 +784,7 @@ export class AhMediaCarousel extends ElementBase {
       video.loop = true;
       video.preload = "auto";
       video.setAttribute("aria-label", item.alt);
-      video.controls = index === 0;
+      video.controls = !clone && index === 0;
       video.src = item.src;
 
       const markLoaded = () => {
@@ -769,8 +794,9 @@ export class AhMediaCarousel extends ElementBase {
       video.addEventListener("canplay", markLoaded);
       video.addEventListener("playing", markLoaded);
       video.addEventListener("error", markLoaded);
-      // Kick decode so off-center slides aren't stuck invisible (opacity 0).
-      void video.play().then(markLoaded).catch(() => undefined);
+      if (!clone) {
+        void video.play().then(markLoaded).catch(() => undefined);
+      }
       if (video.readyState >= 2) markLoaded();
       frame.appendChild(video);
     } else {
@@ -800,7 +826,6 @@ export class AhMediaCarousel extends ElementBase {
         return;
       }
       this.#pauseForUser();
-      if (index !== this.#active) this.#goTo(index);
       this.#openItem(index);
     });
 
@@ -810,6 +835,9 @@ export class AhMediaCarousel extends ElementBase {
   #openItem(index: number) {
     const item = this.#items[index];
     if (!item) return;
+    this.#hoverTargetIndex = -1;
+    this.#hoverScrollCarry = 0;
+    this.pauseAutoplay();
     this.dispatchEvent(
       new CustomEvent<GalleryOpenDetail>("ah-media-open", {
         bubbles: true,
@@ -840,28 +868,33 @@ export class AhMediaCarousel extends ElementBase {
     if (!slides.length) return -1;
 
     const trackRect = this.#track.getBoundingClientRect();
-    if (clientX <= trackRect.left) return 0;
-    if (clientX >= trackRect.right) return slides.length - 1;
+    if (clientX <= trackRect.left) {
+      return Number(slides[0]!.dataset.slide);
+    }
+    if (clientX >= trackRect.right) {
+      return Number(slides[slides.length - 1]!.dataset.slide);
+    }
 
     const centers = slides.map((slide) => {
       const rect = slide.getBoundingClientRect();
-      return rect.left + rect.width / 2;
+      return {
+        center: rect.left + rect.width / 2,
+        index: Number(slide.dataset.slide),
+      };
     });
 
-    if (clientX <= centers[0]!) return 0;
+    if (clientX <= centers[0]!.center) return centers[0]!.index;
 
     for (let i = 0; i < centers.length - 1; i++) {
-      const boundary = (centers[i]! + centers[i + 1]!) / 2;
-      if (clientX < boundary) return i;
+      const boundary = (centers[i]!.center + centers[i + 1]!.center) / 2;
+      if (clientX < boundary) return centers[i]!.index;
     }
 
-    return slides.length - 1;
+    return centers[centers.length - 1]!.index;
   }
 
   #centerSlide(index: number, animated: boolean) {
-    const slide = this.#track.querySelector<HTMLElement>(
-      `[data-slide="${index}"]`,
-    );
+    const slide = this.#slideEl(index);
     if (!slide) return;
     const targetLeft = this.#slideScrollLeft(slide);
     if (animated && !this.#reduced) {
@@ -896,8 +929,10 @@ export class AhMediaCarousel extends ElementBase {
 
     let best = 0;
     let bestAmount = -1;
+    let bestSlide: HTMLElement | null = null;
 
-    slides.forEach((slide, index) => {
+    slides.forEach((slide) => {
+      const slideIndex = Number(slide.dataset.slide);
       const mid =
         trackRect.left +
         (slide.offsetLeft - this.#track.scrollLeft) +
@@ -961,20 +996,22 @@ export class AhMediaCarousel extends ElementBase {
 
       if (amount > bestAmount) {
         bestAmount = amount;
-        best = index;
+        best = slideIndex;
+        bestSlide = slide;
       }
     });
 
-    slides.forEach((slide, index) => {
-      slide.style.zIndex = index === best ? "2" : "1";
+    slides.forEach((slide) => {
+      slide.style.zIndex = slide === bestSlide ? "2" : "1";
     });
 
     if (best !== this.#active) {
-      const bestSlide = slides[best];
+      const focusedSlide = bestSlide ?? slides[0];
+      if (!focusedSlide) return;
       const bestMid =
         trackRect.left +
-        (bestSlide.offsetLeft - this.#track.scrollLeft) +
-        bestSlide.offsetWidth / 2;
+        (focusedSlide.offsetLeft - this.#track.scrollLeft) +
+        focusedSlide.offsetWidth / 2;
       const bestDist = Math.abs(bestMid - rootMid);
       const bestAmount = Math.max(0, Math.min(1, 1 - bestDist / falloff));
       const shouldCommit =
@@ -991,9 +1028,11 @@ export class AhMediaCarousel extends ElementBase {
 
   #syncPlayback() {
     const slides = this.#track.querySelectorAll<HTMLElement>("[data-slide]");
-    slides.forEach((slide, index) => {
+    slides.forEach((slide) => {
+      const slideIndex = Number(slide.dataset.slide);
+      const isClone = slide.dataset.clone === "1";
       const video = slide.querySelector("video");
-      const active = index === this.#active;
+      const active = !isClone && slideIndex === this.#active;
       slide.setAttribute("aria-hidden", active ? "false" : "true");
       if (!video) return;
       video.controls = active;
@@ -1056,6 +1095,7 @@ export class AhMediaCarousel extends ElementBase {
       } else {
         this.#track.scrollLeft = end;
         this.#scrollRaf = null;
+        this.#normalizeLoop();
         this.#active = targetIndex;
         this.#targetIndex = targetIndex;
         this.#syncFocus(now);
@@ -1072,9 +1112,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#hoverTargetIndex = -1;
     this.#hoverScrollCarry = 0;
     const clamped = Math.max(0, Math.min(this.#items.length - 1, index));
-    const slide = this.#track.querySelector<HTMLElement>(
-      `[data-slide="${clamped}"]`,
-    );
+    const slide = this.#slideEl(clamped);
     if (!slide) return;
     this.#layoutSlides();
     const targetLeft = this.#slideScrollLeft(slide);
@@ -1119,15 +1157,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v25": AhMediaCarousel;
+    "ah-media-gallery-v26": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v25")
+    !customElements.get("ah-media-gallery-v26")
   ) {
-    customElements.define("ah-media-gallery-v25", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v26", AhMediaCarousel);
   }
 }
