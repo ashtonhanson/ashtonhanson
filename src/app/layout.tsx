@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import { AmbientOrbs } from "@/components/AmbientOrbs";
+import { ScrollRestore } from "@/components/ScrollRestore";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
@@ -28,7 +29,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${display.variable} min-h-full`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if("scrollRestoration"in history)history.scrollRestoration="manual"}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="relative w-full max-w-full bg-background font-display text-foreground antialiased">
+        <ScrollRestore />
         <AmbientOrbs />
         <div className="relative z-10 w-full max-w-full overflow-x-clip">
           <SiteHeader />
