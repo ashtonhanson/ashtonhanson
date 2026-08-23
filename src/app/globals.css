@@ -40,7 +40,7 @@ html {
   color-scheme: dark;
   width: 100%;
   max-width: 100%;
-  overflow-x: clip;
+  overflow-x: visible;
   overscroll-behavior: none;
   overscroll-behavior-x: none;
 }
@@ -55,7 +55,7 @@ body {
   letter-spacing: 0.01em;
   width: 100%;
   max-width: 100%;
-  overflow-x: clip;
+  overflow-x: visible;
   overscroll-behavior: none;
   overscroll-behavior-x: none;
 }
@@ -523,24 +523,22 @@ body {
   top: 0;
   z-index: 50;
   overflow: visible;
-  background: transparent;
+  background: rgb(12 12 13 / 0.38);
+  backdrop-filter: blur(20px) saturate(1.25);
+  -webkit-backdrop-filter: blur(20px) saturate(1.25);
 }
 
 .site-header-frost,
 .site-header-panel-frost {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: rgb(12 12 13 / 0.48);
-  backdrop-filter: blur(18px) saturate(1.2);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  display: none;
 }
 
 .site-header-panel {
   position: relative;
   overflow: visible;
-  background: transparent;
+  background: rgb(12 12 13 / 0.38);
+  backdrop-filter: blur(20px) saturate(1.25);
+  -webkit-backdrop-filter: blur(20px) saturate(1.25);
 }
 
 .site-header-row,
