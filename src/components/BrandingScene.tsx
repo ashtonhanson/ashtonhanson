@@ -151,6 +151,7 @@ export function BrandingScene({
   const tagsRef = useRef<HTMLDivElement>(null);
   const subtitleRef = useRef<HTMLDivElement>(null);
   const emailRef = useRef<HTMLDivElement>(null);
+  const formTitleRef = useRef<HTMLDivElement>(null);
   const formLockupRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<HTMLDivElement>(null);
   const intro = { ...BRANDING_INTRO, ...introOverride };
@@ -336,12 +337,19 @@ export function BrandingScene({
       if (introLines.length) applyElement(lineRefs.current[0] ?? null, handoffIndex++);
       if (introTags.length) applyElement(tagsRef.current, handoffIndex++);
       if (introEmail) applyElement(emailRef.current, handoffIndex++);
-      if (introForm && formLockupRef.current) {
-        const el = formLockupRef.current;
+      if (introForm) {
         const win = handoffs[handoffIndex];
-        if (!win) {
-          paint(el, 0, ABOUT_INTRO.enterExitBlurPx, "none");
-        } else {
+        const paintFormPiece = (
+          el: HTMLElement | null,
+          seed: number,
+          pullKind: MousePullKind,
+          idleAmount: number,
+        ) => {
+          if (!el) return;
+          if (!win) {
+            paint(el, 0, ABOUT_INTRO.enterExitBlurPx, "none");
+            return;
+          }
           const vis = handoffVisibility(
             progress,
             win,
@@ -349,23 +357,23 @@ export function BrandingScene({
           );
           const u = 1 - vis.opacity;
           const transform = `translate3d(0, ${(16 * u).toFixed(2)}vh, 0) scale(${(1 + 0.18 * u).toFixed(4)})`;
-          paint(
+          paintIdle(
             el,
             vis.opacity,
             vis.blur,
-            composeIdleTransform(
-              idleFor(el),
-              transform,
-              now,
-              dt,
-              8,
-              vis.opacity >= 0.98,
-              u,
-              1,
-            ),
+            transform,
+            seed,
+            now,
+            dt,
+            vis.opacity >= 0.98,
+            u,
+            idleAmount,
+            pullKind,
           );
           el.style.pointerEvents = vis.opacity > 0.65 ? "auto" : "none";
-        }
+        };
+        paintFormPiece(formTitleRef.current, 8, "title", LOCKUP_IDLE);
+        paintFormPiece(formLockupRef.current, 9, "body", 1);
       }
     };
 
@@ -657,19 +665,31 @@ export function BrandingScene({
 
             {introForm ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center overflow-y-auto px-3 py-6 md:py-8">
-                <div
-                  ref={formLockupRef}
-                  className="flex w-full max-w-lg flex-col items-center will-change-transform"
-                  style={{
-                    opacity: 0,
-                    visibility: "hidden",
-                    transformOrigin: "50% 50%",
-                  }}
-                >
-                  <TitleShine as="p" className={FORM_TITLE_CLASS}>
-                    {contact.subtitle}
-                  </TitleShine>
-                  <div className="mt-8 w-full xl:mt-10">
+                <div className="flex w-full max-w-lg flex-col items-center">
+                  <div
+                    ref={formTitleRef}
+                    className="will-change-transform"
+                    style={{
+                      opacity: 0,
+                      visibility: "hidden",
+                      transformOrigin: "50% 50%",
+                      transformStyle: "preserve-3d",
+                    }}
+                  >
+                    <TitleShine as="p" className={FORM_TITLE_CLASS}>
+                      {contact.subtitle}
+                    </TitleShine>
+                  </div>
+                  <div
+                    ref={formLockupRef}
+                    className="mt-8 w-full will-change-transform xl:mt-10"
+                    style={{
+                      opacity: 0,
+                      visibility: "hidden",
+                      transformOrigin: "50% 50%",
+                      transformStyle: "preserve-3d",
+                    }}
+                  >
                     <ContactForm />
                   </div>
                 </div>
