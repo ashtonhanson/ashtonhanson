@@ -25,6 +25,9 @@ const FOCUS_GLIDE_MS = 2400;
 const HOVER_SCROLL_TAU_MS = 680;
 const FOCUS_LERP_MS = 320;
 const FOCUS_FALLOFF = 0.58;
+const MOMENTUM_MIN_VELOCITY = 0.015;
+const MOMENTUM_FRICTION_TAU_MS = 520;
+const DRAG_SAMPLE_MS = 120;
 
 const STYLES = /* css */ `
 :host {
@@ -71,6 +74,8 @@ const STYLES = /* css */ `
   overflow-y: hidden;
   padding: 2rem 12%;
   scroll-behavior: auto;
+  touch-action: none;
+  cursor: grab;
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
@@ -87,8 +92,7 @@ const STYLES = /* css */ `
   .track {
     gap: 1rem;
     padding: 2.5rem 18%;
-    cursor: pointer;
-    touch-action: pan-y;
+    cursor: grab;
   }
 
   .track.is-dragging {
@@ -390,6 +394,10 @@ export class AhMediaCarousel extends ElementBase {
   #dragStartScroll = 0;
   #suppressClick = false;
   #pointerId = -1;
+  #coasting = false;
+  #momentumRaf: number | null = null;
+  #momentumVelocity = 0;
+  #dragSamples: { x: number; t: number }[] = [];
   #onMediaOpen: ((detail: GalleryOpenDetail) => void) | null = null;
   #mq: MediaQueryList | null = null;
   #root!: ShadowRoot;
@@ -562,6 +570,7 @@ export class AhMediaCarousel extends ElementBase {
     if (this.#userPauseTimer) window.clearTimeout(this.#userPauseTimer);
     if (this.#scrollRaf) window.cancelAnimationFrame(this.#scrollRaf);
     if (this.#scrollFrame) window.cancelAnimationFrame(this.#scrollFrame);
+    this.#cancelMomentum();
   }
 
   attributeChangedCallback(name: string, _old: string | null, value: string | null) {
@@ -672,30 +681,105 @@ export class AhMediaCarousel extends ElementBase {
       this.#lightboxOpen ||
       this.#userPaused ||
       this.#dragMoved ||
+      this.#coasting ||
       !this.#isVisibleEnough() ||
       this.#items.length < 2 ||
       (this.#hoverTargetIndex >= 0 && this.#isDesktop());
   }
 
+  #cancelMomentum() {
+    if (this.#momentumRaf) {
+      window.cancelAnimationFrame(this.#momentumRaf);
+      this.#momentumRaf = null;
+    }
+    this.#coasting = false;
+    this.#momentumVelocity = 0;
+  }
+
+  #trackDragSample(x: number) {
+    const t = performance.now();
+    this.#dragSamples.push({ x, t });
+    const cutoff = t - DRAG_SAMPLE_MS;
+    while (this.#dragSamples.length > 2 && this.#dragSamples[0].t < cutoff) {
+      this.#dragSamples.shift();
+    }
+  }
+
+  #dragReleaseVelocity() {
+    const samples = this.#dragSamples;
+    if (samples.length < 2) return 0;
+    const first = samples[0];
+    const last = samples[samples.length - 1];
+    const dt = last.t - first.t;
+    if (dt < 8) return 0;
+    return -(last.x - first.x) / dt;
+  }
+
+  #startMomentum(initialVelocity: number) {
+    this.#cancelMomentum();
+    if (!this.#track || Math.abs(initialVelocity) < MOMENTUM_MIN_VELOCITY) {
+      this.#dragMoved = false;
+      this.#syncAutoPause();
+      this.#syncPlayback();
+      return;
+    }
+
+    this.#coasting = true;
+    this.#momentumVelocity = initialVelocity;
+    this.#syncAutoPause();
+    let lastNow = performance.now();
+
+    const step = (now: number) => {
+      if (!this.#track) {
+        this.#cancelMomentum();
+        return;
+      }
+
+      const dt = Math.min(48, now - lastNow);
+      lastNow = now;
+      const maxLeft = this.#maxScroll();
+      let next = this.#track.scrollLeft + this.#momentumVelocity * dt;
+
+      if (next <= 0 || next >= maxLeft) {
+        next = Math.max(0, Math.min(maxLeft, next));
+        this.#momentumVelocity = 0;
+      }
+
+      this.#track.scrollLeft = next;
+      this.#normalizeLoop();
+      this.#syncFocus(now, dt);
+      this.#syncMediaSources();
+
+      this.#momentumVelocity *= Math.exp(-dt / MOMENTUM_FRICTION_TAU_MS);
+
+      if (Math.abs(this.#momentumVelocity) < MOMENTUM_MIN_VELOCITY) {
+        this.#cancelMomentum();
+        this.#dragMoved = false;
+        this.#syncAutoPause();
+        this.#syncPlayback();
+        return;
+      }
+
+      this.#momentumRaf = window.requestAnimationFrame(step);
+    };
+
+    this.#momentumRaf = window.requestAnimationFrame(step);
+  }
+
   #cancelScrollAnimation() {
-    if (!this.#scrollRaf) return;
+    if (!this.#scrollRaf) {
+      this.#cancelMomentum();
+      return;
+    }
     window.cancelAnimationFrame(this.#scrollRaf);
     this.#scrollRaf = null;
+    this.#cancelMomentum();
     this.#syncAutoPause();
   }
 
   #onPointerDown = (event: PointerEvent) => {
-    if (event.pointerType === "touch") {
-      this.#pauseForUser();
-      return;
-    }
-    if (!this.#isDesktop()) return;
     if (event.button !== 0) return;
     if (!this.#track) return;
-    const onSlide = (event.target as HTMLElement).closest<HTMLElement>(
-      "[data-slide]",
-    );
-    if (onSlide) return;
     if (this.#items.length < 2) return;
 
     this.#cancelScrollAnimation();
@@ -708,7 +792,9 @@ export class AhMediaCarousel extends ElementBase {
     this.#pointerId = event.pointerId;
     this.#dragStartX = event.clientX;
     this.#dragStartScroll = this.#track.scrollLeft;
+    this.#dragSamples = [{ x: event.clientX, t: performance.now() }];
     this.#syncAutoPause();
+    this.#syncPlayback();
   };
 
   #onPointerMove = (event: PointerEvent) => {
@@ -727,6 +813,8 @@ export class AhMediaCarousel extends ElementBase {
       }
     }
 
+    this.#trackDragSample(event.clientX);
+
     const maxLeft = Math.max(
       0,
       this.#track.scrollWidth - this.#track.clientWidth,
@@ -735,6 +823,9 @@ export class AhMediaCarousel extends ElementBase {
       0,
       Math.min(maxLeft, this.#dragStartScroll - dx),
     );
+    this.#normalizeLoop();
+    this.#syncFocus();
+    this.#syncMediaSources();
   };
 
   #onPointerUp = (event: PointerEvent) => {
@@ -743,15 +834,16 @@ export class AhMediaCarousel extends ElementBase {
     const wasDrag = this.#dragMoved;
     this.#dragging = false;
     this.#pointerId = -1;
+    this.#dragSamples = [];
     this.#track?.classList.remove("is-dragging");
     if (this.#track?.hasPointerCapture(event.pointerId)) {
       this.#track.releasePointerCapture(event.pointerId);
     }
 
-    if (!wasDrag && event.button === 0) {
-      // Clicks on slides are handled by slide listeners — drag is track-padding only.
-    } else if (wasDrag) {
+    if (wasDrag) {
       this.#suppressClick = true;
+      this.#startMomentum(this.#dragReleaseVelocity());
+      return;
     }
 
     this.#dragMoved = false;
@@ -803,6 +895,7 @@ export class AhMediaCarousel extends ElementBase {
       !this.#track ||
       !this.#isDesktop() ||
       this.#dragging ||
+      this.#coasting ||
       this.#lightboxOpen ||
       this.#hoverTargetIndex < 0
     ) {
@@ -998,10 +1091,7 @@ export class AhMediaCarousel extends ElementBase {
       };
       video.addEventListener("loadeddata", markLoaded);
       video.addEventListener("canplay", markLoaded);
-      video.addEventListener("error", markLoaded);
-      if (!clone) {
-        video.dataset.src = item.src;
-      }
+      video.dataset.src = item.src;
       if (video.readyState >= 2) markLoaded();
       frame.appendChild(video);
     } else {
@@ -1336,6 +1426,20 @@ export class AhMediaCarousel extends ElementBase {
     video.dataset.hydrated = "1";
     video.preload = "auto";
     video.src = src;
+    video.addEventListener(
+      "loadeddata",
+      () => {
+        const slide = video.closest<HTMLElement>("[data-slide]");
+        const slideIndex = Number(slide?.dataset.slide);
+        if (
+          Number.isNaN(slideIndex) ||
+          slideIndex !== this.#playTargetIndex()
+        ) {
+          this.#primeVideoFrame(video);
+        }
+      },
+      { once: true },
+    );
   }
 
   #primeVideoFrame(video: HTMLVideoElement) {
@@ -1386,14 +1490,12 @@ export class AhMediaCarousel extends ElementBase {
   #syncMediaSources() {
     if (!this.#inView || !this.#track) return;
 
-    this.#track
-      .querySelectorAll<HTMLElement>('[data-slide]:not([data-clone="1"])')
-      .forEach((slide) => {
-        const video = slide.querySelector<HTMLVideoElement>("video");
-        const src = video?.dataset.src;
-        if (!video || !src) return;
-        this.#hydrateVideo(video, src);
-      });
+    this.#track.querySelectorAll<HTMLElement>("[data-slide]").forEach((slide) => {
+      const video = slide.querySelector<HTMLVideoElement>("video");
+      const src = video?.dataset.src;
+      if (!video || !src) return;
+      this.#hydrateVideo(video, src);
+    });
   }
 
   #playTargetIndex() {
@@ -1422,6 +1524,13 @@ export class AhMediaCarousel extends ElementBase {
         void video.play().catch(() => undefined);
       } else {
         video.pause();
+        if (video.readyState >= 2) {
+          try {
+            if (video.currentTime < 0.001) video.currentTime = 0.001;
+          } catch {
+            /* ignore seek errors on some mobile browsers */
+          }
+        }
       }
     });
     this.#syncMediaSources();
@@ -1433,15 +1542,15 @@ export class AhMediaCarousel extends ElementBase {
     const playTarget = this.#playTargetIndex();
 
     this.#track
-      .querySelectorAll<HTMLElement>('[data-slide]:not([data-clone="1"])')
-      .forEach((slide) => {
-        const slideIndex = Number(slide.dataset.slide);
-        if (Number.isNaN(slideIndex)) return;
-        const video = slide.querySelector<HTMLVideoElement>("video");
-        if (!video || video.dataset.hydrated !== "1") return;
-        if (slideIndex === playTarget) return;
-        const dist = Math.abs(slideIndex - this.#active);
-        if (dist <= 2) this.#primeVideoFrame(video);
+      .querySelectorAll<HTMLVideoElement>("video[data-src]")
+      .forEach((video) => {
+        if (video.dataset.hydrated !== "1" || video.dataset.primed === "1") {
+          return;
+        }
+        const slide = video.closest<HTMLElement>("[data-slide]");
+        const slideIndex = Number(slide?.dataset.slide);
+        if (!Number.isNaN(slideIndex) && slideIndex === playTarget) return;
+        this.#primeVideoFrame(video);
       });
   }
 
@@ -1530,7 +1639,12 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   #onTrackMouseMove = (event: MouseEvent) => {
-    if (!this.#isDesktop() || this.#dragging || this.#lightboxOpen) {
+    if (
+      !this.#isDesktop() ||
+      this.#dragging ||
+      this.#coasting ||
+      this.#lightboxOpen
+    ) {
       return;
     }
     const slide = this.#slideAtClientX(event.clientX);
