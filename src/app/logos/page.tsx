@@ -16,6 +16,7 @@ export default function LogosPage() {
         cases={logoCases}
         mediaVariant="plate"
         menu
+        introBodyLowerExit
       />
     </>
   );

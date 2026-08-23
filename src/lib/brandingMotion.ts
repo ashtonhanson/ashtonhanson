@@ -316,6 +316,32 @@ export function shrinkOutPose(
   };
 }
 
+/** ADS / LOGOS intro copy — exits slightly lower on scroll-out. */
+export function pageIntroBodyElementPath(): BezierPath {
+  return {
+    p0: { x: -8, y: 8, z: 0, scale: 1, rot: -2 },
+    p1: { x: 0, y: 4, z: 0, scale: 1, rot: 0.6 },
+    p2: { x: 5, y: 6, z: 0, scale: 1, rot: 1.8 },
+    p3: { x: 9, y: 11, z: 0, scale: 1, rot: 3.2 },
+  };
+}
+
+/** Intro paragraph pose for secondary pages (ADS, LOGOS). */
+export function sampleIntroBodyPose(zoomT: number): PathPose {
+  const lateralPath = pageIntroBodyElementPath();
+  const lateral = sampleBezierPath(zoomT, lateralPath);
+  const zoom = sampleBezierPath(zoomT, aboutZoomPath());
+  const lean = introDirectionalLean(lateralPath, zoomT, zoom.scale, 1);
+  return {
+    x: lateral.x,
+    y: lateral.y + ABOUT_INTRO.zoomAnchorY * zoomT,
+    z: zoom.z,
+    scale: zoom.scale,
+    rot: lateral.rot + lean.leanRot,
+    rotX: lean.rotX,
+  };
+}
+
 /** Branding page intro — title arrives from the left, rests right, exits lower. */
 export function brandingIntroElementPath(content: number): BezierPath {
   switch (content) {

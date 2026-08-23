@@ -24,6 +24,7 @@ import {
   hubHandoffT,
   PAGE_FINALE,
   sampleBrandingIntroPose,
+  sampleIntroBodyPose,
   TEXT_DIRECTIONAL_LEAN,
   type ArriveKind,
   type HandoffTiming,
@@ -106,6 +107,8 @@ type BrandingSceneProps = {
   menu?: boolean;
   /** Branding page — right-biased intro + stronger directional lean on text. */
   brandingMotion?: boolean;
+  /** ADS / LOGOS — intro paragraph exits a little lower. */
+  introBodyLowerExit?: boolean;
 };
 
 function paint(
@@ -138,6 +141,7 @@ export function BrandingScene({
   cases,
   menu = false,
   brandingMotion = false,
+  introBodyLowerExit = false,
 }: BrandingSceneProps) {
   const pinRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -234,6 +238,9 @@ export function BrandingScene({
     const packedExitGate =
       handoffs[lastReal]?.exitStart ?? ABOUT_INTRO.sequenceEnd;
 
+    const introBodyHandoff =
+      introLines.length > 0 ? 2 + (introSubtitle ? 1 : 0) : -1;
+
     const updateIntro = (progress: number, now: number, dt: number) => {
       const { stageFadeStart, stageFadeEnd, enterExitBlurPx } = ABOUT_INTRO;
       const stageFade = easeInOutCubic(
@@ -270,9 +277,12 @@ export function BrandingScene({
         );
         const lifeT =
           handoffIndex === 0 ? cueLifeT(progress, win) : vis.zoomT;
-        const pose = brandingMotion
-          ? sampleBrandingIntroPose(handoffIndex, vis.zoomT, lifeT)
-          : sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
+        const pose =
+          introBodyLowerExit && handoffIndex === introBodyHandoff
+            ? sampleIntroBodyPose(vis.zoomT)
+            : brandingMotion
+              ? sampleBrandingIntroPose(handoffIndex, vis.zoomT, lifeT)
+              : sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
         if (handoffIndex === 0) {
           pose.y += cueArriveY(now - born);
         }
@@ -513,7 +523,7 @@ export function BrandingScene({
       window.visualViewport?.removeEventListener("scroll", onScroll);
       window.visualViewport?.removeEventListener("resize", onScroll);
     };
-  }, [introLines.length, introTags.length, introSubtitle, introEmail, introForm, finale, cases.length, brandingMotion, intro.pinHeightVh, intro.linesStart, intro.lineSpan, intro.holdAfter, intro.exitSpan, handoff.lead, handoff.span, handoff.finish]);
+  }, [introLines.length, introTags.length, introSubtitle, introEmail, introForm, finale, cases.length, brandingMotion, introBodyLowerExit, intro.pinHeightVh, intro.linesStart, intro.lineSpan, intro.holdAfter, intro.exitSpan, handoff.lead, handoff.span, handoff.finish]);
 
   let angleCursor =
     (introLines.length ? 1 : 0) +
