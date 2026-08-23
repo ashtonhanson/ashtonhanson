@@ -612,12 +612,23 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   #normalizeLoop() {
-    if (this.#hoverTargetSlide || this.#hoverTargetIndex >= 0) return;
+    if (!this.#track) return;
+    this.#applyLoopScroll(this.#track.scrollLeft);
+  }
+
+  #applyLoopScroll(target: number) {
+    if (!this.#track) return;
     const span = this.#loopSpan();
-    if (span < 1 || !this.#track) return;
-    if (this.#track.scrollLeft >= span) {
-      this.#track.scrollLeft -= span;
+    if (span < 1 || this.#items.length < 2) {
+      this.#track.scrollLeft = Math.max(0, Math.min(this.#maxScroll(), target));
+      return;
     }
+
+    let left = target;
+    if (left < 0) left += span;
+    while (left >= span) left -= span;
+
+    this.#track.scrollLeft = left;
   }
 
   #slideEl(index: number) {
@@ -738,15 +749,21 @@ export class AhMediaCarousel extends ElementBase {
 
       const dt = Math.min(48, now - lastNow);
       lastNow = now;
-      const maxLeft = this.#maxScroll();
-      let next = this.#track.scrollLeft + this.#momentumVelocity * dt;
+      const next = this.#track.scrollLeft + this.#momentumVelocity * dt;
+      const span = this.#loopSpan();
 
-      if (next <= 0 || next >= maxLeft) {
-        next = Math.max(0, Math.min(maxLeft, next));
-        this.#momentumVelocity *= 0.22;
+      if (span < 1 || this.#items.length < 2) {
+        const maxLeft = this.#maxScroll();
+        let clamped = next;
+        if (clamped <= 0 || clamped >= maxLeft) {
+          clamped = Math.max(0, Math.min(maxLeft, clamped));
+          this.#momentumVelocity *= 0.22;
+        }
+        this.#track.scrollLeft = clamped;
+      } else {
+        this.#applyLoopScroll(next);
       }
 
-      this.#track.scrollLeft = next;
       this.#normalizeLoop();
       this.#syncFocus(now, dt);
       this.#syncMediaSources();
@@ -754,6 +771,7 @@ export class AhMediaCarousel extends ElementBase {
       this.#momentumVelocity *= Math.exp(-dt / MOMENTUM_FRICTION_TAU_MS);
 
       if (Math.abs(this.#momentumVelocity) < MOMENTUM_MIN_VELOCITY) {
+        this.#normalizeLoop();
         this.#cancelMomentum();
         this.#dragMoved = false;
         this.#syncAutoPause();
@@ -784,6 +802,7 @@ export class AhMediaCarousel extends ElementBase {
     if (this.#items.length < 2) return;
 
     this.#cancelScrollAnimation();
+    this.#normalizeLoop();
     this.#hoverTargetIndex = -1;
     this.#hoverTargetSlide = null;
     this.#hoverScrollCarry = 0;
@@ -816,14 +835,7 @@ export class AhMediaCarousel extends ElementBase {
 
     this.#trackDragSample(event.clientX);
 
-    const maxLeft = Math.max(
-      0,
-      this.#track.scrollWidth - this.#track.clientWidth,
-    );
-    this.#track.scrollLeft = Math.max(
-      0,
-      Math.min(maxLeft, this.#dragStartScroll - dx),
-    );
+    this.#applyLoopScroll(this.#dragStartScroll - dx);
     this.#normalizeLoop();
     this.#syncFocus();
     this.#syncMediaSources();
@@ -843,6 +855,7 @@ export class AhMediaCarousel extends ElementBase {
 
     if (wasDrag) {
       this.#suppressClick = true;
+      this.#normalizeLoop();
       this.#startMomentum(this.#dragReleaseVelocity());
       return;
     }
@@ -906,17 +919,14 @@ export class AhMediaCarousel extends ElementBase {
     const slide = this.#hoverTargetSlide;
     if (!slide) return;
 
-    const maxLeft = this.#maxScroll();
-    const targetLeft = Math.max(
-      0,
-      Math.min(maxLeft, this.#slideScrollLeft(slide)),
-    );
+    const targetLeft = this.#slideScrollLeft(slide);
     const current = this.#track.scrollLeft;
     const delta = targetLeft - current;
 
     if (Math.abs(delta) < 0.35) {
-      if (current !== targetLeft) this.#track.scrollLeft = targetLeft;
+      if (current !== targetLeft) this.#applyLoopScroll(targetLeft);
       this.#hoverScrollCarry = 0;
+      this.#normalizeLoop();
       return;
     }
 
@@ -927,10 +937,8 @@ export class AhMediaCarousel extends ElementBase {
     if (Math.abs(this.#hoverScrollCarry) >= 0.5) {
       const step = Math.round(this.#hoverScrollCarry);
       this.#hoverScrollCarry -= step;
-      this.#track.scrollLeft = Math.max(
-        0,
-        Math.min(maxLeft, current + step),
-      );
+      this.#applyLoopScroll(current + step);
+      this.#normalizeLoop();
     }
   }
 
@@ -958,8 +966,8 @@ export class AhMediaCarousel extends ElementBase {
       this.#autoCarry -= step;
 
       let next = this.#track.scrollLeft + step;
-      this.#track.scrollLeft = next;
-      this.#normalizeLoop();
+      this.#applyLoopScroll(next);
+      this.#syncFocus(now);
     };
 
     this.#autoRaf = window.requestAnimationFrame(tick);
