@@ -619,7 +619,50 @@ export class AhMediaCarousel extends ElementBase {
     if (span < 1) return;
     if (this.#track.scrollLeft >= span) {
       this.#track.scrollLeft -= span;
+      this.#reconcileFocusAfterLoop();
     }
+  }
+
+  #reconcileFocusAfterLoop() {
+    this.#track
+      .querySelectorAll<HTMLElement>('[data-clone="1"]')
+      .forEach((clone) => {
+        const index = Number(clone.dataset.slide);
+        if (Number.isNaN(index)) return;
+        const original = this.#slideEl(index);
+        if (!original) return;
+
+        const cloneFocus = this.#focusMap.get(clone);
+        if (cloneFocus) {
+          this.#focusMap.set(original, { ...cloneFocus });
+        }
+
+        const cloneVisual =
+          clone.querySelector<HTMLElement>(".slide-visual") ?? clone;
+        const originalVisual =
+          original.querySelector<HTMLElement>(".slide-visual") ?? original;
+        originalVisual.style.transform = cloneVisual.style.transform;
+        originalVisual.style.opacity = cloneVisual.style.opacity;
+        originalVisual.style.filter = cloneVisual.style.filter;
+
+        const cloneVideo = clone.querySelector<HTMLVideoElement>("video");
+        const originalVideo = original.querySelector<HTMLVideoElement>("video");
+        if (
+          cloneVideo &&
+          originalVideo &&
+          cloneVideo.dataset.hydrated === "1" &&
+          cloneVideo.readyState >= 2
+        ) {
+          if (originalVideo.dataset.hydrated !== "1" && originalVideo.dataset.src) {
+            this.#hydrateVideo(originalVideo, originalVideo.dataset.src);
+          }
+          try {
+            originalVideo.currentTime = cloneVideo.currentTime;
+          } catch {
+            /* ignore seek errors on some mobile browsers */
+          }
+        }
+      });
   }
 
   #commitScrollLeft(target: number) {
@@ -632,8 +675,11 @@ export class AhMediaCarousel extends ElementBase {
       return;
     }
 
-    this.#track.scrollLeft = Math.max(0, Math.min(maxLeft, target));
-    this.#normalizeLoop();
+    let left = Math.max(0, Math.min(maxLeft, target));
+    const wrapped = left >= span;
+    while (left >= span) left -= span;
+    this.#track.scrollLeft = left;
+    if (wrapped) this.#reconcileFocusAfterLoop();
   }
 
   #slideEl(index: number) {
@@ -967,7 +1013,15 @@ export class AhMediaCarousel extends ElementBase {
       this.#autoCarry -= step;
 
       let next = this.#track.scrollLeft + step;
-      this.#commitScrollLeft(next);
+      const span = this.#loopSpan();
+      if (span >= 1) {
+        while (next >= span) next -= span;
+        const wrapped = next < this.#track.scrollLeft;
+        this.#track.scrollLeft = next;
+        if (wrapped) this.#reconcileFocusAfterLoop();
+      } else {
+        this.#commitScrollLeft(next);
+      }
     };
 
     this.#autoRaf = window.requestAnimationFrame(tick);
@@ -1399,6 +1453,14 @@ export class AhMediaCarousel extends ElementBase {
       visual.style.filter = blur < 0.08 ? "none" : `blur(${blur.toFixed(2)}px)`;
 
       if (amount > bestAmount) {
+        bestAmount = amount;
+        best = slideIndex;
+        bestSlide = slide;
+      } else if (
+        amount >= bestAmount - 0.001 &&
+        slide.dataset.clone !== "1" &&
+        bestSlide?.dataset.clone === "1"
+      ) {
         bestAmount = amount;
         best = slideIndex;
         bestSlide = slide;
