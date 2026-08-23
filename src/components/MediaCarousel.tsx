@@ -22,7 +22,7 @@ type MediaCarouselProps = {
 declare module "react" {
   namespace JSX {
     interface IntrinsicElements {
-      "ah-media-gallery-v28": React.DetailedHTMLProps<
+      "ah-media-gallery-v29": React.DetailedHTMLProps<
         React.HTMLAttributes<AhMediaCarousel> & { label?: string },
         AhMediaCarousel
       >;
@@ -35,8 +35,7 @@ export function MediaCarousel({ items, label = "Gallery" }: MediaCarouselProps) 
   const galleryRef = useRef<AhMediaCarousel | null>(null);
   const [lightbox, setLightbox] = useState<LightboxMedia | null>(null);
 
-  const handleOpen = useCallback((event: Event) => {
-    const detail = (event as CustomEvent<GalleryOpenDetail>).detail;
+  const openLightbox = useCallback((detail: GalleryOpenDetail) => {
     if (!detail?.src) return;
     setLightbox({
       src: detail.src,
@@ -51,31 +50,29 @@ export function MediaCarousel({ items, label = "Gallery" }: MediaCarouselProps) 
     galleryRef.current?.resumeAutoplay();
   }, []);
 
-  const setGalleryRef = useCallback(
+  const bindGallery = useCallback(
     (node: AhMediaCarousel | null) => {
-      if (galleryRef.current) {
-        galleryRef.current.removeEventListener("ah-media-open", handleOpen);
-      }
       galleryRef.current = node;
       if (node) {
-        node.addEventListener("ah-media-open", handleOpen);
+        node.onMediaOpen = openLightbox;
         node.items = items;
       }
     },
-    [items, handleOpen],
+    [items, openLightbox],
   );
 
   useEffect(() => {
-    if (galleryRef.current) {
-      galleryRef.current.items = items;
-    }
-  }, [items]);
+    const el = galleryRef.current;
+    if (!el) return;
+    el.onMediaOpen = openLightbox;
+    el.items = items;
+  }, [items, openLightbox]);
 
   if (!items.length) return null;
 
   return (
     <>
-      <ah-media-gallery-v28 ref={setGalleryRef} label={label} className="block w-full" />
+      <ah-media-gallery-v29 ref={bindGallery} label={label} className="block w-full" />
       <MediaLightbox item={lightbox} onClose={onClose} />
     </>
   );

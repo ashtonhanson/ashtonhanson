@@ -45,7 +45,8 @@ function paint(
   el.style.transformStyle = "preserve-3d";
   el.style.transform = transform;
   el.style.visibility = opacity < 0.02 ? "hidden" : "visible";
-  el.style.pointerEvents = opacity > 0.65 ? "auto" : "none";
+  el.style.pointerEvents =
+    opacity > (el.dataset.kind === "media" ? 0.15 : 0.65) ? "auto" : "none";
 }
 
 
