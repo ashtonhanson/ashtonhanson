@@ -79,7 +79,7 @@ const STYLES = /* css */ `
   .track {
     gap: 1rem;
     padding: 2.5rem 18%;
-    cursor: grab;
+    cursor: default;
     touch-action: pan-y;
   }
 
@@ -88,7 +88,8 @@ const STYLES = /* css */ `
     user-select: none;
   }
 
-  .track.is-dragging .slide {
+  .track.is-dragging .slide,
+  .track.is-dragging .media {
     cursor: grabbing;
   }
 }
@@ -100,7 +101,7 @@ const STYLES = /* css */ `
   width: auto;
   max-width: 42rem;
   flex-shrink: 0;
-  cursor: default;
+  cursor: pointer;
   overflow: visible;
   transform-origin: 50% 50%;
   transform-style: preserve-3d;
@@ -157,6 +158,7 @@ const STYLES = /* css */ `
   transform: scale(1.08);
   transform-origin: center center;
   opacity: 1;
+  cursor: pointer;
 }
 
 .controls {
@@ -529,6 +531,10 @@ export class AhMediaCarousel extends ElementBase {
     if (!this.#isDesktop()) return;
     if (event.button !== 0) return;
     if (!this.#track) return;
+    const onSlide = (event.target as HTMLElement).closest<HTMLElement>(
+      "[data-slide]",
+    );
+    if (onSlide) return;
     if (this.#items.length < 2) return;
 
     this.#cancelScrollAnimation();
@@ -582,14 +588,7 @@ export class AhMediaCarousel extends ElementBase {
     }
 
     if (!wasDrag && event.button === 0) {
-      const slide = (event.target as HTMLElement).closest<HTMLElement>(
-        "[data-slide]",
-      );
-      if (slide) {
-        const index = Number(slide.dataset.slide);
-        this.#suppressClick = true;
-        this.#handleSlideActivate(slide, index);
-      }
+      // Clicks on slides are handled by slide listeners — drag is track-padding only.
     } else if (wasDrag) {
       this.#suppressClick = true;
     }
@@ -820,6 +819,7 @@ export class AhMediaCarousel extends ElementBase {
 
     const frame = document.createElement("div");
     frame.className = "frame";
+    let mediaEl: HTMLVideoElement | HTMLImageElement;
 
     if (isVideo(item)) {
       const video = document.createElement("video");
@@ -844,6 +844,7 @@ export class AhMediaCarousel extends ElementBase {
       }
       if (video.readyState >= 2) markLoaded();
       frame.appendChild(video);
+      mediaEl = video;
     } else {
       const img = document.createElement("img");
       img.className = "media";
@@ -859,14 +860,27 @@ export class AhMediaCarousel extends ElementBase {
       if (img.complete) markLoaded();
       void img.decode?.().then(markLoaded).catch(markLoaded);
       frame.appendChild(img);
+      mediaEl = img;
     }
 
     slide.appendChild(frame);
 
+    const openSlide = (event: Event) => {
+      event.stopPropagation();
+      if (this.#suppressClick) {
+        this.#suppressClick = false;
+        return;
+      }
+      this.#openItem(index);
+    };
+    slide.addEventListener("click", openSlide, true);
+    frame.addEventListener("click", openSlide, true);
+    mediaEl.addEventListener("click", openSlide, true);
+
     slide.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
-      this.#handleSlideActivate(slide, index);
+      this.#openItem(index);
     });
 
     return slide;
@@ -882,7 +896,8 @@ export class AhMediaCarousel extends ElementBase {
     );
     if (!slide) return;
     const index = Number(slide.dataset.slide);
-    this.#handleSlideActivate(slide, index);
+    if (Number.isNaN(index)) return;
+    this.#openItem(index);
   };
 
   #openItem(index: number) {
@@ -915,32 +930,6 @@ export class AhMediaCarousel extends ElementBase {
 
   #slideScrollLeft(slide: HTMLElement) {
     return slide.offsetLeft - (this.#track.clientWidth - slide.offsetWidth) / 2;
-  }
-
-  #isSlideFocused(slide: HTMLElement) {
-    if (!this.#track) return false;
-    const trackRect = this.#track.getBoundingClientRect();
-    const rootMid = trackRect.left + trackRect.width / 2;
-    const rect = slide.getBoundingClientRect();
-    const mid = rect.left + rect.width / 2;
-    const clearPx = Math.max(16, slide.offsetWidth * 0.12);
-    return Math.abs(mid - rootMid) <= clearPx;
-  }
-
-  #handleSlideActivate(slide: HTMLElement, index: number) {
-    if (Number.isNaN(index) || this.#lightboxOpen) return;
-    this.#pauseForUser();
-
-    if (!this.#isSlideFocused(slide)) {
-      this.#cancelScrollAnimation();
-      this.#hoverTargetSlide = slide;
-      this.#hoverTargetIndex = index;
-      this.#targetIndex = index;
-      this.#syncAutoPause();
-      return;
-    }
-
-    this.#openItem(index);
   }
 
   /** Pick the physical slide under the cursor — original or loop clone. */
@@ -1085,7 +1074,6 @@ export class AhMediaCarousel extends ElementBase {
       }
       slide.style.opacity = String(opacity);
       slide.style.filter = blur < 0.08 ? "none" : `blur(${blur.toFixed(2)}px)`;
-      slide.style.cursor = isCentered ? "pointer" : "";
 
       if (amount > bestAmount) {
         bestAmount = amount;
@@ -1254,15 +1242,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v29": AhMediaCarousel;
+    "ah-media-gallery-v30": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v29")
+    !customElements.get("ah-media-gallery-v30")
   ) {
-    customElements.define("ah-media-gallery-v29", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v30", AhMediaCarousel);
   }
 }

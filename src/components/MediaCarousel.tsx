@@ -22,7 +22,7 @@ type MediaCarouselProps = {
 declare module "react" {
   namespace JSX {
     interface IntrinsicElements {
-      "ah-media-gallery-v29": React.DetailedHTMLProps<
+      "ah-media-gallery-v30": React.DetailedHTMLProps<
         React.HTMLAttributes<AhMediaCarousel> & { label?: string },
         AhMediaCarousel
       >;
@@ -68,11 +68,20 @@ export function MediaCarousel({ items, label = "Gallery" }: MediaCarouselProps) 
     el.items = items;
   }, [items, openLightbox]);
 
+  useEffect(() => {
+    const onDocOpen = (event: Event) => {
+      const detail = (event as CustomEvent<GalleryOpenDetail>).detail;
+      openLightbox(detail);
+    };
+    document.addEventListener("ah-media-open", onDocOpen);
+    return () => document.removeEventListener("ah-media-open", onDocOpen);
+  }, [openLightbox]);
+
   if (!items.length) return null;
 
   return (
     <>
-      <ah-media-gallery-v29 ref={bindGallery} label={label} className="block w-full" />
+      <ah-media-gallery-v30 ref={bindGallery} label={label} className="block w-full" />
       <MediaLightbox item={lightbox} onClose={onClose} />
     </>
   );
