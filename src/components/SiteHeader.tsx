@@ -137,8 +137,9 @@ export function SiteHeader() {
   }, []);
 
   return (
-    <header className="site-header border-b border-line">
+    <div className="site-header-shell">
       <div className="site-header-frost" aria-hidden="true" />
+      <header className="site-header border-b border-line">
       <div className="site-header-row mx-auto flex max-w-6xl items-center px-5 py-3 md:px-8 xl:max-w-7xl xl:px-12 2xl:px-16">
         <Link
           href="/"
@@ -208,7 +209,6 @@ export function SiteHeader() {
           className="site-header-panel border-t border-line px-5 py-4"
           aria-label="Mobile"
         >
-          <div className="site-header-panel-frost" aria-hidden="true" />
           <ul className="flex flex-col items-end gap-4">
             {navLinks.map((link, index) => {
               const active =
@@ -238,6 +238,7 @@ export function SiteHeader() {
           </ul>
         </nav>
       ) : null}
-    </header>
+      </header>
+    </div>
   );
 }
