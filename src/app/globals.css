@@ -46,20 +46,6 @@ html {
   overscroll-behavior-x: none;
 }
 
-html::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 49;
-  height: var(--site-header-frost-height, 3.6rem);
-  pointer-events: none;
-  background: rgb(12 12 13 / 0.42);
-  backdrop-filter: blur(22px) saturate(1.7);
-  -webkit-backdrop-filter: blur(22px) saturate(1.7);
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
@@ -556,7 +542,7 @@ body {
 }
 
 .site-header-frost {
-  display: none;
+  height: var(--site-header-frost-height, 3.6rem);
 }
 
 .site-header-panel {

@@ -37,6 +37,10 @@ export default function RootLayout({
         />
       </head>
       <body className="w-full max-w-full bg-background font-display text-foreground antialiased">
+        <div
+          className="site-header-frost pointer-events-none fixed inset-x-0 top-0 z-[49] bg-[rgb(12_12_13/0.42)] backdrop-blur-[22px] backdrop-saturate-[1.7]"
+          aria-hidden="true"
+        />
         <ScrollRestore />
         <AmbientOrbs />
         <SiteHeader />
