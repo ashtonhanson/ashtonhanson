@@ -36,8 +36,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="relative w-full max-w-full bg-background font-display text-foreground antialiased">
-        <div className="site-header-frost" aria-hidden="true" />
+      <body className="w-full max-w-full bg-background font-display text-foreground antialiased">
         <ScrollRestore />
         <AmbientOrbs />
         <SiteHeader />

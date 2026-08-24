@@ -46,6 +46,20 @@ html {
   overscroll-behavior-x: none;
 }
 
+html::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 49;
+  height: var(--site-header-frost-height, 3.6rem);
+  pointer-events: none;
+  background: rgb(12 12 13 / 0.42);
+  backdrop-filter: blur(22px) saturate(1.7);
+  -webkit-backdrop-filter: blur(22px) saturate(1.7);
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -542,16 +556,7 @@ body {
 }
 
 .site-header-frost {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 49;
-  height: var(--site-header-frost-height, 3.6rem);
-  pointer-events: none;
-  background: rgb(12 12 13 / 0.42);
-  backdrop-filter: blur(22px) saturate(1.7);
-  -webkit-backdrop-filter: blur(22px) saturate(1.7);
+  display: none;
 }
 
 .site-header-panel {
@@ -890,6 +895,7 @@ body {
   inset: 0;
   width: 100%;
   height: 100%;
+  isolation: isolate;
 }
 
 .velvet-field {
