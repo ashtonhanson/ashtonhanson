@@ -67,7 +67,7 @@ const STYLES = /* css */ `
   gap: 0.75rem;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 2rem 12%;
+  padding: 0.7rem 10%;
   scroll-behavior: auto;
   -ms-overflow-style: none;
   scrollbar-width: none;

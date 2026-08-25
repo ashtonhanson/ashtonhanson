@@ -170,6 +170,17 @@ body {
   z-index: 15;
 }
 
+/* Keep the AI gallery in the visible stage on short Android viewports.
+   overflow-clip + a too-short pin box was parking titles at the top and
+   clipping the work before the chapter scaled out. */
+@media (pointer: coarse) and (max-height: 900px) {
+  div.home-gallery-stage {
+    justify-content: flex-start;
+    padding-top: min(22vh, 7.25rem);
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+}
+
 /* Logo plates — holographic frame + living halo */
 .logo-plate {
   --logo-radius: 1.15rem;

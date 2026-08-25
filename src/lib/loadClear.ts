@@ -125,7 +125,7 @@ export function applyPinStage(pin: HTMLElement, stage: HTMLElement | null) {
   if (rect.bottom > pinnedBottom) {
     stage.style.position = "fixed";
     stage.style.left = `${viewL}px`;
-    stage.style.top = `${header}px`;
+    stage.style.top = `${pinnedTop}px`;
     stage.style.bottom = "auto";
     return;
   }

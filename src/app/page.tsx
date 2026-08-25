@@ -13,8 +13,8 @@ export default function HomePage() {
       meWord={home.meWord}
       aboutLines={home.aboutLines}
       gallery={
-        <div className="mx-auto flex w-full max-w-5xl flex-col items-center xl:max-w-6xl 2xl:max-w-7xl">
-          <header className="mb-7 flex flex-col items-center text-center md:mb-8">
+        <div className="home-gallery-lockup mx-auto flex w-full max-w-5xl flex-col items-center xl:max-w-6xl 2xl:max-w-7xl">
+          <header className="mb-4 flex flex-col items-center text-center md:mb-8">
             <div
               data-home-arrive
               data-kind="copy"

@@ -41,6 +41,7 @@ export function HomeDepthScene({
         exitMode="scale"
         zIndex={12}
         perspective
+        stageClassName="home-gallery-stage !overflow-visible"
         aria-label="Recent work"
       >
         {gallery}

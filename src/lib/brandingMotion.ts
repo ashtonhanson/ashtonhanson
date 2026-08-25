@@ -362,15 +362,15 @@ export function sampleIntroBodyPose(zoomT: number): PathPose {
   };
 }
 
-/** Branding page intro — title arrives from the left, rests right, exits lower. */
+/** Branding page intro — title arrives from the left, rests near center, exits lower. */
 export function brandingIntroElementPath(content: number): BezierPath {
   switch (content) {
     case 0:
       return {
-        p0: { x: -12, y: 8, z: 0, scale: 1, rot: -5 },
-        p1: { x: 2, y: 4, z: 0, scale: 1, rot: 1.8 },
-        p2: { x: 10, y: 5, z: 0, scale: 1, rot: 4.2 },
-        p3: { x: 16, y: 12, z: 0, scale: 1, rot: 6.8 },
+        p0: { x: -12, y: 0, z: 0, scale: 1, rot: -5 },
+        p1: { x: 2, y: -3, z: 0, scale: 1, rot: 1.8 },
+        p2: { x: 10, y: -2, z: 0, scale: 1, rot: 4.2 },
+        p3: { x: 16, y: 3, z: 0, scale: 1, rot: 6.8 },
       };
     case 1:
       return {
@@ -410,7 +410,7 @@ export function sampleBrandingIntroPose(
     y:
       content >= 1
         ? lateral.y + ABOUT_INTRO.zoomAnchorY * zoomT * 0.15 - 4 * zoomT
-        : lateral.y + ABOUT_INTRO.zoomAnchorY * zoomT,
+        : lateral.y,
     z: zoom.z,
     scale: zoom.scale,
     rot: lateral.rot + lean.leanRot,

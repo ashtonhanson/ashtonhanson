@@ -32,6 +32,7 @@ type CinematicChapterProps = {
   exitMode?: "shrink" | "scale" | "hold";
   zIndex?: number;
   perspective?: boolean;
+  stageClassName?: string;
   "aria-label"?: string;
 };
 
@@ -68,6 +69,7 @@ export function CinematicChapter({
   exitMode = "shrink",
   zIndex = 14,
   perspective = false,
+  stageClassName = "",
   "aria-label": ariaLabel,
 }: CinematicChapterProps) {
   const pinRef = useRef<HTMLElement>(null);
@@ -229,7 +231,7 @@ export function CinematicChapter({
     >
       <div
         ref={stageRef}
-        className="absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-clip px-5 md:px-8 xl:px-12 2xl:px-16"
+        className={`absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-clip px-5 md:px-8 xl:px-12 2xl:px-16 ${stageClassName}`.trim()}
         style={
           perspective
             ? { perspective: "1180px", perspectiveOrigin: "50% 42%" }
