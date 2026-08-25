@@ -119,7 +119,7 @@ const STYLES = /* css */ `
 .frame {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 1 / 1;
   overflow: hidden;
   border-radius: 1.25rem;
   border: 1.5px solid rgb(214 208 186 / 0.38);
@@ -127,8 +127,10 @@ const STYLES = /* css */ `
   pointer-events: none;
 }
 
-:host(.is-stills) .frame {
-  aspect-ratio: 1 / 1;
+@media (min-width: 768px) {
+  .frame {
+    aspect-ratio: 16 / 9;
+  }
 }
 
 @media (min-width: 768px) {
@@ -171,6 +173,11 @@ const STYLES = /* css */ `
 
 img.media {
   transform: scale(1.08);
+}
+
+:host(.is-stills) img.media {
+  object-fit: contain;
+  transform: none;
 }
 
 .controls {
