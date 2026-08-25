@@ -38,15 +38,15 @@ export default function RootLayout({
       </head>
       <body className="w-full max-w-full bg-background font-display text-foreground antialiased">
         <div
-          className="site-header-frost pointer-events-none fixed inset-x-0 top-0 z-[49] bg-[rgb(12_12_13/0.42)] backdrop-blur-[22px] backdrop-saturate-[1.7]"
+          className="site-header-frost pointer-events-none fixed inset-x-0 top-0 z-[99] bg-[rgb(12_12_13/0.42)] backdrop-blur-[22px] backdrop-saturate-[1.7]"
           aria-hidden="true"
         />
         <ScrollRestore />
         <AmbientOrbs />
         <SiteHeader />
         <div className="site-header-slot" aria-hidden="true" />
-        <div className="relative z-10 w-full max-w-full">
-          <main className="w-full max-w-full">{children}</main>
+        <div className="relative w-full max-w-full overflow-x-clip">
+          <main className="w-full max-w-full overflow-x-clip">{children}</main>
           <SiteFooter />
         </div>
       </body>

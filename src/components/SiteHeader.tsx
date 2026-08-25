@@ -157,7 +157,7 @@ export function SiteHeader() {
   }, [open]);
 
   return (
-    <div className="site-header-shell">
+    <div className="site-header-shell pointer-events-auto">
       <header className="site-header border-b border-line">
       <div className="site-header-row mx-auto flex max-w-6xl items-center px-5 py-3 md:px-8 xl:max-w-7xl xl:px-12 2xl:px-16">
         <Link

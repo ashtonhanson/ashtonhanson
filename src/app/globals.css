@@ -41,7 +41,7 @@ html {
   color-scheme: dark;
   width: 100%;
   max-width: 100%;
-  overflow-x: visible;
+  overflow-x: clip;
   overscroll-behavior: none;
   overscroll-behavior-x: none;
 }
@@ -56,7 +56,7 @@ body {
   letter-spacing: 0.01em;
   width: 100%;
   max-width: 100%;
-  overflow-x: visible;
+  overflow-x: clip;
   overscroll-behavior: none;
   overscroll-behavior-x: none;
 }
@@ -72,6 +72,7 @@ body {
   position: relative;
   display: inline-block;
   isolation: isolate;
+  overflow: clip;
   color: transparent;
   transform-style: preserve-3d;
 }
@@ -168,7 +169,7 @@ body {
 /* Home cinematic Z-scroll panels */
 .home-depth-scene {
   position: relative;
-  overflow-x: visible;
+  overflow-x: clip;
   overflow-y: visible;
 }
 
@@ -569,8 +570,12 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 50;
+  width: 100%;
+  max-width: 100%;
+  z-index: 100;
+  pointer-events: auto;
   background: transparent;
+  transform: translateZ(0);
 }
 
 .site-header {

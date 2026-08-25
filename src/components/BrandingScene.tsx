@@ -269,8 +269,7 @@ export function BrandingScene({
       );
       if (stageRef.current) {
         stageRef.current.style.opacity = (1 - stageFade).toFixed(3);
-        stageRef.current.style.pointerEvents =
-          stageFade > 0.4 || progress >= packedExitGate ? "none" : "auto";
+        stageRef.current.style.pointerEvents = "none";
         stageRef.current.style.zIndex =
           stageFade > 0.15 || progress >= packedExitGate ? "1" : "20";
       }
@@ -349,6 +348,8 @@ export function BrandingScene({
             pull,
           ),
         );
+        el.style.pointerEvents =
+          el === emailRef.current && opacity > 0.65 ? "auto" : "none";
       };
 
       let handoffIndex = 0;
@@ -585,7 +586,7 @@ export function BrandingScene({
       >
         <div
           ref={stageRef}
-          className="absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] items-center justify-center overflow-visible px-5 md:px-8 xl:px-12"
+          className="pointer-events-none absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] items-center justify-center overflow-clip px-5 md:px-8 xl:px-12"
           style={{
             perspective: "1180px",
             perspectiveOrigin: "50% 50%",
