@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { MobileBreakText } from "@/components/MobileBreakText";
-import { ScrollCue } from "@/components/ScrollCue";
+import { ScrollCue, freezeScrollCueMotion } from "@/components/ScrollCue";
 import { TitleShine } from "@/components/TitleShine";
 import {
   ABOUT_INTRO,
@@ -49,7 +49,7 @@ function applyHandoffStyle(
   transform: string,
 ) {
   el.style.opacity = opacity.toFixed(3);
-  el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none";
+  el.style.filter = `blur(${Math.max(0, blur).toFixed(2)}px)`;
   el.style.transformStyle = "preserve-3d";
   el.style.transform = transform;
   el.style.visibility = opacity < 0.02 ? "hidden" : "visible";
@@ -155,7 +155,9 @@ export function AboutIntroStage({
         const lifeT =
           handoffIndex === 0 ? cueLifeT(progress, win) : vis.zoomT;
         const pose = sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
-        const transform = poseToTransform(pose);
+        if (handoffIndex === 0 && progress > 0.001) {
+          freezeScrollCueMotion(el);
+        }
         const loadBlend =
           handoffIndex === 1
             ? stepLoadClear(
@@ -166,6 +168,8 @@ export function AboutIntroStage({
             : 0;
         const opacity =
           handoffIndex === 0 ? cueHoldOpacity(lifeT) : vis.opacity;
+        const transform =
+          opacity < 0.02 ? "none" : poseToTransform(pose);
         const blur =
           (handoffIndex === 0 ? (1 - opacity) * enterExitBlurPx : vis.blur) +
           loadBlend * LOAD_CLEAR_BLUR_PX;
@@ -234,10 +238,7 @@ export function AboutIntroStage({
         }}
       >
         {/* Absolute stack — each element takes center stage in turn */}
-        <div
-          className="relative z-10 h-full w-full text-center"
-          style={{ transformStyle: "preserve-3d" }}
-        >
+        <div className="relative z-10 h-full w-full text-center">
           <div className="absolute inset-0 flex items-center justify-center">
             <ScrollCue ref={cueRef} />
           </div>

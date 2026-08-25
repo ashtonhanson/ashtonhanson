@@ -67,12 +67,36 @@ export function visualRectTop(el: HTMLElement) {
 }
 
 /**
+ * Stage height used for pinning. Locked after first paint so the iOS/Android
+ * URL bar showing/hiding (~40–80px) cannot resize the intro and jump titles.
+ * Relocks on rotate or a real window resize.
+ */
+function pinnedStageHeight(pin: HTMLElement) {
+  const header = headerOffsetPx();
+  const innerH = window.innerHeight || 1;
+  const innerW = window.innerWidth || 1;
+  const lockedH = Number(pin.dataset.lockStageH || 0);
+  const lockedW = Number(pin.dataset.lockStageW || 0);
+  const lockedInner = Number(pin.dataset.lockInnerH || 0);
+  const rotated = lockedW > 0 && Math.abs(innerW - lockedW) > 48;
+  const resized = lockedInner > 0 && Math.abs(innerH - lockedInner) > 140;
+  if (!lockedH || rotated || resized) {
+    const h = Math.max(viewHeight() - header, 120);
+    pin.dataset.lockStageH = String(h);
+    pin.dataset.lockStageW = String(innerW);
+    pin.dataset.lockInnerH = String(innerH);
+    return h;
+  }
+  return lockedH;
+}
+
+/**
  * 0 when the pin meets the header, 1 when it unsticks from the visible stage.
- * Uses the visual viewport so Android Chrome / device-frame insets stay in sync.
+ * Uses a locked stage height so browser chrome cannot jump intro progress.
  */
 export function pinProgress(pin: HTMLElement) {
   const header = headerOffsetPx();
-  const stageH = Math.max(viewHeight() - header, 120);
+  const stageH = pinnedStageHeight(pin);
   const range = pin.offsetHeight - stageH;
   if (range < 64) return 0;
   const pinnedTop = viewTop() + header;
@@ -98,15 +122,15 @@ export function headerOffsetPx() {
  */
 export function applyPinStage(pin: HTMLElement, stage: HTMLElement | null) {
   if (!stage) return;
-  const viewH = viewHeight();
   const viewW = viewWidth();
   const viewL = viewLeft();
   const viewT = viewTop();
   const header = headerOffsetPx();
-  const stageH = Math.max(viewH - header, 120);
+  const stageH = pinnedStageHeight(pin);
   const rect = pin.getBoundingClientRect();
   const pinnedTop = viewT + header;
   const pinnedBottom = pinnedTop + stageH;
+  const pinEps = 2;
 
   stage.style.height = `${stageH}px`;
   stage.style.width = `${viewW}px`;
@@ -114,7 +138,7 @@ export function applyPinStage(pin: HTMLElement, stage: HTMLElement | null) {
   stage.style.right = "auto";
   stage.style.boxSizing = "border-box";
 
-  if (rect.top > pinnedTop) {
+  if (rect.top > pinnedTop + pinEps) {
     stage.style.position = "absolute";
     stage.style.left = `${viewL - rect.left}px`;
     stage.style.top = "0";
@@ -122,7 +146,7 @@ export function applyPinStage(pin: HTMLElement, stage: HTMLElement | null) {
     return;
   }
 
-  if (rect.bottom > pinnedBottom) {
+  if (rect.bottom > pinnedBottom + pinEps) {
     stage.style.position = "fixed";
     stage.style.left = `${viewL}px`;
     stage.style.top = `${pinnedTop}px`;

@@ -6,7 +6,7 @@ import { EmailShineLink } from "@/components/EmailShineLink";
 import { LogoPlate } from "@/components/LogoPlate";
 import { MediaCarousel } from "@/components/MediaCarousel";
 import { MobileBreakText } from "@/components/MobileBreakText";
-import { ScrollCue } from "@/components/ScrollCue";
+import { ScrollCue, freezeScrollCueMotion } from "@/components/ScrollCue";
 import { TitleShine } from "@/components/TitleShine";
 import {
   arriveAngle,
@@ -123,7 +123,7 @@ function paint(
 ) {
   if (!el) return;
   el.style.opacity = opacity.toFixed(3);
-  el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none";
+  el.style.filter = `blur(${Math.max(0, blur).toFixed(2)}px)`;
   el.style.transformStyle = "preserve-3d";
   el.style.transform = transform;
   el.style.visibility =
@@ -301,6 +301,9 @@ export function BrandingScene({
               : brandingMotion
                 ? sampleBrandingIntroPose(handoffIndex, vis.zoomT, lifeT)
                 : sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
+        if (handoffIndex === 0 && progress > 0.001) {
+          freezeScrollCueMotion(el);
+        }
         const loadBlend =
           handoffIndex === 1
             ? stepLoadClear(
@@ -336,7 +339,7 @@ export function BrandingScene({
           blur,
           composeIdleTransform(
             idleFor(el),
-            poseToTransform(pose),
+            opacity < 0.02 ? "none" : poseToTransform(pose),
             now,
             dt,
             handoffIndex + 3,
@@ -591,10 +594,7 @@ export function BrandingScene({
             zIndex: 20,
           }}
         >
-          <div
-            className="relative z-10 h-full w-full max-w-full text-center"
-            style={{ transformStyle: "preserve-3d" }}
-          >
+          <div className="relative z-10 h-full w-full max-w-full text-center">
             <div className="absolute inset-0 flex items-center justify-center px-2">
               <ScrollCue ref={cueRef} />
             </div>
@@ -736,11 +736,7 @@ export function BrandingScene({
 
       {cases.length ? (
       <div
-        className={
-          mediaVariant === "plate"
-            ? "relative z-[12] overflow-x-clip"
-            : "relative z-[12] overflow-x-clip divide-y divide-line"
-        }
+        className="relative z-[12] overflow-x-clip"
         style={{ marginTop: intro.overlapCases }}
       >
         {cases.map((study, studyIndex) => {

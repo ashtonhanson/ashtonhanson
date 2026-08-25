@@ -817,15 +817,18 @@ body {
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  transform-style: preserve-3d;
 }
 
 .scroll-cue-arrive {
   transform: translate3d(0, var(--cue-from, -78vh), 0);
+  transform-style: preserve-3d;
 }
 
 .scroll-cue-hover {
   display: block;
   transform-origin: 50% 50%;
+  transform-style: preserve-3d;
 }
 
 .scroll-cue-icon {
