@@ -16,6 +16,7 @@ export default function AdsPage() {
         introTags={adCategories}
         cases={adCases}
         menu
+        adsMotion
         introBodyLowerExit
       />
     </>

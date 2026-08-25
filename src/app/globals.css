@@ -68,10 +68,12 @@ body {
 
 /* Titles — velvet fill + FIXED viewport stage-light beam (no solid outline) */
 .title-shine {
+  --title-hires: 4;
   position: relative;
   display: inline-block;
   isolation: isolate;
   color: transparent;
+  transform-style: preserve-3d;
 }
 
 .title-shine::before {
@@ -80,6 +82,38 @@ body {
 
 .title-shine::after {
   content: none;
+}
+
+/* Defines in-flow size at the authored font-size. */
+.title-shine-sizer {
+  display: block;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/*
+ * Paint at 4× on a separate 3D layer, then counter-scale to the sizer.
+ * Parent CSS scale() (intro surge ~2.8×) then composites that high-res layer
+ * instead of stretching a 1× texture — transformed text is not live vectors.
+ */
+.title-shine-paint {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+  width: calc(var(--title-hires) * 100%);
+  font-size: calc(var(--title-hires) * 100%);
+  line-height: inherit;
+  letter-spacing: inherit;
+  font-weight: inherit;
+  font-family: inherit;
+  text-transform: inherit;
+  text-align: inherit;
+  white-space: inherit;
+  transform: translate3d(-50%, -50%, 1px) scale(calc(1 / var(--title-hires)));
+  transform-origin: center center;
+  backface-visibility: hidden;
+  pointer-events: none;
 }
 
 /* Title fill — light blue fading to white */

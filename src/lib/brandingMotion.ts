@@ -418,3 +418,85 @@ export function sampleBrandingIntroPose(
     rotY: lean.rotY,
   };
 }
+
+/** ADS title — surge toward camera without drifting into a corner. */
+export function adsTitlePath(): BezierPath {
+  return {
+    p0: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
+    p1: { x: -0.6, y: -0.3, z: 0, scale: 1, rot: -0.4 },
+    p2: { x: -1.1, y: -0.5, z: 0, scale: 1, rot: -0.7 },
+    p3: { x: -1.6, y: -0.7, z: 0, scale: 1, rot: -1 },
+  };
+}
+
+/** ADS category titles — unique lean, stay near center on the way out. */
+export function adsTagPath(index: number): BezierPath {
+  switch (index) {
+    case 0: // DIRECT MAIL
+      return {
+        p0: { x: -5, y: 1, z: 0, scale: 1, rot: -2.2 },
+        p1: { x: -1.5, y: 0, z: 0, scale: 1, rot: -0.6 },
+        p2: { x: 0.8, y: -0.4, z: 0, scale: 1, rot: 0.3 },
+        p3: { x: 2.2, y: -1, z: 0, scale: 1, rot: 0.8 },
+      };
+    case 1: // PRINT
+      return {
+        p0: { x: 0, y: 2, z: 0, scale: 1, rot: 0 },
+        p1: { x: 0.4, y: 0.2, z: 0, scale: 1, rot: 0.3 },
+        p2: { x: -0.3, y: -0.4, z: 0, scale: 1, rot: -0.3 },
+        p3: { x: 0, y: -1, z: 0, scale: 1, rot: -0.5 },
+      };
+    default: // SOCIAL MEDIA
+      return {
+        p0: { x: 5, y: 1, z: 0, scale: 1, rot: 2.2 },
+        p1: { x: 1.5, y: 0, z: 0, scale: 1, rot: 0.6 },
+        p2: { x: -0.8, y: -0.4, z: 0, scale: 1, rot: -0.3 },
+        p3: { x: -2.2, y: -1, z: 0, scale: 1, rot: -0.8 },
+      };
+  }
+}
+
+/**
+ * ADS intro pin: cue → ADS (centered scale) → DIRECT MAIL → PRINT → SOCIAL MEDIA → body.
+ */
+export function sampleAdsIntroPose(
+  index: number,
+  zoomT: number,
+  lifeT = zoomT,
+): PathPose {
+  if (index === 0) {
+    return sampleIntroPose(0, zoomT, lifeT);
+  }
+  const content = index - 1;
+  if (content === 0) {
+    const lateralPath = adsTitlePath();
+    const lateral = sampleBezierPath(zoomT, lateralPath);
+    const zoom = sampleBezierPath(zoomT, aboutZoomPath());
+    const lean = introDirectionalLean(lateralPath, zoomT, zoom.scale, 0);
+    return {
+      x: lateral.x,
+      y: lateral.y,
+      z: zoom.z,
+      scale: zoom.scale,
+      rot: lateral.rot + lean.leanRot * 0.32,
+      rotX: (lean.rotX ?? 0) * 0.32,
+      rotY: (lean.rotY ?? 0) * 0.32,
+    };
+  }
+  if (content >= 1 && content <= 3) {
+    const lateralPath = adsTagPath(content - 1);
+    const lateral = sampleBezierPath(zoomT, lateralPath);
+    const zoom = sampleBezierPath(zoomT, aboutZoomPath());
+    const lean = introDirectionalLean(lateralPath, zoomT, zoom.scale, content);
+    return {
+      x: lateral.x,
+      y: lateral.y,
+      z: zoom.z,
+      scale: zoom.scale,
+      rot: lateral.rot + lean.leanRot * 0.4,
+      rotX: (lean.rotX ?? 0) * 0.4,
+      rotY: (lean.rotY ?? 0) * 0.4,
+    };
+  }
+  return sampleIntroBodyPose(zoomT);
+}

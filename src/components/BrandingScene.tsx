@@ -24,6 +24,7 @@ import {
   HUB_HANDOFF,
   hubHandoffT,
   PAGE_FINALE,
+  sampleAdsIntroPose,
   sampleBrandingIntroPose,
   sampleIntroBodyPose,
   TEXT_DIRECTIONAL_LEAN,
@@ -108,6 +109,8 @@ type BrandingSceneProps = {
   menu?: boolean;
   /** Branding page — right-biased intro + stronger directional lean on text. */
   brandingMotion?: boolean;
+  /** ADS — title stays centered on scale-out; category words take the stage one by one. */
+  adsMotion?: boolean;
   /** ADS / LOGOS — intro paragraph exits a little lower. */
   introBodyLowerExit?: boolean;
 };
@@ -142,6 +145,7 @@ export function BrandingScene({
   cases,
   menu = false,
   brandingMotion = false,
+  adsMotion = false,
   introBodyLowerExit = false,
 }: BrandingSceneProps) {
   const pinRef = useRef<HTMLElement>(null);
@@ -149,7 +153,7 @@ export function BrandingScene({
   const cueRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const lineRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const tagsRef = useRef<HTMLDivElement>(null);
+  const tagRefs = useRef<(HTMLDivElement | null)[]>([]);
   const subtitleRef = useRef<HTMLDivElement>(null);
   const emailRef = useRef<HTMLDivElement>(null);
   const formTitleRef = useRef<HTMLDivElement>(null);
@@ -240,7 +244,7 @@ export function BrandingScene({
     const extraCount =
       (introSubtitle ? 1 : 0) +
       (introLines.length ? 1 : 0) +
-      (introTags.length ? 1 : 0) +
+      introTags.length +
       (introEmail ? 1 : 0) +
       (introForm ? 1 : 0);
     const handoffs = introHandoffs(Math.max(extraCount - 1, 0));
@@ -249,7 +253,9 @@ export function BrandingScene({
       handoffs[lastReal]?.exitStart ?? ABOUT_INTRO.sequenceEnd;
 
     const introBodyHandoff =
-      introLines.length > 0 ? 2 + (introSubtitle ? 1 : 0) : -1;
+      introLines.length > 0
+        ? 2 + (introSubtitle ? 1 : 0) + (adsMotion ? introTags.length : 0)
+        : -1;
 
     const updateIntro = (progress: number, now: number, dt: number) => {
       const { stageFadeStart, stageFadeEnd, enterExitBlurPx } = ABOUT_INTRO;
@@ -288,11 +294,13 @@ export function BrandingScene({
         const lifeT =
           handoffIndex === 0 ? cueLifeT(progress, win) : vis.zoomT;
         const pose =
-          introBodyLowerExit && handoffIndex === introBodyHandoff
-            ? sampleIntroBodyPose(vis.zoomT)
-            : brandingMotion
-              ? sampleBrandingIntroPose(handoffIndex, vis.zoomT, lifeT)
-              : sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
+          adsMotion
+            ? sampleAdsIntroPose(handoffIndex, vis.zoomT, lifeT)
+            : introBodyLowerExit && handoffIndex === introBodyHandoff
+              ? sampleIntroBodyPose(vis.zoomT)
+              : brandingMotion
+                ? sampleBrandingIntroPose(handoffIndex, vis.zoomT, lifeT)
+                : sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
         if (handoffIndex === 0) {
           pose.y += cueArriveY(now - born);
         }
@@ -318,7 +326,11 @@ export function BrandingScene({
           el,
           now,
           dt,
-          handoffIndex <= 2 ? "title" : "body",
+          handoffIndex === introBodyHandoff
+            ? "body"
+            : handoffIndex <= 2 || adsMotion
+              ? "title"
+              : "body",
           1 - travelT,
         );
         paint(
@@ -343,8 +355,17 @@ export function BrandingScene({
       applyElement(cueRef.current, handoffIndex++);
       applyElement(titleRef.current, handoffIndex++);
       if (introSubtitle) applyElement(subtitleRef.current, handoffIndex++);
-      if (introLines.length) applyElement(lineRefs.current[0] ?? null, handoffIndex++);
-      if (introTags.length) applyElement(tagsRef.current, handoffIndex++);
+      if (adsMotion) {
+        introTags.forEach((_, i) => {
+          applyElement(tagRefs.current[i] ?? null, handoffIndex++);
+        });
+        if (introLines.length) applyElement(lineRefs.current[0] ?? null, handoffIndex++);
+      } else {
+        if (introLines.length) applyElement(lineRefs.current[0] ?? null, handoffIndex++);
+        introTags.forEach((_, i) => {
+          applyElement(tagRefs.current[i] ?? null, handoffIndex++);
+        });
+      }
       if (introEmail) applyElement(emailRef.current, handoffIndex++);
       if (introForm) {
         const win = handoffs[handoffIndex];
@@ -546,12 +567,12 @@ export function BrandingScene({
       window.visualViewport?.removeEventListener("scroll", onScroll);
       window.visualViewport?.removeEventListener("resize", onScroll);
     };
-  }, [introLines.length, introTags.length, introSubtitle, introEmail, introForm, finale, cases.length, brandingMotion, introBodyLowerExit, intro.pinHeightVh, intro.linesStart, intro.lineSpan, intro.holdAfter, intro.exitSpan, handoff.lead, handoff.span, handoff.finish]);
+  }, [introLines.length, introTags.length, introSubtitle, introEmail, introForm, finale, cases.length, brandingMotion, adsMotion, introBodyLowerExit, intro.pinHeightVh, intro.linesStart, intro.lineSpan, intro.holdAfter, intro.exitSpan, handoff.lead, handoff.span, handoff.finish]);
 
   let angleCursor =
     (introLines.length ? 1 : 0) +
     (introSubtitle ? 1 : 0) +
-    (introTags.length ? 1 : 0) +
+    introTags.length +
     (introEmail ? 1 : 0);
 
   return (
@@ -637,11 +658,16 @@ export function BrandingScene({
               </div>
             ) : null}
 
-            {introTags.length ? (
-              <div className="absolute inset-0 flex items-center justify-center px-3">
+            {introTags.map((tag, i) => (
+              <div
+                key={tag}
+                className="absolute inset-0 flex items-center justify-center px-2"
+              >
                 <div
-                  ref={tagsRef}
-                  className="flex flex-col items-center gap-y-4 will-change-transform md:flex-row md:flex-wrap md:justify-center md:gap-x-8 md:gap-y-3"
+                  ref={(el) => {
+                    tagRefs.current[i] = el;
+                  }}
+                  className="will-change-transform"
                   style={{
                     opacity: 0,
                     visibility: "hidden",
@@ -649,17 +675,12 @@ export function BrandingScene({
                     transformStyle: "preserve-3d",
                   }}
                 >
-                  {introTags.map((tag) => (
-                    <p
-                      key={tag}
-                      className="font-display text-[0.78rem] font-semibold tracking-[0.22em] text-ink"
-                    >
-                      {tag}
-                    </p>
-                  ))}
+                  <TitleShine as="h2" className={TITLE_CLASS}>
+                    {tag}
+                  </TitleShine>
                 </div>
               </div>
-            ) : null}
+            ))}
 
             {introEmail ? (
               <div className="absolute inset-0 flex items-center justify-center px-2">
