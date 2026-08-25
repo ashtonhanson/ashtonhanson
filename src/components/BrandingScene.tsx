@@ -738,7 +738,11 @@ export function BrandingScene({
 
       {cases.length ? (
       <div
-        className="relative z-[12] overflow-x-clip divide-y divide-line"
+        className={
+          mediaVariant === "plate"
+            ? "relative z-[12] overflow-x-clip"
+            : "relative z-[12] overflow-x-clip divide-y divide-line"
+        }
         style={{ marginTop: intro.overlapCases }}
       >
         {cases.map((study, studyIndex) => {
