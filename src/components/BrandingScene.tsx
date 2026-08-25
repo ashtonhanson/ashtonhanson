@@ -57,7 +57,6 @@ import {
   ABOUT_INTRO,
   cueHoldOpacity,
   cueLifeT,
-  cueArriveY,
   handoffVisibility,
   introHandoffs,
   poseToTransform,
@@ -159,13 +158,15 @@ export function BrandingScene({
   const formTitleRef = useRef<HTMLDivElement>(null);
   const formLockupRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<HTMLDivElement>(null);
+  const cueBornRef = useRef(0);
   const intro = { ...BRANDING_INTRO, ...introOverride };
   const handoff = { ...HUB_HANDOFF, ...handoffOverride };
 
   useEffect(() => {
     let frame = 0;
     let lastNow = performance.now();
-    const born = lastNow;
+    if (!cueBornRef.current) cueBornRef.current = lastNow;
+    const born = cueBornRef.current;
     const idleMap = new WeakMap<HTMLElement, IdleHoverState>();
     const pullMap = new WeakMap<HTMLElement, MousePullState>();
     const loadClear = createLoadClearState();
@@ -300,9 +301,6 @@ export function BrandingScene({
               : brandingMotion
                 ? sampleBrandingIntroPose(handoffIndex, vis.zoomT, lifeT)
                 : sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
-        if (handoffIndex === 0) {
-          pose.y += cueArriveY(now - born);
-        }
         const loadBlend =
           handoffIndex === 1
             ? stepLoadClear(

@@ -7,7 +7,6 @@ import { TitleShine } from "@/components/TitleShine";
 import {
   ABOUT_INTRO,
   clamp,
-  cueArriveY,
   cueHoldOpacity,
   cueLifeT,
   easeInOutCubic,
@@ -73,11 +72,13 @@ export function AboutIntroStage({
   const aboutRef = useRef<HTMLDivElement>(null);
   const meRef = useRef<HTMLDivElement>(null);
   const lineRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const cueBornRef = useRef(0);
 
   useEffect(() => {
     let frame = 0;
     let lastNow = performance.now();
-    const born = lastNow;
+    if (!cueBornRef.current) cueBornRef.current = lastNow;
+    const born = cueBornRef.current;
     const handoffs = introHandoffs(bodyLines.length);
     const idleMap = new WeakMap<HTMLElement, IdleHoverState>();
     const pullMap = new WeakMap<HTMLElement, ReturnType<typeof createMousePullState>>();
@@ -154,9 +155,6 @@ export function AboutIntroStage({
         const lifeT =
           handoffIndex === 0 ? cueLifeT(progress, win) : vis.zoomT;
         const pose = sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
-        if (handoffIndex === 0) {
-          pose.y += cueArriveY(now - born);
-        }
         const transform = poseToTransform(pose);
         const loadBlend =
           handoffIndex === 1

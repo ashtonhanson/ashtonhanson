@@ -72,7 +72,11 @@ export const ABOUT_INTRO = {
   cueArriveVh: -78,
   /** Rest above true center so the exit still has downward travel. */
   cueRestY: -22,
-  cueArriveMs: 1700,
+  /**
+   * CSS drop duration. Ease-out so it leaves the top immediately;
+   * a long smootherstep here parked the mark on the clip edge.
+   */
+  cueArriveMs: 880,
 
   /**
    * Zoom t when opacity begins falling. Keep this < 1 so nothing sits at max scale.
@@ -390,14 +394,6 @@ export function introElementPath(index: number): BezierPath {
 
 export function cueLifeT(progress: number, win: IntroHandoff) {
   return clamp(progress / Math.max(win.exitEnd, 0.0001), 0, 1);
-}
-
-/** vh: from above the screen to a high rest, no bounce. */
-export function cueArriveY(elapsedMs: number) {
-  const t = smootherstep(elapsedMs / ABOUT_INTRO.cueArriveMs);
-  const start = ABOUT_INTRO.cueArriveVh;
-  const rest = ABOUT_INTRO.cueRestY;
-  return start + (rest - start) * t;
 }
 
 /** Tilt rides the same smoothed Z so the shaft never kicks. */

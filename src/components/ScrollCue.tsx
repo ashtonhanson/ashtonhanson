@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef } from "react";
+import { forwardRef, type CSSProperties } from "react";
 import { ABOUT_INTRO } from "@/lib/cinematicDepth";
 
 const ARROW_PATH =
@@ -14,26 +14,39 @@ export const ScrollCue = forwardRef<HTMLDivElement>(function ScrollCue(
   const startScale = 1 / ABOUT_INTRO.cueLayoutScale;
 
   return (
-    <div className="scroll-cue" role="img" aria-label="Scroll down">
-      <span className="scroll-cue-hover">
-        <div
-          ref={ref}
-          className="scroll-cue-pose will-change-transform"
-          style={{
-            transform: `translate3d(0, ${ABOUT_INTRO.cueArriveVh}vh, 0) scale(${startScale})`,
-            transformOrigin: "50% 50%",
-            transformStyle: "preserve-3d",
-          }}
-        >
-          <svg
-            className="scroll-cue-icon"
-            viewBox="0 0 48 64"
-            aria-hidden="true"
+    <div
+      className="scroll-cue"
+      role="img"
+      aria-label="Scroll down"
+      style={
+        {
+          "--cue-from": `${ABOUT_INTRO.cueArriveVh}vh`,
+          "--cue-to": `${ABOUT_INTRO.cueRestY}vh`,
+          "--cue-arrive-ms": `${ABOUT_INTRO.cueArriveMs}ms`,
+        } as CSSProperties
+      }
+    >
+      <div className="scroll-cue-arrive">
+        <span className="scroll-cue-hover">
+          <div
+            ref={ref}
+            className="scroll-cue-pose will-change-transform"
+            style={{
+              transform: `translate3d(0, 0, 0) scale(${startScale})`,
+              transformOrigin: "50% 50%",
+              transformStyle: "preserve-3d",
+            }}
           >
-            <path d={ARROW_PATH} fill="#E8DFC4" />
-          </svg>
-        </div>
-      </span>
+            <svg
+              className="scroll-cue-icon"
+              viewBox="0 0 48 64"
+              aria-hidden="true"
+            >
+              <path d={ARROW_PATH} fill="#E8DFC4" />
+            </svg>
+          </div>
+        </span>
+      </div>
     </div>
   );
 });
