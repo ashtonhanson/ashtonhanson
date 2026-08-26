@@ -821,7 +821,8 @@ body {
 }
 
 .scroll-cue-arrive {
-  transform: translate3d(0, var(--cue-from, -78vh), 0);
+  /* Literals — Safari will not interpolate transform var() in keyframes. */
+  transform: translate3d(0, -78vh, 0);
   transform-style: preserve-3d;
 }
 
@@ -853,16 +854,16 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .scroll-cue-arrive {
     animation: none;
-    transform: translate3d(0, var(--cue-to, -22vh), 0);
+    transform: translate3d(0, -22vh, 0);
   }
 }
 
 @keyframes scroll-cue-arrive {
   from {
-    transform: translate3d(0, var(--cue-from, -78vh), 0);
+    transform: translate3d(0, -78vh, 0);
   }
   to {
-    transform: translate3d(0, var(--cue-to, -22vh), 0);
+    transform: translate3d(0, -22vh, 0);
   }
 }
 

@@ -68,7 +68,8 @@ export const ABOUT_INTRO = {
   cueLayoutScale: 6.6,
   cuePeakScale: 1.38,
   cuePeakZ: 640,
-  /** Start above the viewport so the load-in is a real descent. */
+  /** Start above the viewport so the load-in is a real descent.
+   * Keep in sync with `.scroll-cue-arrive` keyframes in globals.css. */
   cueArriveVh: -78,
   /** Rest above true center so the exit still has downward travel. */
   cueRestY: -22,

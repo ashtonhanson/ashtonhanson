@@ -155,8 +155,12 @@ export function AboutIntroStage({
         const lifeT =
           handoffIndex === 0 ? cueLifeT(progress, win) : vis.zoomT;
         const pose = sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
-        if (handoffIndex === 0 && progress > 0.001) {
-          freezeScrollCueMotion(el);
+        if (handoffIndex === 0) {
+          if (now - born >= ABOUT_INTRO.cueArriveMs) {
+            freezeScrollCueMotion(el, true);
+          } else if (progress >= ABOUT_INTRO.cueExitStart) {
+            freezeScrollCueMotion(el);
+          }
         }
         const loadBlend =
           handoffIndex === 1
