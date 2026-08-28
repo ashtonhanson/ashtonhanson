@@ -123,7 +123,7 @@ const STYLES = /* css */ `
   overflow: hidden;
   border-radius: 1.25rem;
   border: 1.5px solid rgb(214 208 186 / 0.38);
-  background: #080809;
+  background: transparent;
   pointer-events: none;
 }
 
