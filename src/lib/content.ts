@@ -221,104 +221,81 @@ export const adsIntroLines = [
 
 export const adCategories = ["DIRECT MAIL", "PRINT", "SOCIAL MEDIA"] as const;
 
+function directMailAd(file: string, alt: string): MediaItem {
+  return {
+    src: `/ads/${encodeURIComponent("Direct Mail")}/${encodeURIComponent(file)}`,
+    alt,
+  };
+}
+
 export const adCases: CaseStudy[] = [
   {
-    id: "ternium",
-    title: "TERNIUM",
-    subtitle: "AD DESIGN",
-    body: "Campaign work across print and digital touchpoints, built for clarity, impact, and brand consistency.",
+    id: "print",
+    title: "PRINT",
+    subtitle: "",
+    body: "Mailers, print ads, and illustrated pieces made to work in the real world—clear hierarchy, strong imagery, and layouts that still read when they land in a mailbox or on a page.",
     media: [
-      {
-        src: "/ads/ternium/01.jpg",
-        alt: "Ternium ad design 01",
-      },
-      {
-        src: "/ads/ternium/02.jpg",
-        alt: "Ternium ad design 02",
-      },
-      {
-        src: "/ads/ternium/03.jpg",
-        alt: "Ternium ad design 03",
-      },
-      {
-        src: "/ads/ternium/04.jpg",
-        alt: "Ternium ad design 04",
-      },
-      {
-        src: "/ads/ternium/05.jpg",
-        alt: "Ternium ad design 05",
-      },
-      {
-        src: "/ads/ternium/06.png",
-        alt: "Ternium ad design 06",
-      },
+      directMailAd("Illustration AD.jpg", "J&J Exterminating illustrated print ad"),
+      directMailAd(
+        "Illustrated and printed AD.jpg",
+        "J&J Exterminating illustrated ad in print",
+      ),
+      directMailAd("Luna Bar & Grill 4TR PG SQ.jpg", "Luna Bar and Grill print ad"),
+      directMailAd("Campus Collectables.jpg", "Campus Collectibles vintage shop print ad"),
+      directMailAd("Floor Connection.jpg", "Floor Connection print ad"),
+      directMailAd("Ichiban.jpg", "Ichiban Restaurant direct mail flyer"),
+      directMailAd("Lockhart Jewelers.jpg", "Lockhart Jewelers print ad"),
+      directMailAd("Maids of Many.jpg", "Maids of Many print ad"),
+      directMailAd("Halls Sml Pwr Wrp.jpg", "Hall’s Fitness Center print ad"),
+      directMailAd(
+        "Gorham's Potting Soil Nusery Fence Banner_Proof 4 copy.jpg",
+        "Gorham’s Potting Soil nursery fence banner",
+      ),
+      directMailAd(
+        "Bossier Olympiad Brochure.jpg",
+        "Bossier Olympiad brochure layout",
+      ),
     ],
   },
   {
-    id: "reaux-fitness",
-    title: "REAUX FITNESS",
-    subtitle: "AD DESIGN",
-    body: "High-energy visuals for fitness branding and social promotion.",
-    media: [
+    id: "social-media",
+    title: "SOCIAL MEDIA",
+    subtitle: "",
+    body: "Campaign graphics for feeds and stories—consistent, high-energy visuals built to stop the scroll and stay on brand.",
+    sections: [
       {
-        src: "/ads/reaux-fitness/01.jpg",
-        alt: "Reaux Fitness ad design 01",
+        heading: "TERNIUM",
+        media: [
+          { src: "/ads/ternium/01.jpg", alt: "Ternium ad design 01" },
+          { src: "/ads/ternium/02.jpg", alt: "Ternium ad design 02" },
+          { src: "/ads/ternium/03.jpg", alt: "Ternium ad design 03" },
+          { src: "/ads/ternium/04.jpg", alt: "Ternium ad design 04" },
+          { src: "/ads/ternium/05.jpg", alt: "Ternium ad design 05" },
+          { src: "/ads/ternium/06.png", alt: "Ternium ad design 06" },
+        ],
       },
       {
-        src: "/ads/reaux-fitness/02.jpg",
-        alt: "Reaux Fitness ad design 02",
+        heading: "REAUX FITNESS",
+        media: [
+          { src: "/ads/reaux-fitness/01.jpg", alt: "Reaux Fitness ad design 01" },
+          { src: "/ads/reaux-fitness/02.jpg", alt: "Reaux Fitness ad design 02" },
+          { src: "/ads/reaux-fitness/03.jpg", alt: "Reaux Fitness ad design 03" },
+          { src: "/ads/reaux-fitness/04.jpg", alt: "Reaux Fitness ad design 04" },
+          { src: "/ads/reaux-fitness/05.jpg", alt: "Reaux Fitness ad design 05" },
+          { src: "/ads/reaux-fitness/06.jpg", alt: "Reaux Fitness ad design 06" },
+          { src: "/ads/reaux-fitness/07.jpg", alt: "Reaux Fitness ad design 07" },
+        ],
       },
       {
-        src: "/ads/reaux-fitness/03.jpg",
-        alt: "Reaux Fitness ad design 03",
-      },
-      {
-        src: "/ads/reaux-fitness/04.jpg",
-        alt: "Reaux Fitness ad design 04",
-      },
-      {
-        src: "/ads/reaux-fitness/05.jpg",
-        alt: "Reaux Fitness ad design 05",
-      },
-      {
-        src: "/ads/reaux-fitness/06.jpg",
-        alt: "Reaux Fitness ad design 06",
-      },
-      {
-        src: "/ads/reaux-fitness/07.jpg",
-        alt: "Reaux Fitness ad design 07",
-      },
-    ],
-  },
-  {
-    id: "air-ref",
-    title: "AIR REF",
-    subtitle: "AD DESIGN",
-    body: "Clean, direct advertising for service-focused messaging.",
-    media: [
-      {
-        src: "/ads/air-ref/01.jpg",
-        alt: "Air Ref ad design 01",
-      },
-      {
-        src: "/ads/air-ref/02.png",
-        alt: "Air Ref ad design 02",
-      },
-      {
-        src: "/ads/air-ref/03.png",
-        alt: "Air Ref ad design 03",
-      },
-      {
-        src: "/ads/air-ref/04.png",
-        alt: "Air Ref ad design 04",
-      },
-      {
-        src: "/ads/air-ref/05.png",
-        alt: "Air Ref ad design 05",
-      },
-      {
-        src: "/ads/air-ref/06.png",
-        alt: "Air Ref ad design 06",
+        heading: "AIR REF",
+        media: [
+          { src: "/ads/air-ref/01.jpg", alt: "Air Ref ad design 01" },
+          { src: "/ads/air-ref/02.png", alt: "Air Ref ad design 02" },
+          { src: "/ads/air-ref/03.png", alt: "Air Ref ad design 03" },
+          { src: "/ads/air-ref/04.png", alt: "Air Ref ad design 04" },
+          { src: "/ads/air-ref/05.png", alt: "Air Ref ad design 05" },
+          { src: "/ads/air-ref/06.png", alt: "Air Ref ad design 06" },
+        ],
       },
     ],
   },
