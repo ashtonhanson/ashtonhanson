@@ -1,3 +1,10 @@
+/**
+ * Frozen snapshot: ah-media-gallery-v32 (push elements on hover)
+ *
+ * Live gallery as of the aspect-fit frames + mouse-pull-on-slides version.
+ * This file is not imported. Restore it by copying over `ah-media-carousel.ts`
+ * and renaming the class / tag back to `AhMediaCarousel` / `ah-media-gallery-v32`.
+ */
 import {
   createMousePullState,
   stepMousePull,
@@ -32,7 +39,7 @@ const STYLES = /* css */ `
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  overflow: clip;
+  overflow-x: clip;
   pointer-events: auto;
   color: #d2d2d2;
   font-family: var(--font-display, "Montserrat", system-ui, sans-serif);
@@ -46,7 +53,7 @@ const STYLES = /* css */ `
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  overflow: clip;
+  overflow-x: clip;
 }
 
 .viewport {
@@ -366,7 +373,7 @@ const DRAG_THRESHOLD = 6;
 /**
  * Native gallery: hover focus, slow auto-scroll, click-to-lightbox event.
  */
-export class AhMediaCarousel extends ElementBase {
+export class AhMediaGalleryV32PushOnHover extends ElementBase {
   static get observedAttributes() {
     return ["label"];
   }
@@ -1415,8 +1422,8 @@ export class AhMediaCarousel extends ElementBase {
           0.5,
         );
         visual.style.transform = withIdleHover(pose, {
-          x: 0,
-          y: 0,
+          x: pull.x,
+          y: pull.y,
           z: pull.z,
           rot: 0,
           rotX: pull.rotX,
@@ -1762,15 +1769,18 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v32": AhMediaCarousel;
+    "ah-media-gallery-v32-push-elements-on-hover": AhMediaGalleryV32PushOnHover;
   }
 }
 
-export function defineAhMediaCarousel() {
+export function defineAhMediaGalleryV32PushOnHover() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v32")
+    !customElements.get("ah-media-gallery-v32-push-elements-on-hover")
   ) {
-    customElements.define("ah-media-gallery-v32", AhMediaCarousel);
+    customElements.define(
+      "ah-media-gallery-v32-push-elements-on-hover",
+      AhMediaGalleryV32PushOnHover,
+    );
   }
 }
