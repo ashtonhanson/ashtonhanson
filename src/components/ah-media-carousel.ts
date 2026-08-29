@@ -119,6 +119,7 @@ const STYLES = /* css */ `
 .frame {
   position: relative;
   width: 100%;
+  height: auto;
   aspect-ratio: 1 / 1;
   overflow: hidden;
   border-radius: 1.25rem;
@@ -166,18 +167,10 @@ const STYLES = /* css */ `
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transform: none;
   transform-origin: center center;
   opacity: 1;
   pointer-events: none;
-}
-
-img.media {
-  transform: scale(1.08);
-}
-
-:host(.is-stills) img.media {
-  object-fit: contain;
-  transform: none;
 }
 
 .controls {
@@ -424,6 +417,8 @@ export class AhMediaCarousel extends ElementBase {
   #bodyOverflow = "";
   #loopAdjusting = false;
   #lastCloneSync = 0;
+  #mediaRatio = new Map<number, number>();
+  #layoutRaf = 0;
 
   constructor() {
     super();
@@ -575,6 +570,7 @@ export class AhMediaCarousel extends ElementBase {
     if (this.#userPauseTimer) window.clearTimeout(this.#userPauseTimer);
     if (this.#scrollRaf) window.cancelAnimationFrame(this.#scrollRaf);
     if (this.#scrollFrame) window.cancelAnimationFrame(this.#scrollFrame);
+    if (this.#layoutRaf) window.cancelAnimationFrame(this.#layoutRaf);
   }
 
   attributeChangedCallback(name: string, _old: string | null, value: string | null) {
@@ -706,13 +702,51 @@ export class AhMediaCarousel extends ElementBase {
     return inner * 0.58;
   }
 
+  #defaultRatio() {
+    return this.#isDesktop() ? 16 / 9 : 1;
+  }
+
+  #fitSlideWidth(ratio: number) {
+    const maxW = this.#slideBasisPx();
+    const maxH = this.#isDesktop() ? maxW * (9 / 16) : maxW;
+    if (maxW < 1) return 0;
+    let width = maxW;
+    let height = width / ratio;
+    if (height > maxH) {
+      height = maxH;
+      width = height * ratio;
+    }
+    return width;
+  }
+
+  #noteMediaRatio(index: number, width: number, height: number) {
+    if (width < 2 || height < 2) return;
+    const ratio = width / height;
+    if (this.#mediaRatio.get(index) === ratio) return;
+    this.#mediaRatio.set(index, ratio);
+    this.#scheduleLayout();
+  }
+
+  #scheduleLayout() {
+    if (this.#layoutRaf) return;
+    this.#layoutRaf = window.requestAnimationFrame(() => {
+      this.#layoutRaf = 0;
+      this.#layoutSlides();
+    });
+  }
+
   #layoutSlides() {
     if (!this.#track) return;
-    const basis = this.#slideBasisPx();
-    if (basis < 1) return;
+    const fallback = this.#defaultRatio();
     this.#track.querySelectorAll<HTMLElement>(".slide").forEach((slide) => {
-      slide.style.flex = `0 0 ${basis}px`;
-      slide.style.width = `${basis}px`;
+      const index = Number(slide.dataset.slide);
+      const ratio = this.#mediaRatio.get(index) ?? fallback;
+      const width = this.#fitSlideWidth(ratio);
+      if (width < 1) return;
+      slide.style.flex = `0 0 ${width}px`;
+      slide.style.width = `${width}px`;
+      const frame = slide.querySelector<HTMLElement>(".frame");
+      if (frame) frame.style.aspectRatio = String(ratio);
     });
   }
 
@@ -943,6 +977,7 @@ export class AhMediaCarousel extends ElementBase {
   #render() {
     this.#stopAutoplay();
     this.#cancelScrollAnimation();
+    this.#mediaRatio.clear();
     this.classList.toggle(
       "is-stills",
       this.#items.length > 0 && this.#items.every((item) => !isVideo(item)),
@@ -1067,12 +1102,14 @@ export class AhMediaCarousel extends ElementBase {
 
       const markLoaded = () => {
         video.classList.add("is-loaded");
+        this.#noteMediaRatio(index, video.videoWidth, video.videoHeight);
       };
+      video.addEventListener("loadedmetadata", markLoaded);
       video.addEventListener("loadeddata", markLoaded);
       video.addEventListener("canplay", markLoaded);
       video.addEventListener("error", markLoaded);
       video.dataset.src = item.src;
-      if (video.readyState >= 2) markLoaded();
+      if (video.readyState >= 1) markLoaded();
       frame.appendChild(video);
     } else {
       const img = document.createElement("img");
@@ -1083,6 +1120,7 @@ export class AhMediaCarousel extends ElementBase {
       img.src = item.src;
       const markLoaded = () => {
         img.classList.add("is-loaded");
+        this.#noteMediaRatio(index, img.naturalWidth, img.naturalHeight);
       };
       img.addEventListener("load", markLoaded);
       img.addEventListener("error", markLoaded);
