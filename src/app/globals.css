@@ -811,6 +811,15 @@ body {
   transform: translateY(-0.285rem) rotate(-45deg);
 }
 
+.z-handoff-stage [data-z-item] {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
 .scroll-cue {
   display: flex;
   width: 100%;

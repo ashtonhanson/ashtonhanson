@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { AboutIntroStage } from "@/components/AboutIntroStage";
-import { CinematicChapter } from "@/components/CinematicChapter";
+import { ZHandoffChapter } from "@/components/ZHandoffChapter";
 import { HOME_CHAPTER } from "@/lib/homeMotion";
 
 type HomeDepthSceneProps = {
@@ -16,8 +16,8 @@ type HomeDepthSceneProps = {
 /**
  * Home cinematic scroll:
  * 1) Sticky ABOUT intro
- * 2) RECENT WORK / AI ANIMATION / gallery — unique-angle enter, hold, scale-up exit
- * 3) SEE MENU / FOR OTHER / WORK — same unique-angle arrive as the gallery
+ * 2) RECENT WORK → AI ANIMATION → gallery — sequential Z-handoffs
+ * 3) SEE MENU → FOR OTHER → WORK — same Z-scale as the intro
  */
 export function HomeDepthScene({
   aboutWord,
@@ -34,30 +34,26 @@ export function HomeDepthScene({
         bodyLines={aboutLines}
       />
 
-      <CinematicChapter
-        pinHeight={HOME_CHAPTER.galleryPinVh}
+      <ZHandoffChapter
+        itemCount={3}
         overlap={HOME_CHAPTER.overlapAbout}
-        angleOffset={0}
-        exitMode="scale"
+        poseOffset={0}
         zIndex={12}
-        perspective
-        stageClassName="home-gallery-stage !overflow-visible"
+        stageClassName="!overflow-visible"
         aria-label="Recent work"
       >
         {gallery}
-      </CinematicChapter>
+      </ZHandoffChapter>
 
-      <CinematicChapter
-        pinHeight={HOME_CHAPTER.menuPinVh}
+      <ZHandoffChapter
+        itemCount={4}
         overlap={HOME_CHAPTER.overlapGallery}
-        angleOffset={4}
-        exitMode="hold"
+        poseOffset={3}
         zIndex={14}
-        perspective
         aria-label="See menu"
       >
         {menu}
-      </CinematicChapter>
+      </ZHandoffChapter>
     </div>
   );
 }

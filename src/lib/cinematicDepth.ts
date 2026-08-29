@@ -178,6 +178,44 @@ export function introHandoffs(lineCount: number): IntroHandoff[] {
 }
 
 /**
+ * Sequential Z-handoffs for a page chapter (no scroll cue).
+ * Each piece arrives small on Z, rests, then scales toward camera as the next enters.
+ */
+export function sectionHandoffs(itemCount: number): IntroHandoff[] {
+  const n = Math.max(itemCount, 1);
+  const start = 0.04;
+  const end = ABOUT_INTRO.sequenceEnd;
+  const beat = (end - start) / n;
+  const handoff = beat * ABOUT_INTRO.handoffRatio;
+  return Array.from({ length: n }, (_, i) => {
+    const appearStart = start + i * beat;
+    const appearEnd = appearStart + handoff;
+    const exitStart = i === n - 1 ? end : start + (i + 1) * beat;
+    const exitEnd = Math.min(i === n - 1 ? 1 : 0.98, exitStart + handoff);
+    return { appearStart, appearEnd, exitStart, exitEnd };
+  });
+}
+
+/** Scroll length for a sequential Z chapter — roomy, never rushed. */
+export function sectionPinHeightVh(itemCount: number) {
+  const n = Math.max(itemCount, 1);
+  return `${Math.max(280, 80 * n + 80)}vh`;
+}
+
+/**
+ * Same Z-surge as the intro: titles ride ABOUT/ME, copy and media ride body.
+ * `index` only picks a lateral path so successive pieces don’t share a line.
+ */
+export function sampleSectionPose(
+  index: number,
+  zoomT: number,
+  kind: "title" | "copy" | "media" = "copy",
+): PathPose {
+  const poseIndex = kind === "copy" ? 3 + (index % 5) : 1 + (index % 2);
+  return sampleIntroPose(poseIndex, zoomT);
+}
+
+/**
  * Opacity + blur envelope for appear / hold / disappear.
  * visibility 0 = gone+blurred, 1 = sharp+opaque.
  */

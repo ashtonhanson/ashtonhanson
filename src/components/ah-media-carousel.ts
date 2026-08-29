@@ -1,10 +1,3 @@
-import {
-  createMousePullState,
-  stepMousePull,
-  type MousePullState,
-} from "@/lib/mousePull";
-import { withIdleHover } from "@/lib/idleHover";
-
 export type CarouselMediaItem = {
   src: string;
   alt: string;
@@ -396,7 +389,6 @@ export class AhMediaCarousel extends ElementBase {
   #dots!: HTMLDivElement;
   #prevBtn!: HTMLButtonElement;
   #nextBtn!: HTMLButtonElement;
-  #pullMap = new WeakMap<HTMLElement, MousePullState>();
   #focusMap = new WeakMap<
     HTMLElement,
     { scale: number; opacity: number; blur: number }
@@ -862,15 +854,6 @@ export class AhMediaCarousel extends ElementBase {
       window.cancelAnimationFrame(this.#autoRaf);
       this.#autoRaf = null;
     }
-  }
-
-  #pullFor(el: HTMLElement) {
-    let state = this.#pullMap.get(el);
-    if (!state) {
-      state = createMousePullState();
-      this.#pullMap.set(el, state);
-    }
-    return state;
   }
 
   #stopMotion() {
@@ -1406,22 +1389,7 @@ export class AhMediaCarousel extends ElementBase {
         visual.style.transformStyle = "flat";
       } else {
         visual.style.transformStyle = "preserve-3d";
-        const pull = stepMousePull(
-          this.#pullFor(slide),
-          visual,
-          now,
-          dt,
-          "gallery",
-          0.5,
-        );
-        visual.style.transform = withIdleHover(pose, {
-          x: 0,
-          y: 0,
-          z: pull.z,
-          rot: 0,
-          rotX: pull.rotX,
-          rotY: pull.rotY,
-        });
+        visual.style.transform = pose;
       }
       visual.style.opacity = String(opacity);
       visual.style.filter = blur < 0.08 ? "none" : `blur(${blur.toFixed(2)}px)`;

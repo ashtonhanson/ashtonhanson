@@ -1,34 +1,21 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { CaseZChapter } from "@/components/CaseZChapter";
 import { ContactForm } from "@/components/ContactForm";
 import { EmailShineLink } from "@/components/EmailShineLink";
-import { LogoPlate } from "@/components/LogoPlate";
-import { MediaCarousel } from "@/components/MediaCarousel";
 import { MobileBreakText } from "@/components/MobileBreakText";
 import { ScrollCue, freezeScrollCueMotion } from "@/components/ScrollCue";
+import { SeeMenuChapter } from "@/components/SeeMenuBlock";
 import { TitleShine } from "@/components/TitleShine";
+import { ZHandoffChapter } from "@/components/ZHandoffChapter";
 import {
-  arriveAngle,
-  oppositeArriveAngle,
-  arriveGrowTransform,
-  arriveT,
-  arriveTransform,
   BRANDING_INTRO,
-  BRANDING_LEAN,
   clamp,
   easeInOutCubic,
-  finaleExitPose,
-  finaleExitT,
-  finaleWindows,
-  HUB_HANDOFF,
-  hubHandoffT,
-  PAGE_FINALE,
   sampleAdsIntroPose,
   sampleBrandingIntroPose,
   sampleIntroBodyPose,
-  TEXT_DIRECTIONAL_LEAN,
-  type ArriveKind,
   type HandoffTiming,
   type IntroTiming,
 } from "@/lib/brandingMotion";
@@ -50,8 +37,6 @@ import {
   pageHasScrolled,
   pinProgress,
   stepLoadClear,
-  viewHeight,
-  visualRectTop,
 } from "@/lib/loadClear";
 import {
   ABOUT_INTRO,
@@ -62,8 +47,7 @@ import {
   poseToTransform,
   sampleIntroPose,
 } from "@/lib/cinematicDepth";
-import { SeeMenuArrive } from "@/components/SeeMenuBlock";
-import { contact, type CaseStudy as CaseStudyType, type MediaItem } from "@/lib/content";
+import { contact, type CaseStudy as CaseStudyType } from "@/lib/content";
 import { preventOrphan } from "@/lib/text";
 
 const TITLE_CLASS =
@@ -71,9 +55,6 @@ const TITLE_CLASS =
 
 const FORM_TITLE_CLASS =
   "pointer-events-none select-none max-w-full whitespace-pre-line text-center font-display text-[clamp(1.45rem,8.2vw,3.4rem)] font-black uppercase leading-[0.92] tracking-[0.04em] xl:text-[clamp(2.4rem,4.2vw,4.25rem)]";
-
-const SECTION_TITLE_CLASS =
-  "pointer-events-none select-none whitespace-pre-line text-center font-display text-[clamp(1.35rem,4.2vw,2.35rem)] font-black uppercase leading-[0.92] tracking-[0.06em] xl:text-[clamp(1.7rem,2.6vw,2.75rem)]";
 
 const SUBTITLE_CLASS =
   "font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-[1.85] tracking-[0.18em] text-foreground md:leading-tight xl:text-[clamp(1.35rem,1.55vw,1.7rem)]";
@@ -83,7 +64,6 @@ const BODY_CLASS =
 
 /** Stronger idle float for branding titles / subtitles only. */
 const LOCKUP_IDLE = 1.75;
-const SUBTITLE_IDLE = 1.55;
 
 type BrandingSceneProps = {
   introTitle: string;
@@ -135,12 +115,10 @@ export function BrandingScene({
   introLines,
   introTags = [],
   introSubtitle,
-  finale = false,
   mediaVariant = "carousel",
   introEmail,
   introForm = false,
   intro: introOverride,
-  handoff: handoffOverride,
   cases,
   menu = false,
   brandingMotion = false,
@@ -160,7 +138,6 @@ export function BrandingScene({
   const sceneRef = useRef<HTMLDivElement>(null);
   const cueBornRef = useRef(0);
   const intro = { ...BRANDING_INTRO, ...introOverride };
-  const handoff = { ...HUB_HANDOFF, ...handoffOverride };
 
   useEffect(() => {
     let frame = 0;
@@ -413,137 +390,6 @@ export function BrandingScene({
       }
     };
 
-    const updateArrivals = (
-      introProgress: number,
-      packedExitGate: number,
-      now: number,
-      dt: number,
-    ) => {
-      const root = sceneRef.current;
-      if (!root) return;
-      const viewH = viewHeight();
-      const nodes = root.querySelectorAll<HTMLElement>("[data-arrive]");
-      const finalePin = root.querySelector<HTMLElement>("[data-finale]");
-      const finaleStage = root.querySelector<HTMLElement>("[data-finale-stage]");
-      let finaleProgress = 0;
-      if (finalePin) {
-        finaleProgress = pinProgress(finalePin);
-        if (finaleStage) {
-          const { stageFadeStart, stageFadeEnd } = PAGE_FINALE;
-          const stageFade = easeInOutCubic(
-            clamp(
-              (finaleProgress - stageFadeStart) /
-                Math.max(stageFadeEnd - stageFadeStart, 0.0001),
-              0,
-              1,
-            ),
-          );
-          finaleStage.style.opacity = (1 - stageFade).toFixed(3);
-        }
-      }
-      const finaleNodes = finalePin
-        ? [...finalePin.querySelectorAll<HTMLElement>("[data-arrive]")]
-        : [];
-      const finaleOuts = finaleWindows(finaleNodes.length);
-      const lean = brandingMotion ? BRANDING_LEAN : TEXT_DIRECTIONAL_LEAN;
-      let lastTitleAngle = arriveAngle(0);
-      nodes.forEach((el) => {
-        const kind = (el.dataset.kind || "copy") as ArriveKind;
-        const lag = Number(el.dataset.lag || 0);
-        const index = Number(el.dataset.angle || 0);
-        let angle = arriveAngle(index);
-        if (kind === "title") lastTitleAngle = angle;
-        else if (kind === "copy" && !el.hasAttribute("data-still")) {
-          angle = oppositeArriveAngle(lastTitleAngle);
-        }
-        const poseEl = (el.firstElementChild as HTMLElement) ?? el;
-        el.style.transform = "none";
-        el.style.filter = "none";
-        if (poseEl !== el) {
-          poseEl.style.transform = "none";
-          poseEl.style.filter = "none";
-        }
-        let t = arriveT(visualRectTop(el), viewH, kind, lag);
-        if (el.hasAttribute("data-hub-handoff")) {
-          const lockup = el.closest("[data-first-study]");
-          const siblings = lockup
-            ? [...lockup.querySelectorAll<HTMLElement>("[data-hub-handoff]")]
-            : [];
-          const order = Math.max(0, siblings.indexOf(el));
-          t = hubHandoffT(
-            introProgress,
-            packedExitGate,
-            order,
-            siblings.length,
-            handoff,
-          );
-        }
-        el.style.opacity = "1";
-        el.style.visibility = "visible";
-        const still = el.hasAttribute("data-still");
-        const idleAmount = still
-          ? 0
-          : kind === "title"
-            ? LOCKUP_IDLE
-            : el.dataset.idle === "subtitle"
-              ? SUBTITLE_IDLE
-              : 1;
-        const pullKind: MousePullKind | null = still
-          ? null
-          : kind === "media"
-            ? "gallery"
-            : kind === "title"
-              ? "title"
-              : el.dataset.idle === "subtitle"
-                ? "subtitle"
-                : "body";
-        const finaleIndex = finaleNodes.indexOf(el);
-        const finaleWin = finaleIndex >= 0 ? finaleOuts[finaleIndex] : undefined;
-        if (finaleWin && finaleProgress >= finaleWin.start) {
-          const out = finaleExitPose(
-            finaleExitT(finaleProgress, finaleWin),
-            angle,
-            kind,
-            lean,
-          );
-          poseEl.style.transformOrigin = out.origin;
-          paintIdle(
-            poseEl,
-            out.opacity,
-            out.blur,
-            out.transform,
-            index + 11,
-            now,
-            dt,
-            false,
-            out.travelT,
-            idleAmount,
-            pullKind,
-            kind !== "media",
-          );
-          return;
-        }
-        const pose = el.hasAttribute("data-grow")
-          ? arriveGrowTransform(t, angle, kind, lean)
-          : arriveTransform(t, angle, kind, lean);
-        poseEl.style.transformOrigin = pose.origin;
-        paintIdle(
-          poseEl,
-          pose.opacity,
-          pose.blur,
-          pose.transform,
-          index + 11,
-          now,
-          dt,
-          t >= 0.985,
-          1 - t,
-          idleAmount,
-          pullKind,
-          kind !== "media",
-        );
-      });
-    };
-
     const tick = (now: number) => {
       const dt = Math.min(48, now - lastNow);
       lastNow = now;
@@ -553,7 +399,6 @@ export function BrandingScene({
       applyPinStage(pin, stageRef.current);
       const progress = pinProgress(pin);
       updateIntro(progress, now, dt);
-      updateArrivals(progress, packedExitGate, now, dt);
     };
 
     const loop = (now: number) => {
@@ -573,13 +418,7 @@ export function BrandingScene({
       window.visualViewport?.removeEventListener("scroll", onScroll);
       window.visualViewport?.removeEventListener("resize", onScroll);
     };
-  }, [introLines.length, introTags.length, introSubtitle, introEmail, introForm, finale, cases.length, brandingMotion, adsMotion, introBodyLowerExit, intro.pinHeightVh, intro.linesStart, intro.lineSpan, intro.holdAfter, intro.exitSpan, handoff.lead, handoff.span, handoff.finish]);
-
-  let angleCursor =
-    (introLines.length ? 1 : 0) +
-    (introSubtitle ? 1 : 0) +
-    introTags.length +
-    (introEmail ? 1 : 0);
+  }, [introLines.length, introTags.length, introSubtitle, introEmail, introForm, brandingMotion, adsMotion, introBodyLowerExit, intro.pinHeightVh]);
 
   return (
     <div ref={sceneRef} className="w-full max-w-[100vw]">
@@ -738,200 +577,29 @@ export function BrandingScene({
         </div>
       </section>
 
-      {cases.length ? (
-      <div
-        className="relative z-[12] overflow-x-clip"
-        style={{ marginTop: intro.overlapCases }}
-      >
-        {cases.map((study, studyIndex) => {
-          const bodyText = study.body.trim();
-          const subText = study.subtitle.trim();
-          const titleAngle = angleCursor++;
-          const subAngle = subText ? angleCursor++ : -1;
-          const bodyAngle = bodyText ? angleCursor++ : -1;
-          const formAngle = study.form ? angleCursor++ : -1;
-          const mediaAngle = study.media?.length ? angleCursor++ : -1;
-          const sections = study.sections ?? [];
-          const isFinale = finale && studyIndex === cases.length - 1;
-
-          return (
-            <article
-              key={study.id}
-              id={study.id}
-              data-first-study={studyIndex === 0 ? "" : undefined}
-              data-finale={isFinale ? "" : undefined}
-              className={
-                isFinale
-                  ? "relative overflow-visible"
-                  : study.form
-                    ? "relative overflow-x-clip px-5 pb-[clamp(4.5rem,12vh,8rem)] pt-[clamp(7rem,24vh,12rem)] md:px-8 xl:px-12 xl:pb-[clamp(5.5rem,13vh,11rem)] xl:pt-[clamp(8rem,20vh,14rem)] 2xl:px-16"
-                    : "relative overflow-x-clip px-5 py-[clamp(4.5rem,12vh,8rem)] md:px-8 xl:px-12 xl:py-[clamp(5.5rem,13vh,11rem)] 2xl:px-16"
-              }
-              style={isFinale ? { height: PAGE_FINALE.pinHeightVh } : undefined}
-            >
-              <div
-                data-finale-stage={isFinale ? "" : undefined}
-                className={
-                  isFinale
-                    ? "sticky top-[3.6rem] mx-auto flex min-h-[calc(100dvh-3.6rem)] w-full max-w-3xl flex-col items-center justify-center overflow-visible px-5 text-center md:px-8 xl:max-w-4xl xl:px-12 2xl:max-w-5xl 2xl:px-16"
-                    : "mx-auto flex max-w-3xl flex-col items-center text-center xl:max-w-4xl 2xl:max-w-5xl"
-                }
-                style={
-                  isFinale
-                    ? { perspective: "1180px", perspectiveOrigin: "50% 42%" }
-                    : undefined
-                }
-              >
-                <div
-                  data-arrive
-                  data-kind="title"
-                  data-angle={titleAngle}
-                  className="will-change-transform"
-                  style={{
-                    opacity: 0,
-                    transformOrigin: "50% 50%",
-                  }}
-                >
-                  <TitleShine as="h2" className={study.form ? FORM_TITLE_CLASS : TITLE_CLASS}>
-                    {study.title}
-                  </TitleShine>
-                </div>
-
-                {subText ? (
-                <div
-                  data-arrive
-                  data-kind="copy"
-                  data-idle="subtitle"
-                  data-angle={subAngle}
-                  data-lag="12"
-                  className="mt-4 will-change-transform xl:mt-5"
-                  style={{
-                    opacity: 0,
-                    transformOrigin: "50% 50%",
-                  }}
-                >
-                  <p className={SUBTITLE_CLASS}>
-                    <MobileBreakText text={study.subtitle} />
-                  </p>
-                </div>
-                ) : null}
-
-                {bodyText ? (
-                  <div className="mt-8 w-full max-w-3xl text-center xl:mt-10 xl:max-w-4xl">
-                    <div
-                      data-arrive
-                      data-kind="copy"
-                      data-angle={bodyAngle}
-                      data-lag={20}
-                      className="will-change-transform"
-                      style={{
-                        opacity: 0,
-                        transformOrigin: "50% 50%",
-                      }}
-                    >
-                      <p className={`${BODY_CLASS} mx-auto mb-0`}>
-                        {preventOrphan(bodyText)}
-                      </p>
-                    </div>
-                  </div>
-                ) : null}
-
-                {study.form ? (
-                  <div
-                    data-arrive
-                    data-still=""
-                    data-kind="copy"
-                    data-angle={formAngle}
-                    data-lag={36}
-                    className="mt-10 w-full max-w-lg will-change-transform xl:mt-12"
-                    style={{ opacity: 0, transformOrigin: "50% 40%" }}
-                  >
-                    <ContactForm />
-                  </div>
-                ) : study.media?.length ? (
-                  <ArriveMedia
-                    items={study.media}
-                    label={`${study.title} gallery`}
-                    angle={mediaAngle}
-                    variant={mediaVariant}
-                  />
-                ) : null}
-
-                {sections.map((section) => {
-                  const headingAngle = angleCursor++;
-                  const galleryAngle = section.media?.length
-                    ? angleCursor++
-                    : -1;
-                  return (
-                    <div
-                      key={section.heading}
-                      className="mt-16 w-full xl:mt-20"
-                    >
-                      <div
-                        data-arrive
-                        data-kind="title"
-                        data-angle={headingAngle}
-                        className="will-change-transform"
-                        style={{
-                          opacity: 0,
-                          transformOrigin: "50% 50%",
-                        }}
-                      >
-                        <TitleShine as="h3" className={SECTION_TITLE_CLASS}>
-                          {section.heading}
-                        </TitleShine>
-                      </div>
-                      {section.media?.length ? (
-                        <ArriveMedia
-                          items={section.media}
-                          label={`${section.heading} gallery`}
-                          angle={galleryAngle}
-                          lag={28}
-                          variant={mediaVariant}
-                        />
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            </article>
-          );
-        })}
-      </div>
+      {cases.map((study, studyIndex) => (
+        <CaseZChapter
+          key={study.id}
+          study={study}
+          overlap={
+            studyIndex === 0 ? intro.overlapCases : "calc(-100dvh - 10vh)"
+          }
+          mediaVariant={mediaVariant}
+          poseOffset={studyIndex * 5}
+          zIndex={12 + studyIndex}
+        />
+      ))}
+      {menu ? (
+        <ZHandoffChapter
+          itemCount={4}
+          overlap="calc(-100dvh - 10vh)"
+          poseOffset={cases.length * 5}
+          zIndex={14 + cases.length}
+          aria-label="See menu"
+        >
+          <SeeMenuChapter />
+        </ZHandoffChapter>
       ) : null}
-      {menu ? <SeeMenuArrive angleStart={angleCursor} /> : null}
-    </div>
-  );
-}
-
-function ArriveMedia({
-  items,
-  label,
-  angle,
-  lag = 36,
-  variant = "carousel",
-}: {
-  items: MediaItem[];
-  label: string;
-  angle: number;
-  lag?: number;
-  variant?: "carousel" | "plate";
-}) {
-  const plate = variant === "plate" ? items[0] : null;
-  return (
-    <div
-      data-arrive
-      data-kind="media"
-      data-angle={angle}
-      data-lag={lag}
-      className="mt-12 w-full max-w-5xl md:will-change-transform xl:mt-14 xl:max-w-6xl 2xl:max-w-7xl"
-      style={{ opacity: 0, transformOrigin: "50% 40%" }}
-    >
-      {plate ? (
-        <LogoPlate src={plate.src} alt={plate.alt} />
-      ) : (
-        <MediaCarousel items={items} label={label} />
-      )}
     </div>
   );
 }
