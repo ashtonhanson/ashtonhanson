@@ -259,6 +259,7 @@ export function BrandingScene({
       );
     };
 
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
     const tagSlots = adsMotion && introTags.length ? 1 : introTags.length;
     const extraCount =
       (introSubtitle ? 1 : 0) +
@@ -390,14 +391,13 @@ export function BrandingScene({
         const itemSpan = Math.max(span - stagger * (n - 1), span * 0.55);
         if (stack && stackWin) {
           const groupOn = progress >= lifeStart && progress <= lifeEnd;
-          paint(
-            stack,
-            groupOn ? 1 : 0,
-            0,
-            groupOn ? "rotateX(10deg)" : "none",
-          );
+          stack.style.opacity = groupOn ? "1" : "0";
+          stack.style.filter = "none";
+          stack.style.perspective = "none";
+          stack.style.transform =
+            groupOn && !coarsePointer ? "rotateX(10deg)" : "none";
+          stack.style.visibility = groupOn ? "visible" : "hidden";
           stack.style.transformStyle = "preserve-3d";
-          stack.style.perspective = "720px";
         }
         introTags.forEach((_, i) => {
           const el = tagRefs.current[i];
@@ -405,9 +405,11 @@ export function BrandingScene({
           const start = lifeStart + i * stagger;
           const t = clamp((progress - start) / itemSpan, 0, 1);
           const flow = sampleAdsTagFlow(t, i);
+          const useBlur = !coarsePointer && flow.blur > 0.05;
           el.style.opacity = flow.opacity.toFixed(3);
-          el.style.filter =
-            flow.blur > 0.05 ? `blur(${flow.blur.toFixed(2)}px)` : "none";
+          el.style.filter = useBlur
+            ? `blur(${flow.blur.toFixed(2)}px)`
+            : "none";
           el.style.transform = `translate3d(0, 0, ${flow.z.toFixed(1)}px) scale(${flow.scale.toFixed(4)})`;
           el.style.visibility = flow.opacity < 0.02 ? "hidden" : "visible";
           el.style.zIndex = String(i);
@@ -710,19 +712,15 @@ export function BrandingScene({
             ) : null}
 
             {adsMotion && introTags.length ? (
-              <div
-                className="absolute inset-0 flex items-center justify-center px-2"
-                style={{ perspective: "720px", transformStyle: "preserve-3d" }}
-              >
+              <div className="absolute inset-0 flex items-center justify-center overflow-visible px-2">
                 <div
                   ref={tagStackRef}
-                  className="flex flex-col items-center gap-y-2 will-change-transform md:gap-y-3"
+                  className="flex flex-col items-center gap-y-2 md:gap-y-3"
                   style={{
                     opacity: 0,
                     visibility: "hidden",
                     transformOrigin: "50% 50%",
                     transformStyle: "preserve-3d",
-                    perspective: "720px",
                   }}
                 >
                   {introTags.map((tag, i) => (
@@ -733,10 +731,15 @@ export function BrandingScene({
                       }}
                       className="will-change-transform"
                       style={{
+                        transformOrigin: "50% 50%",
                         transformStyle: "preserve-3d",
+                        backfaceVisibility: "hidden",
+                        overflow: "visible",
                       }}
                     >
-                      <p className={SUBTITLE_CLASS}>{tag}</p>
+                      <p className={`${SUBTITLE_CLASS} whitespace-nowrap`}>
+                        {tag}
+                      </p>
                     </div>
                   ))}
                 </div>
