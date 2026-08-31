@@ -108,7 +108,7 @@ type BrandingSceneProps = {
   menu?: boolean;
   /** Branding page — right-biased intro + stronger directional lean on text. */
   brandingMotion?: boolean;
-  /** ADS — title stays centered on scale-out; category words take the stage one by one. */
+  /** ADS — title stays centered on scale-out; category words stack as subtitles. */
   adsMotion?: boolean;
   /** ADS / LOGOS — intro paragraph exits a little lower. */
   introBodyLowerExit?: boolean;
@@ -153,6 +153,7 @@ export function BrandingScene({
   const titleRef = useRef<HTMLDivElement>(null);
   const lineRefs = useRef<(HTMLDivElement | null)[]>([]);
   const tagRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const tagStackRef = useRef<HTMLDivElement>(null);
   const subtitleRef = useRef<HTMLDivElement>(null);
   const emailRef = useRef<HTMLDivElement>(null);
   const formTitleRef = useRef<HTMLDivElement>(null);
@@ -257,10 +258,11 @@ export function BrandingScene({
       );
     };
 
+    const tagSlots = adsMotion && introTags.length ? 1 : introTags.length;
     const extraCount =
       (introSubtitle ? 1 : 0) +
       (introLines.length ? 1 : 0) +
-      introTags.length +
+      tagSlots +
       (introEmail ? 1 : 0) +
       (introForm ? 1 : 0);
     const handoffs = introHandoffs(Math.max(extraCount - 1, 0));
@@ -270,7 +272,7 @@ export function BrandingScene({
 
     const introBodyHandoff =
       introLines.length > 0
-        ? 2 + (introSubtitle ? 1 : 0) + (adsMotion ? introTags.length : 0)
+        ? 2 + (introSubtitle ? 1 : 0) + tagSlots
         : -1;
 
     const updateIntro = (progress: number, now: number, dt: number) => {
@@ -376,10 +378,31 @@ export function BrandingScene({
       applyElement(cueRef.current, handoffIndex++);
       applyElement(titleRef.current, handoffIndex++);
       if (introSubtitle) applyElement(subtitleRef.current, handoffIndex++);
-      if (adsMotion) {
+      if (adsMotion && introTags.length) {
+        const stackWin = handoffs[handoffIndex];
+        applyElement(tagStackRef.current, handoffIndex, 0.85);
+        const stagger = 0.022;
         introTags.forEach((_, i) => {
-          applyElement(tagRefs.current[i] ?? null, handoffIndex++);
+          const el = tagRefs.current[i];
+          if (!el || !stackWin) return;
+          const vis = handoffVisibility(
+            progress,
+            {
+              appearStart: stackWin.appearStart + i * stagger,
+              appearEnd: stackWin.appearEnd + i * stagger,
+              exitStart: stackWin.exitStart,
+              exitEnd: stackWin.exitEnd,
+            },
+            ABOUT_INTRO.enterExitBlurPx * 0.85,
+          );
+          el.style.opacity = vis.opacity.toFixed(3);
+          el.style.filter =
+            vis.blur > 0.05 ? `blur(${vis.blur.toFixed(2)}px)` : "none";
+          el.style.transform = `translate3d(0, 0, ${(22 * i).toFixed(1)}px)`;
+          el.style.visibility = vis.opacity < 0.02 ? "hidden" : "visible";
+          el.style.zIndex = String(i);
         });
+        handoffIndex++;
         if (introLines.length) applyElement(lineRefs.current[0] ?? null, handoffIndex++);
       } else {
         if (introLines.length) applyElement(lineRefs.current[0] ?? null, handoffIndex++);
@@ -676,16 +699,11 @@ export function BrandingScene({
               </div>
             ) : null}
 
-            {introTags.map((tag, i) => (
-              <div
-                key={tag}
-                className="absolute inset-0 flex items-center justify-center px-2"
-              >
+            {adsMotion && introTags.length ? (
+              <div className="absolute inset-0 flex items-center justify-center px-2">
                 <div
-                  ref={(el) => {
-                    tagRefs.current[i] = el;
-                  }}
-                  className="will-change-transform"
+                  ref={tagStackRef}
+                  className="flex flex-col items-center gap-y-2 will-change-transform md:gap-y-3"
                   style={{
                     opacity: 0,
                     visibility: "hidden",
@@ -693,12 +711,47 @@ export function BrandingScene({
                     transformStyle: "preserve-3d",
                   }}
                 >
-                  <TitleShine as="h2" className={TITLE_CLASS}>
-                    {tag}
-                  </TitleShine>
+                  {introTags.map((tag, i) => (
+                    <div
+                      key={tag}
+                      ref={(el) => {
+                        tagRefs.current[i] = el;
+                      }}
+                      className="will-change-transform"
+                      style={{
+                        transformStyle: "preserve-3d",
+                      }}
+                    >
+                      <p className={SUBTITLE_CLASS}>{tag}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
+            ) : (
+              introTags.map((tag, i) => (
+                <div
+                  key={tag}
+                  className="absolute inset-0 flex items-center justify-center px-2"
+                >
+                  <div
+                    ref={(el) => {
+                      tagRefs.current[i] = el;
+                    }}
+                    className="will-change-transform"
+                    style={{
+                      opacity: 0,
+                      visibility: "hidden",
+                      transformOrigin: "50% 50%",
+                      transformStyle: "preserve-3d",
+                    }}
+                  >
+                    <TitleShine as="h2" className={TITLE_CLASS}>
+                      {tag}
+                    </TitleShine>
+                  </div>
+                </div>
+              ))
+            )}
 
             {introEmail ? (
               <div className="absolute inset-0 flex items-center justify-center px-2">

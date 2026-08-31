@@ -457,7 +457,7 @@ export function adsTagPath(index: number): BezierPath {
 }
 
 /**
- * ADS intro pin: cue → ADS (centered scale) → DIRECT MAIL → PRINT → SOCIAL MEDIA → body.
+ * ADS intro pin: cue → ADS (centered scale) → category stack → body.
  */
 export function sampleAdsIntroPose(
   index: number,
@@ -483,19 +483,19 @@ export function sampleAdsIntroPose(
       rotY: (lean.rotY ?? 0) * 0.32,
     };
   }
-  if (content >= 1 && content <= 3) {
-    const lateralPath = adsTagPath(content - 1);
+  if (content === 1) {
+    const lateralPath = adsTitlePath();
     const lateral = sampleBezierPath(zoomT, lateralPath);
     const zoom = sampleBezierPath(zoomT, aboutZoomPath());
-    const lean = introDirectionalLean(lateralPath, zoomT, zoom.scale, content);
+    const lean = introDirectionalLean(lateralPath, zoomT, zoom.scale, 1);
     return {
       x: lateral.x,
       y: lateral.y,
       z: zoom.z,
       scale: zoom.scale,
-      rot: lateral.rot + lean.leanRot * 0.4,
-      rotX: (lean.rotX ?? 0) * 0.4,
-      rotY: (lean.rotY ?? 0) * 0.4,
+      rot: lateral.rot + lean.leanRot * 0.28,
+      rotX: (lean.rotX ?? 0) * 0.28,
+      rotY: (lean.rotY ?? 0) * 0.28,
     };
   }
   return sampleIntroBodyPose(zoomT);
