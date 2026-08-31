@@ -380,8 +380,25 @@ export function BrandingScene({
       if (introSubtitle) applyElement(subtitleRef.current, handoffIndex++);
       if (adsMotion && introTags.length) {
         const stackWin = handoffs[handoffIndex];
-        applyElement(tagStackRef.current, handoffIndex, 0.85);
+        const stack = tagStackRef.current;
+        const restZ = [-140, 16, 168];
+        const restScale = [0.8, 1.02, 1.24];
         const stagger = 0.022;
+        if (stack && stackWin) {
+          const vis = handoffVisibility(
+            progress,
+            stackWin,
+            ABOUT_INTRO.enterExitBlurPx * 0.85,
+          );
+          paint(
+            stack,
+            vis.opacity,
+            0,
+            vis.opacity < 0.02 ? "none" : "rotateX(12deg)",
+          );
+          stack.style.transformStyle = "preserve-3d";
+          stack.style.perspective = "720px";
+        }
         introTags.forEach((_, i) => {
           const el = tagRefs.current[i];
           if (!el || !stackWin) return;
@@ -395,10 +412,18 @@ export function BrandingScene({
             },
             ABOUT_INTRO.enterExitBlurPx * 0.85,
           );
+          const appear = vis.opacity;
+          const z0 = restZ[i] ?? 0;
+          const s0 = restScale[i] ?? 1;
+          const z = z0 - 90 + 90 * appear;
+          const s = s0 * (0.52 + 0.48 * appear);
+          const exit = Math.max(0, (vis.zoomT - ABOUT_INTRO.fadeZoomT) / 0.28);
+          const zOut = z + 220 * exit;
+          const sOut = s * (1 + 1.15 * exit);
           el.style.opacity = vis.opacity.toFixed(3);
           el.style.filter =
             vis.blur > 0.05 ? `blur(${vis.blur.toFixed(2)}px)` : "none";
-          el.style.transform = `translate3d(0, 0, ${(22 * i).toFixed(1)}px)`;
+          el.style.transform = `translate3d(0, 0, ${zOut.toFixed(1)}px) scale(${sOut.toFixed(4)})`;
           el.style.visibility = vis.opacity < 0.02 ? "hidden" : "visible";
           el.style.zIndex = String(i);
         });
@@ -700,7 +725,10 @@ export function BrandingScene({
             ) : null}
 
             {adsMotion && introTags.length ? (
-              <div className="absolute inset-0 flex items-center justify-center px-2">
+              <div
+                className="absolute inset-0 flex items-center justify-center px-2"
+                style={{ perspective: "720px", transformStyle: "preserve-3d" }}
+              >
                 <div
                   ref={tagStackRef}
                   className="flex flex-col items-center gap-y-2 will-change-transform md:gap-y-3"
@@ -709,6 +737,7 @@ export function BrandingScene({
                     visibility: "hidden",
                     transformOrigin: "50% 50%",
                     transformStyle: "preserve-3d",
+                    perspective: "720px",
                   }}
                 >
                   {introTags.map((tag, i) => (
