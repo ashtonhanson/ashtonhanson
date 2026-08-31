@@ -7,6 +7,7 @@ import {
   towardOppositeSide,
   sampleBezierPath,
   sampleIntroPose,
+  smootherstep,
   type BezierPath,
   type PathPose,
 } from "@/lib/cinematicDepth";
@@ -499,4 +500,29 @@ export function sampleAdsIntroPose(
     };
   }
   return sampleIntroBodyPose(zoomT);
+}
+
+/**
+ * One ADS category line: continuous far → camera → past, no rest plateau.
+ * `lifeT` is 0 at that line’s appear and 1 when it has scaled out.
+ */
+export function sampleAdsTagFlow(lifeT: number, index: number) {
+  const t = clamp(lifeT, 0, 1);
+  const zoom = sampleBezierPath(smootherstep(t), aboutZoomPath());
+  const fadeIn = 0.12;
+  const fadeOut = ABOUT_INTRO.fadeZoomT;
+  let opacity = 1;
+  if (t <= 0) {
+    opacity = 0;
+  } else if (t < fadeIn) {
+    opacity = easeInOutCubic(t / fadeIn);
+  } else if (t > fadeOut) {
+    opacity = 1 - easeInOutCubic((t - fadeOut) / Math.max(1 - fadeOut, 0.0001));
+  }
+  return {
+    z: zoom.z + (index - 1) * 64,
+    scale: zoom.scale * (0.86 + index * 0.12),
+    opacity,
+    blur: (1 - opacity) * ABOUT_INTRO.enterExitBlurPx * 0.85,
+  };
 }

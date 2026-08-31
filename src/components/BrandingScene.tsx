@@ -25,6 +25,7 @@ import {
   hubHandoffT,
   PAGE_FINALE,
   sampleAdsIntroPose,
+  sampleAdsTagFlow,
   sampleBrandingIntroPose,
   sampleIntroBodyPose,
   TEXT_DIRECTIONAL_LEAN,
@@ -381,20 +382,19 @@ export function BrandingScene({
       if (adsMotion && introTags.length) {
         const stackWin = handoffs[handoffIndex];
         const stack = tagStackRef.current;
-        const restZ = [-140, 16, 168];
-        const restScale = [0.8, 1.02, 1.24];
-        const stagger = 0.022;
+        const n = introTags.length;
+        const lifeStart = stackWin?.appearStart ?? 0;
+        const lifeEnd = stackWin?.exitEnd ?? 1;
+        const span = Math.max(lifeEnd - lifeStart, 0.0001);
+        const stagger = span * 0.22;
+        const itemSpan = Math.max(span - stagger * (n - 1), span * 0.55);
         if (stack && stackWin) {
-          const vis = handoffVisibility(
-            progress,
-            stackWin,
-            ABOUT_INTRO.enterExitBlurPx * 0.85,
-          );
+          const groupOn = progress >= lifeStart && progress <= lifeEnd;
           paint(
             stack,
-            vis.opacity,
+            groupOn ? 1 : 0,
             0,
-            vis.opacity < 0.02 ? "none" : "rotateX(12deg)",
+            groupOn ? "rotateX(10deg)" : "none",
           );
           stack.style.transformStyle = "preserve-3d";
           stack.style.perspective = "720px";
@@ -402,29 +402,14 @@ export function BrandingScene({
         introTags.forEach((_, i) => {
           const el = tagRefs.current[i];
           if (!el || !stackWin) return;
-          const vis = handoffVisibility(
-            progress,
-            {
-              appearStart: stackWin.appearStart + i * stagger,
-              appearEnd: stackWin.appearEnd + i * stagger,
-              exitStart: stackWin.exitStart,
-              exitEnd: stackWin.exitEnd,
-            },
-            ABOUT_INTRO.enterExitBlurPx * 0.85,
-          );
-          const appear = vis.opacity;
-          const z0 = restZ[i] ?? 0;
-          const s0 = restScale[i] ?? 1;
-          const z = z0 - 90 + 90 * appear;
-          const s = s0 * (0.52 + 0.48 * appear);
-          const exit = Math.max(0, (vis.zoomT - ABOUT_INTRO.fadeZoomT) / 0.28);
-          const zOut = z + 220 * exit;
-          const sOut = s * (1 + 1.15 * exit);
-          el.style.opacity = vis.opacity.toFixed(3);
+          const start = lifeStart + i * stagger;
+          const t = clamp((progress - start) / itemSpan, 0, 1);
+          const flow = sampleAdsTagFlow(t, i);
+          el.style.opacity = flow.opacity.toFixed(3);
           el.style.filter =
-            vis.blur > 0.05 ? `blur(${vis.blur.toFixed(2)}px)` : "none";
-          el.style.transform = `translate3d(0, 0, ${zOut.toFixed(1)}px) scale(${sOut.toFixed(4)})`;
-          el.style.visibility = vis.opacity < 0.02 ? "hidden" : "visible";
+            flow.blur > 0.05 ? `blur(${flow.blur.toFixed(2)}px)` : "none";
+          el.style.transform = `translate3d(0, 0, ${flow.z.toFixed(1)}px) scale(${flow.scale.toFixed(4)})`;
+          el.style.visibility = flow.opacity < 0.02 ? "hidden" : "visible";
           el.style.zIndex = String(i);
         });
         handoffIndex++;
