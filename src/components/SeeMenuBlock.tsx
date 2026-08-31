@@ -128,14 +128,15 @@ export function SeeMenuArrive({ angleStart }: { angleStart: number }) {
   );
 }
 
-/** Sequential Z-handoff pieces — SEE MENU / FOR OTHER / WORK / links. */
+/** Same [data-home-arrive] pieces as the AI ANIMATION chapter. */
 export function SeeMenuChapter() {
   return (
-    <>
+    <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center justify-center gap-y-6 text-center xl:max-w-4xl xl:gap-y-7">
       {home.seeMenuLines.map((line, index) => (
         <div
           key={line}
-          data-z-item
+          data-home-arrive
+          data-grow=""
           data-kind="title"
           data-index={index}
           className="will-change-transform"
@@ -147,13 +148,14 @@ export function SeeMenuChapter() {
         </div>
       ))}
       <WorkLinks
-        data-z-item
+        data-home-arrive
+        data-grow=""
         data-kind="copy"
         data-index={home.seeMenuLines.length}
-        className="flex flex-wrap justify-center gap-x-10 gap-y-3 will-change-transform"
+        className="mt-14 flex flex-wrap justify-center gap-x-10 gap-y-3 will-change-transform xl:mt-16"
         style={{ opacity: 0, visibility: "hidden", transformOrigin: "50% 50%" }}
       />
-    </>
+    </div>
   );
 }
 

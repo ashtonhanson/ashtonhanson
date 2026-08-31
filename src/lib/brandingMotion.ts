@@ -94,7 +94,7 @@ export const BRANDING_INTRO: IntroTiming = {
    * Slight pull so the first case starts as the intro leaves,
    * without scrolling past its title / subtitle / description.
    */
-  overlapCases: "calc(-100dvh - 12vh)",
+  overlapCases: "calc(-12vh)",
 } as const;
 
 /** CONTACT intro — still a cinematic pin, then the form lockup. */
