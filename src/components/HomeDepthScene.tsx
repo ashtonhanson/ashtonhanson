@@ -54,6 +54,7 @@ export function HomeDepthScene({
         exitMode="hold"
         zIndex={14}
         perspective
+        stageClassName="!overflow-visible"
         aria-label="See menu"
       >
         {menu}

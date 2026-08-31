@@ -1,13 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { withIdleHover } from "@/lib/idleHover";
 import { createLogoGlowState, stepLogoGlow } from "@/lib/logoGlow";
-import {
-  createMousePullState,
-  getPointer,
-  stepMousePull,
-} from "@/lib/mousePull";
+import { getPointer } from "@/lib/mousePull";
 
 type LogoPlateProps = {
   src: string;
@@ -18,10 +13,6 @@ function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
 }
 
-function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * t;
-}
-
 function readRadius(el: HTMLElement) {
   const raw = getComputedStyle(el).borderTopLeftRadius.split(" ")[0];
   const n = Number.parseFloat(raw);
@@ -29,8 +20,8 @@ function readRadius(el: HTMLElement) {
 }
 
 /**
- * Logo plate: the card tilts with the cursor, and the photo parallaxes
- * a little inside the frame — scaled just enough that it never gaps.
+ * Logo plate: scroll travel plus a cursor glow. The photo stays put so
+ * the frame never shoves on hover.
  */
 export function LogoPlate({ src, alt }: LogoPlateProps) {
   const ref = useRef<HTMLElement>(null);
@@ -49,9 +40,7 @@ export function LogoPlate({ src, alt }: LogoPlateProps) {
   }, []);
 
   useEffect(() => {
-    const pull = createMousePullState();
     const glow = createLogoGlowState();
-    const look = { x: 0, y: 0 };
     let frameId = 0;
     let lastNow = performance.now();
 
@@ -82,14 +71,11 @@ export function LogoPlate({ src, alt }: LogoPlateProps) {
       const base = travel
         ? `translate3d(0, ${travel.toFixed(2)}px, 0)`
         : "none";
-      if (reduced) {
-        el.style.transform = base;
-        if (art) art.style.transform = "none";
-        if (bezel) bezel.style.transform = "none";
-        return;
-      }
+      el.style.transform = base;
+      if (art) art.style.transform = "none";
+      if (bezel) bezel.style.transform = "none";
+      if (reduced) return;
 
-      const pulled = stepMousePull(pull, el, now, dt, "media");
       const pointer = getPointer(now);
       const rect = el.getBoundingClientRect();
       const px = pointer.has
@@ -98,49 +84,8 @@ export function LogoPlate({ src, alt }: LogoPlateProps) {
       const py = pointer.has
         ? (pointer.y - rect.top) / Math.max(rect.height, 1)
         : 0.5;
-      const dx = px - 0.5;
-      const dy = py - 0.5;
-      const dist = Math.hypot(dx, dy);
-      const influence = pointer.has
-        ? dist <= 0.62
-          ? 1
-          : Math.max(0, 1 - (dist - 0.62) * 1.6)
-        : 0;
-      const follow = 1 - Math.exp(-dt / 55);
-      look.x = lerp(look.x, dx * 2 * influence, follow);
-      look.y = lerp(look.y, dy * 2 * influence, follow);
-      const nx = clamp(look.x, -1.35, 1.35);
-      const ny = clamp(look.y, -1.35, 1.35);
-
-      el.style.transformStyle = "preserve-3d";
-      el.style.transform = withIdleHover(base, {
-        x: pulled.x,
-        y: pulled.y,
-        z: pulled.z,
-        rot: 0,
-        rotX: pulled.rotX,
-        rotY: pulled.rotY,
-      });
-
-      if (art) {
-        const w = art.offsetWidth || el.clientWidth || 1;
-        const h = art.offsetHeight || el.clientHeight || 1;
-        const tiltX = pulled.rotY / 11;
-        const tiltY = -pulled.rotX / 9;
-        const mixX = clamp(tiltX * 0.7 + nx * 0.45, -1, 1);
-        const mixY = clamp(tiltY * 0.7 + ny * 0.45, -1, 1);
-        const shiftX = -mixX * 13;
-        const shiftY = -mixY * 10;
-        const cover = Math.max(
-          (2 * Math.abs(shiftX)) / w,
-          (2 * Math.abs(shiftY)) / h,
-        );
-        art.style.transform = `translate3d(${shiftX.toFixed(2)}px, ${shiftY.toFixed(2)}px, 0) scale(${(1 + cover).toFixed(4)})`;
-      }
-
-      if (bezel) {
-        bezel.style.transform = "none";
-      }
+      const dist = Math.hypot(px - 0.5, py - 0.5);
+      const hovering = pointer.has && dist <= 0.72;
 
       const plateW = el.clientWidth;
       const plateH = el.clientHeight;
@@ -152,7 +97,7 @@ export function LogoPlate({ src, alt }: LogoPlateProps) {
         radius: readRadius(imageRef.current ?? el),
         pointerX: px,
         pointerY: py,
-        hovering: influence > 0.18,
+        hovering,
       });
       el.style.boxShadow = stepped.boxShadow;
     };

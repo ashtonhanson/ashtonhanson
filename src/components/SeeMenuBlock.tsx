@@ -18,6 +18,7 @@ const WORK_LINKS = [
   { href: "/branding", label: "BRANDING" },
   { href: "/ads", label: "ADS" },
   { href: "/logos", label: "LOGOS" },
+  { href: "/contact", label: "CONTACT" },
 ] as const;
 
 type LineMotion = {
@@ -121,7 +122,7 @@ export function SeeMenuArrive({ angleStart }: { angleStart: number }) {
           className="mt-14 will-change-transform xl:mt-16"
           style={{ opacity: 0, transformOrigin: "50% 50%" }}
         >
-          <WorkLinks className="flex flex-wrap justify-center gap-x-10 gap-y-3" />
+          <WorkLinks className="flex w-full flex-wrap justify-center gap-x-6 gap-y-3 md:gap-x-10" />
         </div>
       </div>
     </article>
@@ -131,7 +132,7 @@ export function SeeMenuArrive({ angleStart }: { angleStart: number }) {
 /** Same [data-home-arrive] pieces as the AI ANIMATION chapter. */
 export function SeeMenuChapter() {
   return (
-    <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center justify-center gap-y-6 text-center xl:max-w-4xl xl:gap-y-7">
+    <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center justify-center gap-y-3 text-center md:gap-y-6 xl:max-w-4xl xl:gap-y-7">
       {home.seeMenuLines.map((line, index) => (
         <div
           key={line}
@@ -152,7 +153,7 @@ export function SeeMenuChapter() {
         data-grow=""
         data-kind="copy"
         data-index={home.seeMenuLines.length}
-        className="mt-14 flex flex-wrap justify-center gap-x-10 gap-y-3 will-change-transform xl:mt-16"
+        className="mt-8 flex w-full flex-wrap justify-center gap-x-6 gap-y-3 will-change-transform md:mt-14 md:gap-x-10 xl:mt-16"
         style={{ opacity: 0, visibility: "hidden", transformOrigin: "50% 50%" }}
       />
     </div>
@@ -253,7 +254,7 @@ export function SeeMenuBlock({
         </div>
 
         <WorkLinks
-          className="mt-12 flex flex-wrap justify-center gap-x-10 gap-y-3 will-change-transform"
+          className="mt-8 flex w-full flex-wrap justify-center gap-x-6 gap-y-3 will-change-transform md:mt-12 md:gap-x-10"
           style={{
             opacity: 0.25 + linksFocus * 0.75,
             transform: `translate3d(0, ${(1 - linksFocus) * 18}px, 0)`,

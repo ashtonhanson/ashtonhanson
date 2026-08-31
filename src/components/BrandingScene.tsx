@@ -213,7 +213,9 @@ export function BrandingScene({
         return;
       }
       const pull =
-        pullKind && opacity > 0.04
+        pullKind &&
+        pullKind !== "gallery" &&
+        opacity > 0.04
           ? stepMousePull(
               pullFor(el),
               el,
@@ -223,6 +225,19 @@ export function BrandingScene({
               1 - Math.min(1, Math.max(0, travelT)),
             )
           : undefined;
+      const rest = atRest || opacity > 0.98;
+      if (pullKind === "gallery") {
+        paint(
+          el,
+          opacity,
+          rest ? 0 : blur,
+          rest ? "none" : transform,
+          hideWhenGone,
+        );
+        el.style.transformStyle = "flat";
+        el.style.pointerEvents = opacity > 0.05 ? "auto" : "none";
+        return;
+      }
       paint(
         el,
         opacity,
@@ -924,7 +939,7 @@ function ArriveMedia({
       data-kind="media"
       data-angle={angle}
       data-lag={lag}
-      className="mt-12 w-full max-w-5xl md:will-change-transform xl:mt-14 xl:max-w-6xl 2xl:max-w-7xl"
+      className="pointer-events-auto mt-12 w-full max-w-5xl md:will-change-transform xl:mt-14 xl:max-w-6xl 2xl:max-w-7xl"
       style={{ opacity: 0, transformOrigin: "50% 40%" }}
     >
       {plate ? (

@@ -8,7 +8,7 @@ export type IdleHoverState = {
   lastScrollY: number;
 };
 
-const DELAY_MS = 80;
+const DELAY_MS = 420;
 const FADE_IN_MS = 260;
 const FADE_OUT_TAU = 0.22;
 const FADE_IN_TAU = 0.12;

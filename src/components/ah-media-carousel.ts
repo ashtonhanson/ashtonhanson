@@ -1,10 +1,3 @@
-import {
-  createMousePullState,
-  stepMousePull,
-  type MousePullState,
-} from "@/lib/mousePull";
-import { withIdleHover } from "@/lib/idleHover";
-
 export type CarouselMediaItem = {
   src: string;
   alt: string;
@@ -71,6 +64,8 @@ const STYLES = /* css */ `
   scroll-behavior: auto;
   -ms-overflow-style: none;
   scrollbar-width: none;
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 .track::-webkit-scrollbar {
@@ -85,8 +80,8 @@ const STYLES = /* css */ `
   .track {
     gap: 1rem;
     padding: 2.5rem 18%;
-    cursor: pointer;
-    touch-action: pan-y;
+    cursor: grab;
+    touch-action: pan-x pan-y;
   }
 
   .track.is-dragging {
@@ -107,8 +102,9 @@ const STYLES = /* css */ `
   width: auto;
   max-width: 42rem;
   flex-shrink: 0;
-  cursor: pointer;
+  cursor: grab;
   overflow: visible;
+  pointer-events: auto;
 }
 
 .slide-visual {
@@ -385,7 +381,9 @@ export class AhMediaCarousel extends ElementBase {
   #userPauseTimer: number | null = null;
   #dragging = false;
   #dragMoved = false;
+  #dragAxis: "x" | "y" | null = null;
   #dragStartX = 0;
+  #dragStartY = 0;
   #dragStartScroll = 0;
   #suppressClick = false;
   #pointerId = -1;
@@ -396,7 +394,6 @@ export class AhMediaCarousel extends ElementBase {
   #dots!: HTMLDivElement;
   #prevBtn!: HTMLButtonElement;
   #nextBtn!: HTMLButtonElement;
-  #pullMap = new WeakMap<HTMLElement, MousePullState>();
   #focusMap = new WeakMap<
     HTMLElement,
     { scale: number; opacity: number; blur: number }
@@ -784,17 +781,10 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   #onPointerDown = (event: PointerEvent) => {
-    if (event.pointerType === "touch") {
-      this.#pauseForUser();
-      return;
-    }
-    if (!this.#isDesktop()) return;
-    if (event.button !== 0) return;
+    if (event.pointerType === "mouse" && event.button !== 0) return;
     if (!this.#track) return;
-    const onSlide = (event.target as HTMLElement).closest<HTMLElement>(
-      "[data-slide]",
-    );
-    if (onSlide) return;
+    if ((event.target as HTMLElement).closest("button")) return;
+    if (this.#lightboxOpen) return;
     if (this.#items.length < 2) return;
 
     this.#cancelScrollAnimation();
@@ -803,9 +793,11 @@ export class AhMediaCarousel extends ElementBase {
     this.#hoverScrollCarry = 0;
     this.#dragging = true;
     this.#dragMoved = false;
+    this.#dragAxis = null;
     this.#suppressClick = false;
     this.#pointerId = event.pointerId;
     this.#dragStartX = event.clientX;
+    this.#dragStartY = event.clientY;
     this.#dragStartScroll = this.#track.scrollLeft;
     this.#syncAutoPause();
   };
@@ -815,9 +807,17 @@ export class AhMediaCarousel extends ElementBase {
       return;
     }
     const dx = event.clientX - this.#dragStartX;
-    if (Math.abs(dx) <= DRAG_THRESHOLD) return;
+    const dy = event.clientY - this.#dragStartY;
 
-    if (!this.#dragMoved) {
+    if (!this.#dragAxis) {
+      if (Math.hypot(dx, dy) <= DRAG_THRESHOLD) return;
+      this.#dragAxis = Math.abs(dx) >= Math.abs(dy) ? "x" : "y";
+      if (this.#dragAxis === "y") {
+        this.#dragging = false;
+        this.#pointerId = -1;
+        this.#syncAutoPause();
+        return;
+      }
       this.#dragMoved = true;
       this.#track.classList.add("is-dragging");
       this.#pauseForUser();
@@ -825,6 +825,9 @@ export class AhMediaCarousel extends ElementBase {
         this.#track.setPointerCapture(event.pointerId);
       }
     }
+
+    if (this.#dragAxis !== "x") return;
+    if (event.cancelable) event.preventDefault();
 
     const maxLeft = Math.max(
       0,
@@ -841,17 +844,14 @@ export class AhMediaCarousel extends ElementBase {
 
     const wasDrag = this.#dragMoved;
     this.#dragging = false;
+    this.#dragAxis = null;
     this.#pointerId = -1;
     this.#track?.classList.remove("is-dragging");
     if (this.#track?.hasPointerCapture(event.pointerId)) {
       this.#track.releasePointerCapture(event.pointerId);
     }
 
-    if (!wasDrag && event.button === 0) {
-      // Clicks on slides are handled by slide listeners — drag is track-padding only.
-    } else if (wasDrag) {
-      this.#suppressClick = true;
-    }
+    if (wasDrag) this.#suppressClick = true;
 
     this.#dragMoved = false;
     this.#syncAutoPause();
@@ -862,15 +862,6 @@ export class AhMediaCarousel extends ElementBase {
       window.cancelAnimationFrame(this.#autoRaf);
       this.#autoRaf = null;
     }
-  }
-
-  #pullFor(el: HTMLElement) {
-    let state = this.#pullMap.get(el);
-    if (!state) {
-      state = createMousePullState();
-      this.#pullMap.set(el, state);
-    }
-    return state;
   }
 
   #stopMotion() {
@@ -1014,7 +1005,9 @@ export class AhMediaCarousel extends ElementBase {
       { passive: true },
     );
     this.#track.addEventListener("pointerdown", this.#onPointerDown);
-    this.#track.addEventListener("pointermove", this.#onPointerMove);
+    this.#track.addEventListener("pointermove", this.#onPointerMove, {
+      passive: false,
+    });
     this.#track.addEventListener("pointerup", this.#onPointerUp);
     this.#track.addEventListener("pointercancel", this.#onPointerUp);
     this.#track.addEventListener("mousemove", this.#onTrackMouseMove);
@@ -1406,22 +1399,7 @@ export class AhMediaCarousel extends ElementBase {
         visual.style.transformStyle = "flat";
       } else {
         visual.style.transformStyle = "preserve-3d";
-        const pull = stepMousePull(
-          this.#pullFor(slide),
-          visual,
-          now,
-          dt,
-          "gallery",
-          0.5,
-        );
-        visual.style.transform = withIdleHover(pose, {
-          x: 0,
-          y: 0,
-          z: pull.z,
-          rot: 0,
-          rotX: pull.rotX,
-          rotY: pull.rotY,
-        });
+        visual.style.transform = pose;
       }
       visual.style.opacity = String(opacity);
       visual.style.filter = blur < 0.08 ? "none" : `blur(${blur.toFixed(2)}px)`;

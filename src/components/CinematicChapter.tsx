@@ -49,7 +49,7 @@ function paint(
   el.style.transform = transform;
   el.style.visibility = opacity < 0.02 ? "hidden" : "visible";
   el.style.pointerEvents =
-    opacity > (el.dataset.kind === "media" ? 0.05 : 0.65) ? "auto" : "none";
+    opacity > (el.dataset.kind === "title" ? 0.65 : 0.05) ? "auto" : "none";
 }
 
 function isCoarsePointer() {
@@ -152,13 +152,16 @@ export function CinematicChapter({
           atRest: boolean,
           travelT: number,
         ) => {
-          // Android Chrome paints <video> black inside 3D / transformed ancestors.
-          if (kind === "media" && isCoarsePointer()) {
+          // Keep galleries flat while at rest so overflow-x / drag work.
+          // Android Chrome paints <video> black inside 3D ancestors.
+          if (kind === "media" && (isCoarsePointer() || atRest)) {
             paint(el, opacity, atRest ? 0 : blur, "none", true);
             return;
           }
           const pull =
-            pullKind && opacity > 0.04
+            pullKind &&
+            pullKind !== "gallery" &&
+            opacity > 0.04
               ? stepMousePull(
                   pullFor(el),
                   el,
@@ -178,9 +181,9 @@ export function CinematicChapter({
               now,
               dt,
               i + angleOffset,
-              atRest,
+              kind === "media" ? false : atRest,
               travelT,
-              1,
+              kind === "media" ? 0 : 1,
               pull,
             ),
           );
