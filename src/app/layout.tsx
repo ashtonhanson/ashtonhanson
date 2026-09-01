@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     template: "%s | Ashton Hanson Design",
   },
   description:
-    "Branding, logos, and advertising by Ashton Hanson—illustration, Adobe Creative Suite, and AI-assisted visual storytelling.",
+    "Branding, logos, and advertising by Ashton Hanson: illustration, Adobe Creative Suite, and AI-assisted visual storytelling.",
 };
 
 export default function RootLayout({

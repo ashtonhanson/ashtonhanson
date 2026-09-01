@@ -102,15 +102,15 @@ export const brandingCases: CaseStudy[] = [
         media: [
           {
             src: "/branding/hub-tablet/old-layout/yourec-logo.jpg",
-            alt: "YouRec logo — old HUB Tablet layout",
+            alt: "YouRec logo, old HUB Tablet layout",
           },
           {
             src: "/branding/hub-tablet/old-layout/yourec-card-1.jpg",
-            alt: "YouRec card — old HUB Tablet layout",
+            alt: "YouRec card, old HUB Tablet layout",
           },
           {
             src: "/branding/hub-tablet/old-layout/yourec-card-2.jpg",
-            alt: "YouRec card alternate — old HUB Tablet layout",
+            alt: "YouRec card alternate, old HUB Tablet layout",
           },
         ],
       },
@@ -154,19 +154,19 @@ export const brandingCases: CaseStudy[] = [
       },
       {
         src: "/branding/wagyu-yume/wrap-layout.png",
-        alt: "Wagyu Yume food truck wrap — sides and back layout",
+        alt: "Wagyu Yume food truck wrap, sides and back layout",
       },
       {
         src: "/branding/wagyu-yume/daytime-front.jpg",
-        alt: "Wagyu Yume food truck — daytime front view",
+        alt: "Wagyu Yume food truck, daytime front view",
       },
       {
         src: "/branding/wagyu-yume/truck-side.png",
-        alt: "Wagyu Yume food truck — side wrap",
+        alt: "Wagyu Yume food truck, side wrap",
       },
       {
         src: "/branding/wagyu-yume/side-door.png",
-        alt: "Wagyu Yume food truck — side door wrap",
+        alt: "Wagyu Yume food truck, side door wrap",
       },
       {
         src: "/branding/wagyu-yume/food-truck.mp4",
@@ -233,7 +233,7 @@ export const adCases: CaseStudy[] = [
     id: "print",
     title: "PRINT",
     subtitle: "",
-    body: "Mailers, print ads, and illustrated pieces made to work in the real world—clear hierarchy, strong imagery, and layouts that still read when they land in a mailbox or on a page.",
+    body: "Mailers, print ads, and illustrated pieces made to work in the real world: clear hierarchy, strong imagery, and layouts that still read when they land in a mailbox or on a page.",
     media: [
       directMailAd("Illustration AD.jpg", "J&J Exterminating illustrated print ad"),
       directMailAd(
@@ -261,7 +261,7 @@ export const adCases: CaseStudy[] = [
     id: "social-media",
     title: "SOCIAL MEDIA",
     subtitle: "",
-    body: "Campaign graphics for feeds and stories—consistent, high-energy visuals built to stop the scroll and stay on brand.",
+    body: "Campaign graphics for feeds and stories: consistent, high-energy visuals built to stop the scroll and stay on brand.",
     sections: [
       {
         heading: "TERNIUM",

@@ -90,7 +90,7 @@ async function sendWithFormsubmit(input: {
       body: JSON.stringify({
         name: input.name,
         email: input.email,
-        project: input.project || "—",
+        project: input.project || "Not specified",
         message: input.message,
         _subject: `Inquiry from ${input.name}`,
         _template: "table",
