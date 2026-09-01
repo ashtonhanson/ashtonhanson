@@ -765,6 +765,66 @@ body {
   }
 }
 
+@keyframes nav-glow-ios-halo {
+  0%,
+  100% {
+    text-shadow:
+      0 0 4px rgb(255 255 255 / 0.3),
+      0 0 12px rgb(255 255 255 / 0.14);
+  }
+  26% {
+    text-shadow:
+      0 0 10px rgb(255 255 255 / 0.72),
+      0 0 22px rgb(255 255 255 / 0.34);
+  }
+  48% {
+    text-shadow:
+      0 0 5px rgb(255 255 255 / 0.36),
+      0 0 14px rgb(255 255 255 / 0.16);
+  }
+  73% {
+    text-shadow:
+      0 0 9px rgb(255 255 255 / 0.58),
+      0 0 20px rgb(255 255 255 / 0.28);
+  }
+}
+
+/* iPhone: clip-text + 3D hover flatten the glow; use solid white + text-shadow. */
+.is-ios .site-header-row,
+.is-ios .site-header-panel > ul {
+  perspective: none;
+}
+
+.is-ios .nav-glow {
+  transform-style: flat;
+}
+
+.is-ios .nav-glow-bloom,
+.is-ios .nav-glow-live {
+  display: none;
+}
+
+.is-ios .nav-glow.is-active .nav-glow-base {
+  opacity: 1;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  text-shadow:
+    0 0 6px rgb(255 255 255 / 0.45),
+    0 0 16px rgb(255 255 255 / 0.22);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .is-ios .nav-glow.is-active .nav-glow-base {
+    animation: nav-glow-ios-halo var(--nav-glow-pulse, 6.4s) ease-in-out infinite;
+    animation-delay: var(--nav-glow-delay, 0s);
+  }
+}
+
+.is-ios .nav-burger-bars span {
+  background-image: none;
+  background-color: #fff;
+}
+
 .site-nav-desktop {
   display: none;
 }
@@ -849,6 +909,20 @@ body {
   .nav-burger-bars span:nth-child(3) {
     animation-duration: 9.1s, 5.5s;
     animation-delay: -6.8s, -4.1s;
+  }
+
+  .is-ios .nav-burger-bars span {
+    animation: nav-glow-bar-halo 6.4s ease-in-out infinite;
+  }
+
+  .is-ios .nav-burger-bars span:nth-child(2) {
+    animation-duration: 7.6s;
+    animation-delay: -1.6s;
+  }
+
+  .is-ios .nav-burger-bars span:nth-child(3) {
+    animation-duration: 5.5s;
+    animation-delay: -4.1s;
   }
 }
 
@@ -991,6 +1065,7 @@ body {
   .nav-glow.is-active .nav-glow-base,
   .nav-glow:hover .nav-glow-base {
     opacity: 1;
+    animation: none;
   }
 
   .nav-glow-live,

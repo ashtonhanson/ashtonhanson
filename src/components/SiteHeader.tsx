@@ -16,6 +16,14 @@ import {
 } from "@/lib/idleHover";
 import { createMousePullState, stepMousePull } from "@/lib/mousePull";
 
+function isAppleTouch() {
+  if (typeof navigator === "undefined") return false;
+  return (
+    /iP(hone|ad|od)/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
+
 function glowVars(index: number): CSSProperties {
   return {
     "--nav-glow-delay": `${(index * 1.15).toFixed(2)}s`,
@@ -43,6 +51,7 @@ function NavHover({
     const pull = createMousePullState();
     const idle = createIdleHoverState();
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const appleTouch = isAppleTouch();
     let lastNow = performance.now();
     let frame = 0;
 
@@ -51,8 +60,9 @@ function NavHover({
       const dt = Math.min(48, now - lastNow);
       lastNow = now;
       if (document.hidden) return;
-      if (reduce.matches) {
+      if (reduce.matches || appleTouch) {
         el.style.transform = "none";
+        el.style.transformStyle = "flat";
         return;
       }
       const pulled = stepMousePull(pull, el, now, dt, "title");
@@ -133,6 +143,11 @@ function NavGlowLink({
 export function SiteHeader() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [ios, setIos] = useState(false);
+
+  useEffect(() => {
+    setIos(isAppleTouch());
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
@@ -165,7 +180,9 @@ export function SiteHeader() {
   }, [open]);
 
   return (
-    <div className="site-header-shell pointer-events-auto">
+    <div
+      className={`site-header-shell pointer-events-auto${ios ? " is-ios" : ""}`}
+    >
       <header className="site-header border-b border-line">
       <div className="site-header-row mx-auto flex max-w-6xl items-center px-5 py-3 md:px-8 xl:max-w-7xl xl:px-12 2xl:px-16">
         <Link
