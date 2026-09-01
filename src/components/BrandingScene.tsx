@@ -329,9 +329,11 @@ export function BrandingScene({
                 ? sampleBrandingIntroPose(handoffIndex, vis.zoomT, lifeT)
                 : sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
         if (handoffIndex === 0) {
-          if (now - born >= ABOUT_INTRO.cueArriveMs) {
-            freezeScrollCueMotion(el, true);
-          } else if (progress >= ABOUT_INTRO.cueExitStart) {
+          const arrived = now - born >= ABOUT_INTRO.cueArriveMs;
+          const exiting = progress >= ABOUT_INTRO.cueExitStart;
+          if (arrived) {
+            freezeScrollCueMotion(el, true, !coarsePointer || exiting);
+          } else if (exiting) {
             freezeScrollCueMotion(el);
           }
         }
@@ -375,7 +377,7 @@ export function BrandingScene({
           el,
           opacity,
           blur,
-          coarsePointer
+          coarsePointer && handoffIndex !== 0
             ? baseTransform
             : composeIdleTransform(
                 idleFor(el),
@@ -385,8 +387,14 @@ export function BrandingScene({
                 handoffIndex + 3,
                 atRest,
                 travelT,
-                handoffIndex === 0 ? (arriving ? 0 : 2.2) : 1,
-                pull,
+                handoffIndex === 0
+                  ? arriving
+                    ? 0
+                    : coarsePointer
+                      ? 3.6
+                      : 2.2
+                  : 1,
+                coarsePointer ? undefined : pull,
               ),
         );
         el.style.pointerEvents =

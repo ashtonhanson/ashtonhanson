@@ -31,16 +31,18 @@ function freezeHover(el: HTMLElement) {
 /**
  * Freeze the CSS drop/bob so a pin-stage position change cannot restart them.
  * Pass snapArriveToRest after the load-in so Safari cannot keep the off-screen start.
+ * On coarse pointers the bob stays live until scale-out (`freezeBob`).
  */
 export function freezeScrollCueMotion(
   poseEl: HTMLElement | null,
   snapArriveToRest = false,
+  freezeBob = true,
 ) {
   if (!poseEl) return;
   const arrive = poseEl.closest(".scroll-cue-arrive");
   const hover = poseEl.closest(".scroll-cue-hover");
   if (arrive instanceof HTMLElement) freezeArrive(arrive, snapArriveToRest);
-  if (hover instanceof HTMLElement) freezeHover(hover);
+  if (freezeBob && hover instanceof HTMLElement) freezeHover(hover);
 }
 
 /** Branded down-arrow shown on load before the first intro title. */

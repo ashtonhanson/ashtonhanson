@@ -960,6 +960,28 @@ body {
   }
 }
 
+@keyframes scroll-cue-hover-coarse {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  20% {
+    transform: translate3d(0, -0.78rem, 0);
+  }
+  50% {
+    transform: translate3d(0, 0.95rem, 0);
+  }
+  80% {
+    transform: translate3d(0, -0.78rem, 0);
+  }
+}
+
+@media (pointer: coarse) and (prefers-reduced-motion: no-preference) {
+  .scroll-cue-hover {
+    animation-name: scroll-cue-hover-coarse;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .nav-glow.is-active,
   .nav-glow:hover {

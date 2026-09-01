@@ -157,9 +157,11 @@ export function AboutIntroStage({
           handoffIndex === 0 ? cueLifeT(progress, win) : vis.zoomT;
         const pose = sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
         if (handoffIndex === 0) {
-          if (now - born >= ABOUT_INTRO.cueArriveMs) {
-            freezeScrollCueMotion(el, true);
-          } else if (progress >= ABOUT_INTRO.cueExitStart) {
+          const arrived = now - born >= ABOUT_INTRO.cueArriveMs;
+          const exiting = progress >= ABOUT_INTRO.cueExitStart;
+          if (arrived) {
+            freezeScrollCueMotion(el, true, !coarsePointer || exiting);
+          } else if (exiting) {
             freezeScrollCueMotion(el);
           }
         }
@@ -203,7 +205,7 @@ export function AboutIntroStage({
           el,
           opacity,
           blur,
-          coarsePointer
+          coarsePointer && handoffIndex !== 0
             ? transform
             : composeIdleTransform(
                 idleFor(el),
@@ -213,8 +215,16 @@ export function AboutIntroStage({
                 handoffIndex + 3,
                 atRest && !inBodyZoom,
                 travelT,
-                isBodyLine ? 0 : handoffIndex === 0 ? (arriving ? 0 : 2.2) : 1,
-                pull,
+                isBodyLine
+                  ? 0
+                  : handoffIndex === 0
+                    ? arriving
+                      ? 0
+                      : coarsePointer
+                        ? 3.6
+                        : 2.2
+                    : 1,
+                coarsePointer ? undefined : pull,
               ),
         );
       };
