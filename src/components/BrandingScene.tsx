@@ -124,7 +124,7 @@ function paint(
 ) {
   if (!el) return;
   el.style.opacity = opacity.toFixed(3);
-  el.style.filter = `blur(${Math.max(0, blur).toFixed(2)}px)`;
+  el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none";
   el.style.transformStyle = "preserve-3d";
   el.style.transform = transform;
   el.style.visibility =
@@ -208,10 +208,19 @@ export function BrandingScene({
       if (!el) return;
       if (
         pullKind === "gallery" &&
-        window.matchMedia("(pointer: coarse)").matches
+        (window.matchMedia("(pointer: coarse)").matches ||
+          /Android/i.test(navigator.userAgent))
       ) {
-        paint(el, opacity, atRest ? 0 : blur, "none", hideWhenGone);
+        const android = /Android/i.test(navigator.userAgent);
+        paint(
+          el,
+          android ? (opacity > 0.08 ? 1 : 0) : opacity,
+          0,
+          "none",
+          hideWhenGone,
+        );
         el.style.transformStyle = "flat";
+        el.style.filter = "none";
         return;
       }
       const pull =

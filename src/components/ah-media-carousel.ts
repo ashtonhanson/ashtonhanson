@@ -64,8 +64,9 @@ const STYLES = /* css */ `
   scroll-behavior: auto;
   -ms-overflow-style: none;
   scrollbar-width: none;
-  touch-action: pan-x pan-y;
-  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: auto;
 }
 
 .track::-webkit-scrollbar {
@@ -81,7 +82,7 @@ const STYLES = /* css */ `
     gap: 1rem;
     padding: 2.5rem 18%;
     cursor: grab;
-    touch-action: pan-x pan-y;
+    touch-action: pan-y;
   }
 
   .track.is-dragging {
@@ -166,7 +167,13 @@ const STYLES = /* css */ `
   transform: none;
   transform-origin: center center;
   opacity: 1;
+  background: transparent;
   pointer-events: none;
+}
+
+/* Android paints an unloaded <video> as a black rectangle. */
+video.media:not(.is-loaded) {
+  visibility: hidden;
 }
 
 .controls {
@@ -347,6 +354,10 @@ function easeInOutCubic(t: number) {
   return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
 }
 
+function easeOutCubic(t: number) {
+  return 1 - (1 - t) ** 3;
+}
+
 function smoothstep(t: number) {
   const x = Math.max(0, Math.min(1, t));
   return x * x * (3 - 2 * x);
@@ -358,6 +369,12 @@ const ElementBase =
     : (class {} as unknown as typeof HTMLElement);
 
 const DRAG_THRESHOLD = 6;
+const SWIPE_SAMPLE_MS = 100;
+const SWIPE_TAU_MS = 360;
+const SWIPE_MAX_SLIDES = 2.4;
+const SWIPE_MIN_MS = 240;
+const SWIPE_MAX_MS = 520;
+const SWIPE_FLICK_VEL = 0.12;
 
 /**
  * Native gallery: hover focus, slow auto-scroll, click-to-lightbox event.
@@ -385,6 +402,9 @@ export class AhMediaCarousel extends ElementBase {
   #dragStartX = 0;
   #dragStartY = 0;
   #dragStartScroll = 0;
+  #dragTimes: number[] = [];
+  #dragScrolls: number[] = [];
+  #android: boolean | null = null;
   #suppressClick = false;
   #pointerId = -1;
   #onMediaOpen: ((detail: GalleryOpenDetail) => void) | null = null;
@@ -682,6 +702,13 @@ export class AhMediaCarousel extends ElementBase {
     return window.matchMedia("(min-width: 768px)").matches;
   }
 
+  #isAndroid() {
+    if (this.#android === null) {
+      this.#android = /Android/i.test(navigator.userAgent);
+    }
+    return this.#android;
+  }
+
   #maxScroll() {
     if (!this.#track) return 0;
     return Math.max(0, this.#track.scrollWidth - this.#track.clientWidth);
@@ -799,6 +826,8 @@ export class AhMediaCarousel extends ElementBase {
     this.#dragStartX = event.clientX;
     this.#dragStartY = event.clientY;
     this.#dragStartScroll = this.#track.scrollLeft;
+    this.#dragTimes = [performance.now()];
+    this.#dragScrolls = [this.#track.scrollLeft];
     this.#syncAutoPause();
   };
 
@@ -815,11 +844,13 @@ export class AhMediaCarousel extends ElementBase {
       if (this.#dragAxis === "y") {
         this.#dragging = false;
         this.#pointerId = -1;
+        this.#track.style.touchAction = "";
         this.#syncAutoPause();
         return;
       }
       this.#dragMoved = true;
       this.#track.classList.add("is-dragging");
+      this.#track.style.touchAction = "none";
       this.#pauseForUser();
       if (!this.#track.hasPointerCapture(event.pointerId)) {
         this.#track.setPointerCapture(event.pointerId);
@@ -837,25 +868,113 @@ export class AhMediaCarousel extends ElementBase {
       0,
       Math.min(maxLeft, this.#dragStartScroll - dx),
     );
+    this.#sampleDrag(this.#track.scrollLeft);
   };
 
   #onPointerUp = (event: PointerEvent) => {
     if (!this.#dragging || event.pointerId !== this.#pointerId) return;
 
     const wasDrag = this.#dragMoved;
+    const axis = this.#dragAxis;
     this.#dragging = false;
     this.#dragAxis = null;
     this.#pointerId = -1;
     this.#track?.classList.remove("is-dragging");
+    if (this.#track) this.#track.style.touchAction = "";
     if (this.#track?.hasPointerCapture(event.pointerId)) {
       this.#track.releasePointerCapture(event.pointerId);
     }
 
     if (wasDrag) this.#suppressClick = true;
+    if (wasDrag && axis === "x") {
+      this.#pauseForUser();
+      this.#finishSwipe();
+    }
 
     this.#dragMoved = false;
     this.#syncAutoPause();
   };
+
+  #sampleDrag(scrollLeft: number) {
+    const now = performance.now();
+    this.#dragTimes.push(now);
+    this.#dragScrolls.push(scrollLeft);
+    while (
+      this.#dragTimes.length > 1 &&
+      now - this.#dragTimes[0]! > SWIPE_SAMPLE_MS
+    ) {
+      this.#dragTimes.shift();
+      this.#dragScrolls.shift();
+    }
+  }
+
+  #releaseVelocity() {
+    const times = this.#dragTimes;
+    const scrolls = this.#dragScrolls;
+    if (times.length < 2) return 0;
+    const dt = times[times.length - 1]! - times[0]!;
+    if (dt < 12) return 0;
+    return (scrolls[scrolls.length - 1]! - scrolls[0]!) / dt;
+  }
+
+  #nearestIndexAtScroll(scrollLeft: number) {
+    const trackRect = this.#track.getBoundingClientRect();
+    const centerX = trackRect.left + trackRect.width / 2;
+    let best = this.#active;
+    let bestDist = Infinity;
+    this.#track.querySelectorAll<HTMLElement>("[data-slide]").forEach((slide) => {
+      const mid =
+        trackRect.left +
+        (slide.offsetLeft - scrollLeft) +
+        slide.offsetWidth / 2;
+      const dist = Math.abs(mid - centerX);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = Number(slide.dataset.slide);
+      }
+    });
+    return Number.isFinite(best) ? best : 0;
+  }
+
+  #finishSwipe() {
+    if (!this.#track) return;
+    const velocity = this.#releaseVelocity();
+    const sample = this.#slideEl(this.#active);
+    const slideW = sample?.offsetWidth || this.#track.clientWidth * 0.7;
+    const travel = Math.max(
+      -slideW * SWIPE_MAX_SLIDES,
+      Math.min(slideW * SWIPE_MAX_SLIDES, velocity * SWIPE_TAU_MS),
+    );
+    const targetIndex = this.#nearestIndexAtScroll(
+      this.#track.scrollLeft + travel,
+    );
+    const targetSlide = this.#slideEl(targetIndex);
+    if (!targetSlide) return;
+    const targetLeft = this.#wrapScrollLeft(this.#slideScrollLeft(targetSlide));
+    const delta = this.#shortestDelta(this.#track.scrollLeft, targetLeft);
+
+    if (this.#reduced || Math.abs(delta) < 0.75) {
+      this.#setScrollLeft(targetLeft);
+      this.#active = targetIndex;
+      this.#targetIndex = targetIndex;
+      this.#updateChrome();
+      this.#syncPlayback();
+      this.#syncFocus();
+      return;
+    }
+
+    const duration =
+      Math.abs(velocity) > SWIPE_FLICK_VEL
+        ? Math.min(
+            SWIPE_MAX_MS,
+            Math.max(
+              SWIPE_MIN_MS,
+              (2.35 * Math.abs(delta)) / Math.max(Math.abs(velocity), 0.1),
+            ),
+          )
+        : Math.min(400, Math.max(220, 200 + Math.abs(delta) * 0.5));
+    this.#animateScrollTo(targetLeft, duration, targetIndex, easeOutCubic);
+  }
 
   #stopAutoplay() {
     if (this.#autoRaf) {
@@ -1347,6 +1466,11 @@ export class AhMediaCarousel extends ElementBase {
 
     const trackRect = this.#track.getBoundingClientRect();
     const falloff = Math.max(trackRect.width * FOCUS_FALLOFF, 1);
+    const flattenVideo =
+      this.#reduced ||
+      !this.#isDesktop() ||
+      this.#isAndroid() ||
+      window.matchMedia("(pointer: coarse)").matches;
 
     let best = 0;
     let bestAmount = -1;
@@ -1389,20 +1513,19 @@ export class AhMediaCarousel extends ElementBase {
       const blur = smoothed.blur;
       const pose = `scale(${scale.toFixed(4)})`;
       visual.style.transformOrigin = "50% 50%";
-      if (
-        this.#reduced ||
-        !this.#isDesktop() ||
-        window.matchMedia("(pointer: coarse)").matches
-      ) {
-        // Scale via transform blacks out <video> on Android Chrome.
+      if (flattenVideo) {
+        // Opacity, filter, and scale on a video ancestor paint black on Android.
         visual.style.transform = "none";
         visual.style.transformStyle = "flat";
+        visual.style.filter = "none";
+        visual.style.opacity = "1";
       } else {
         visual.style.transformStyle = "preserve-3d";
         visual.style.transform = pose;
+        visual.style.opacity = String(opacity);
+        visual.style.filter =
+          blur < 0.08 ? "none" : `blur(${blur.toFixed(2)}px)`;
       }
-      visual.style.opacity = String(opacity);
-      visual.style.filter = blur < 0.08 ? "none" : `blur(${blur.toFixed(2)}px)`;
 
       if (amount > bestAmount) {
         bestAmount = amount;
@@ -1645,6 +1768,7 @@ export class AhMediaCarousel extends ElementBase {
     targetLeft: number,
     duration: number,
     targetIndex = this.#targetIndex,
+    ease: (t: number) => number = easeInOutCubic,
   ) {
     if (this.#scrollRaf) window.cancelAnimationFrame(this.#scrollRaf);
 
@@ -1663,7 +1787,7 @@ export class AhMediaCarousel extends ElementBase {
     const startTime = performance.now();
     const step = (now: number) => {
       const t = Math.min(1, (now - startTime) / duration);
-      this.#setScrollLeft(start + delta * easeInOutCubic(t));
+      this.#setScrollLeft(start + delta * ease(t));
       this.#syncFocus(now, Math.min(48, now - startTime));
       if (t < 1) {
         this.#scrollRaf = window.requestAnimationFrame(step);

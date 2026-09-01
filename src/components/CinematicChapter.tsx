@@ -56,6 +56,10 @@ function isCoarsePointer() {
   return window.matchMedia("(pointer: coarse)").matches;
 }
 
+function isAndroid() {
+  return /Android/i.test(navigator.userAgent);
+}
+
 
 /**
  * Sticky lockup that brings `[data-home-arrive]` pieces in from unique
@@ -153,9 +157,17 @@ export function CinematicChapter({
           travelT: number,
         ) => {
           // Keep galleries flat while at rest so overflow-x / drag work.
-          // Android Chrome paints <video> black inside 3D ancestors.
-          if (kind === "media" && (isCoarsePointer() || atRest)) {
-            paint(el, opacity, atRest ? 0 : blur, "none", true);
+          // Android Chrome paints <video> black inside 3D, opacity, or filter.
+          if (kind === "media" && (isCoarsePointer() || isAndroid() || atRest)) {
+            const android = isAndroid();
+            paint(
+              el,
+              android ? (opacity > 0.08 ? 1 : 0) : opacity,
+              android || atRest ? 0 : blur,
+              "none",
+              true,
+            );
+            el.style.filter = "none";
             return;
           }
           const pull =
