@@ -228,30 +228,21 @@ export function handoffVisibility(
 }
 
 /**
- * Slow climb through the visible life. Fade starts at fadeZoomT so the
- * element is already dissolving before theoretical max scale — no peak park.
+ * One continuous climb from appear through fade.
+ * A split smootherstep parked at fadeZoomT (zero slope on both sides of the
+ * join), which read as a pause in the scale right before exit.
  */
 function zoomProgress(progress: number, win: IntroHandoff) {
   const start = win.appearStart;
-  const fadeAt = win.exitStart;
   const gone = win.exitEnd;
-  const fadeZ = ABOUT_INTRO.fadeZoomT;
-
   if (progress <= start) return 0;
   if (progress >= gone) return 1;
-
-  const total = Math.max(gone - start, 0.0001);
-  const fadeAtU = clamp((fadeAt - start) / total, 0.0001, 0.999);
-  const u = clamp((progress - start) / total, 0, 1);
-
-  if (u <= fadeAtU) {
-    const t = u / fadeAtU;
-    const shaped = win.appearEnd <= win.appearStart ? t : smootherstep(t);
-    return fadeZ * shaped;
-  }
-
-  const t = (u - fadeAtU) / (1 - fadeAtU);
-  return fadeZ + (1 - fadeZ) * smootherstep(t);
+  const u = clamp(
+    (progress - start) / Math.max(gone - start, 0.0001),
+    0,
+    1,
+  );
+  return smootherstep(u);
 }
 
 /** Lean from path travel direction — stable sign, perspective tied to motion not scale size. */

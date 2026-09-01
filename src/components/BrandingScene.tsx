@@ -353,7 +353,8 @@ export function BrandingScene({
             loadBlend * LOAD_CLEAR_BLUR_PX;
         const arriving =
           handoffIndex === 0 && now - born < ABOUT_INTRO.cueArriveMs;
-        const atRest = !arriving && opacity >= 0.98 && blur < 0.4;
+        const atRest =
+          !arriving && opacity >= 0.98 && blur < 0.4 && vis.zoomT < 0.04;
         const travelT = 1 - opacity;
         const pull = stepMousePull(
           pullFor(el),
