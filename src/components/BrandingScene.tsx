@@ -44,12 +44,8 @@ import {
   type MousePullState,
 } from "@/lib/mousePull";
 import {
-  createLoadClearState,
-  LOAD_CLEAR_BLUR_PX,
   applyPinStage,
-  pageHasScrolled,
   pinProgress,
-  stepLoadClear,
   viewHeight,
   visualRectTop,
 } from "@/lib/loadClear";
@@ -170,7 +166,6 @@ export function BrandingScene({
     const born = cueBornRef.current;
     const idleMap = new WeakMap<HTMLElement, IdleHoverState>();
     const pullMap = new WeakMap<HTMLElement, MousePullState>();
-    const loadClear = createLoadClearState();
 
     const idleFor = (el: HTMLElement) => {
       let state = idleMap.get(el);
@@ -337,20 +332,15 @@ export function BrandingScene({
             freezeScrollCueMotion(el);
           }
         }
-        const loadBlend =
-          !coarsePointer && handoffIndex === 1
-            ? stepLoadClear(
-                loadClear,
-                dt,
-                pageHasScrolled() || progress > 0.002,
-              )
-            : 0;
         const opacity =
           handoffIndex === 0 ? cueHoldOpacity(lifeT) : vis.opacity;
-        const blur = coarsePointer
-          ? 0
-          : (handoffIndex === 0 ? (1 - opacity) * enterExitBlurPx : vis.blur) +
-            loadBlend * LOAD_CLEAR_BLUR_PX;
+        const isTitle = handoffIndex === 1;
+        const blur =
+          coarsePointer || isTitle
+            ? 0
+            : handoffIndex === 0
+              ? (1 - opacity) * enterExitBlurPx
+              : vis.blur;
         const arriving =
           handoffIndex === 0 && now - born < ABOUT_INTRO.cueArriveMs;
         const atRest =
@@ -397,6 +387,7 @@ export function BrandingScene({
                   : 1,
                 coarsePointer ? undefined : pull,
               ),
+          !isTitle,
         );
         el.style.pointerEvents =
           el === emailRef.current && opacity > 0.65 ? "auto" : "none";

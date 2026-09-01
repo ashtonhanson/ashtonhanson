@@ -42,8 +42,8 @@ html {
   width: 100%;
   max-width: 100%;
   overflow-x: clip;
-  overscroll-behavior: none;
   overscroll-behavior-x: none;
+  overscroll-behavior-y: auto;
 }
 
 body {
@@ -57,8 +57,8 @@ body {
   width: 100%;
   max-width: 100%;
   overflow-x: clip;
-  overscroll-behavior: none;
   overscroll-behavior-x: none;
+  overscroll-behavior-y: auto;
 }
 
 ::selection {
@@ -71,8 +71,8 @@ body {
   --title-hires: 4;
   position: relative;
   display: inline-block;
-  isolation: isolate;
-  overflow: clip;
+  isolation: auto;
+  overflow: visible;
   color: transparent;
   transform-style: preserve-3d;
 }
@@ -134,9 +134,8 @@ body {
 }
 
 /*
- * Soft stage-light highlight — FIXED in viewport space.
- * Letters catch this beam as they scroll through; the light does not travel
- * with the text. Larger soft falloff = cinematic, not a harsh strip.
+ * Soft stage-light highlight. Scroll-attached so a transformed parent
+ * cannot glitch a viewport-fixed beam on intro/exit.
  */
 .title-shine-beam {
   position: absolute;
@@ -150,7 +149,7 @@ body {
     rgb(180 214 245 / 0.12) 46%,
     transparent 68%
   );
-  background-attachment: fixed;
+  background-attachment: scroll;
   background-repeat: no-repeat;
   -webkit-background-clip: text;
   background-clip: text;
