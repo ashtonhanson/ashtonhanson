@@ -197,7 +197,7 @@ export function handoffVisibility(
     } else if (progress < win.exitEnd) {
       visibility =
         1 -
-        easeInOutCubic(
+        easeOutCubic(
           (progress - win.exitStart) /
             Math.max(win.exitEnd - win.exitStart, 0.0001),
         );
@@ -214,7 +214,7 @@ export function handoffVisibility(
   } else if (progress < win.exitEnd) {
     visibility =
       1 -
-      easeInOutCubic(
+      easeOutCubic(
         (progress - win.exitStart) /
           Math.max(win.exitEnd - win.exitStart, 0.0001),
       );
@@ -228,21 +228,20 @@ export function handoffVisibility(
 }
 
 /**
- * One continuous climb from appear through fade.
- * A split smootherstep parked at fadeZoomT (zero slope on both sides of the
- * join), which read as a pause in the scale right before exit.
+ * Climb from appear through fade with no terminal flatten.
+ * smootherstep (and a split fade join) parked the last of the scale
+ * while opacity was still holding, which read as a pause before exit.
  */
 function zoomProgress(progress: number, win: IntroHandoff) {
   const start = win.appearStart;
   const gone = win.exitEnd;
   if (progress <= start) return 0;
   if (progress >= gone) return 1;
-  const u = clamp(
+  return clamp(
     (progress - start) / Math.max(gone - start, 0.0001),
     0,
     1,
   );
-  return smootherstep(u);
 }
 
 /** Lean from path travel direction — stable sign, perspective tied to motion not scale size. */
