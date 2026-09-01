@@ -13,6 +13,8 @@ const OPACITY_MAX = 1;
 const BLUR_MAX = 3;
 const AUTO_PX_PER_SEC = 46;
 const USER_PAUSE_MS = 4200;
+const AUTO_VEL_BLEND_MS = 820;
+const AUTO_VEL_MAX = 1600;
 const FOCUS_GLIDE_MS = 2400;
 /** Time constant for hover scroll pursuit — higher = softer glide. */
 const HOVER_SCROLL_TAU_MS = 680;
@@ -354,10 +356,6 @@ function easeInOutCubic(t: number) {
   return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
 }
 
-function easeOutCubic(t: number) {
-  return 1 - (1 - t) ** 3;
-}
-
 function smoothstep(t: number) {
   const x = Math.max(0, Math.min(1, t));
   return x * x * (3 - 2 * x);
@@ -370,11 +368,6 @@ const ElementBase =
 
 const DRAG_THRESHOLD = 6;
 const SWIPE_SAMPLE_MS = 100;
-const SWIPE_TAU_MS = 360;
-const SWIPE_MAX_SLIDES = 2.4;
-const SWIPE_MIN_MS = 240;
-const SWIPE_MAX_MS = 520;
-const SWIPE_FLICK_VEL = 0.12;
 
 /**
  * Native gallery: hover focus, slow auto-scroll, click-to-lightbox event.
@@ -405,6 +398,8 @@ export class AhMediaCarousel extends ElementBase {
   #dragTimes: number[] = [];
   #dragScrolls: number[] = [];
   #android: boolean | null = null;
+  #autoVel = AUTO_PX_PER_SEC;
+  #scrollPx = 0;
   #suppressClick = false;
   #pointerId = -1;
   #onMediaOpen: ((detail: GalleryOpenDetail) => void) | null = null;
@@ -460,6 +455,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#active = 0;
     this.#autoDir = 1;
     this.#autoCarry = 0;
+    this.#autoVel = AUTO_PX_PER_SEC;
     this.#hoverTargetIndex = -1;
     this.#hoverTargetSlide = null;
     this.#hoverScrollCarry = 0;
@@ -667,7 +663,9 @@ export class AhMediaCarousel extends ElementBase {
   #setScrollLeft(target: number) {
     if (!this.#track) return;
     this.#loopAdjusting = true;
-    this.#track.scrollLeft = this.#wrapScrollLeft(target);
+    const next = this.#wrapScrollLeft(target);
+    this.#track.scrollLeft = next;
+    this.#scrollPx = next;
     this.#loopAdjusting = false;
   }
 
@@ -707,6 +705,10 @@ export class AhMediaCarousel extends ElementBase {
       this.#android = /Android/i.test(navigator.userAgent);
     }
     return this.#android;
+  }
+
+  #cruiseSpeed() {
+    return this.#reduced ? AUTO_PX_PER_SEC * 0.35 : AUTO_PX_PER_SEC;
   }
 
   #maxScroll() {
@@ -777,6 +779,7 @@ export class AhMediaCarousel extends ElementBase {
   #resetToStart() {
     this.#cancelScrollAnimation();
     this.#autoCarry = 0;
+    this.#autoVel = this.#cruiseSpeed();
     this.#hoverTargetIndex = -1;
     this.#hoverTargetSlide = null;
     this.#hoverScrollCarry = 0;
@@ -794,6 +797,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#autoPaused =
       this.#lightboxOpen ||
       this.#userPaused ||
+      this.#dragging ||
       this.#dragMoved ||
       !this.#isVisibleEnough() ||
       this.#items.length < 2 ||
@@ -826,8 +830,9 @@ export class AhMediaCarousel extends ElementBase {
     this.#dragStartX = event.clientX;
     this.#dragStartY = event.clientY;
     this.#dragStartScroll = this.#track.scrollLeft;
+    this.#scrollPx = this.#track.scrollLeft;
     this.#dragTimes = [performance.now()];
-    this.#dragScrolls = [this.#track.scrollLeft];
+    this.#dragScrolls = [this.#scrollPx];
     this.#syncAutoPause();
   };
 
@@ -864,11 +869,12 @@ export class AhMediaCarousel extends ElementBase {
       0,
       this.#track.scrollWidth - this.#track.clientWidth,
     );
-    this.#track.scrollLeft = Math.max(
+    this.#scrollPx = Math.max(
       0,
       Math.min(maxLeft, this.#dragStartScroll - dx),
     );
-    this.#sampleDrag(this.#track.scrollLeft);
+    this.#track.scrollLeft = this.#scrollPx;
+    this.#sampleDrag(this.#scrollPx);
   };
 
   #onPointerUp = (event: PointerEvent) => {
@@ -887,8 +893,7 @@ export class AhMediaCarousel extends ElementBase {
 
     if (wasDrag) this.#suppressClick = true;
     if (wasDrag && axis === "x") {
-      this.#pauseForUser();
-      this.#finishSwipe();
+      this.#handoffSwipe();
     }
 
     this.#dragMoved = false;
@@ -917,63 +922,16 @@ export class AhMediaCarousel extends ElementBase {
     return (scrolls[scrolls.length - 1]! - scrolls[0]!) / dt;
   }
 
-  #nearestIndexAtScroll(scrollLeft: number) {
-    const trackRect = this.#track.getBoundingClientRect();
-    const centerX = trackRect.left + trackRect.width / 2;
-    let best = this.#active;
-    let bestDist = Infinity;
-    this.#track.querySelectorAll<HTMLElement>("[data-slide]").forEach((slide) => {
-      const mid =
-        trackRect.left +
-        (slide.offsetLeft - scrollLeft) +
-        slide.offsetWidth / 2;
-      const dist = Math.abs(mid - centerX);
-      if (dist < bestDist) {
-        bestDist = dist;
-        best = Number(slide.dataset.slide);
-      }
-    });
-    return Number.isFinite(best) ? best : 0;
-  }
-
-  #finishSwipe() {
+  #handoffSwipe() {
     if (!this.#track) return;
-    const velocity = this.#releaseVelocity();
-    const sample = this.#slideEl(this.#active);
-    const slideW = sample?.offsetWidth || this.#track.clientWidth * 0.7;
-    const travel = Math.max(
-      -slideW * SWIPE_MAX_SLIDES,
-      Math.min(slideW * SWIPE_MAX_SLIDES, velocity * SWIPE_TAU_MS),
-    );
-    const targetIndex = this.#nearestIndexAtScroll(
-      this.#track.scrollLeft + travel,
-    );
-    const targetSlide = this.#slideEl(targetIndex);
-    if (!targetSlide) return;
-    const targetLeft = this.#wrapScrollLeft(this.#slideScrollLeft(targetSlide));
-    const delta = this.#shortestDelta(this.#track.scrollLeft, targetLeft);
-
-    if (this.#reduced || Math.abs(delta) < 0.75) {
-      this.#setScrollLeft(targetLeft);
-      this.#active = targetIndex;
-      this.#targetIndex = targetIndex;
-      this.#updateChrome();
-      this.#syncPlayback();
-      this.#syncFocus();
-      return;
+    const raw = this.#releaseVelocity() * 1000;
+    this.#autoVel = Math.max(-AUTO_VEL_MAX, Math.min(AUTO_VEL_MAX, raw));
+    this.#scrollPx = this.#track.scrollLeft;
+    if (this.#userPauseTimer) {
+      window.clearTimeout(this.#userPauseTimer);
+      this.#userPauseTimer = null;
     }
-
-    const duration =
-      Math.abs(velocity) > SWIPE_FLICK_VEL
-        ? Math.min(
-            SWIPE_MAX_MS,
-            Math.max(
-              SWIPE_MIN_MS,
-              (2.35 * Math.abs(delta)) / Math.max(Math.abs(velocity), 0.1),
-            ),
-          )
-        : Math.min(400, Math.max(220, 200 + Math.abs(delta) * 0.5));
-    this.#animateScrollTo(targetLeft, duration, targetIndex, easeOutCubic);
+    this.#userPaused = false;
   }
 
   #stopAutoplay() {
@@ -1060,14 +1018,11 @@ export class AhMediaCarousel extends ElementBase {
         return;
       }
 
-      const speed = this.#reduced ? AUTO_PX_PER_SEC * 0.35 : AUTO_PX_PER_SEC;
-      this.#autoCarry += speed * dt;
-      const step = Math.floor(this.#autoCarry);
-      if (step < 1) return;
-      this.#autoCarry -= step;
-
-      let next = this.#track.scrollLeft + step;
-      this.#setScrollLeft(next);
+      const cruise = this.#cruiseSpeed();
+      const tau = AUTO_VEL_BLEND_MS + Math.min(640, Math.abs(this.#autoVel - cruise) * 0.28);
+      this.#autoVel += (cruise - this.#autoVel) * (1 - Math.exp(-(dt * 1000) / tau));
+      this.#scrollPx += this.#autoVel * dt;
+      this.#setScrollLeft(this.#scrollPx);
     };
 
     this.#autoRaf = window.requestAnimationFrame(tick);

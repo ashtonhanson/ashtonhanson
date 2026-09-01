@@ -166,6 +166,24 @@ body {
   }
 }
 
+/* iPhone: the 4× paint layer + clip + fixed beam glitches at the start of scale. */
+@media (pointer: coarse) {
+  .title-shine {
+    --title-hires: 1;
+    overflow: visible;
+    isolation: auto;
+  }
+
+  .title-shine-paint {
+    transform: translate3d(-50%, -50%, 0);
+    backface-visibility: visible;
+  }
+
+  .title-shine-beam {
+    background-attachment: scroll;
+  }
+}
+
 /* Home cinematic Z-scroll panels */
 .home-depth-scene {
   position: relative;

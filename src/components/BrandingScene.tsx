@@ -337,7 +337,7 @@ export function BrandingScene({
           }
         }
         const loadBlend =
-          handoffIndex === 1
+          !coarsePointer && handoffIndex === 1
             ? stepLoadClear(
                 loadClear,
                 dt,
@@ -346,9 +346,10 @@ export function BrandingScene({
             : 0;
         const opacity =
           handoffIndex === 0 ? cueHoldOpacity(lifeT) : vis.opacity;
-        const blur =
-          (handoffIndex === 0 ? (1 - opacity) * enterExitBlurPx : vis.blur) +
-          loadBlend * LOAD_CLEAR_BLUR_PX;
+        const blur = coarsePointer
+          ? 0
+          : (handoffIndex === 0 ? (1 - opacity) * enterExitBlurPx : vis.blur) +
+            loadBlend * LOAD_CLEAR_BLUR_PX;
         const arriving =
           handoffIndex === 0 && now - born < ABOUT_INTRO.cueArriveMs;
         const atRest = !arriving && opacity >= 0.98 && blur < 0.4;
@@ -365,21 +366,28 @@ export function BrandingScene({
               : "body",
           1 - travelT,
         );
+        const poseForPaint = coarsePointer
+          ? { ...pose, rotX: 0, rotY: 0 }
+          : pose;
+        const baseTransform =
+          opacity < 0.02 ? "none" : poseToTransform(poseForPaint);
         paint(
           el,
           opacity,
           blur,
-          composeIdleTransform(
-            idleFor(el),
-            opacity < 0.02 ? "none" : poseToTransform(pose),
-            now,
-            dt,
-            handoffIndex + 3,
-            atRest,
-            travelT,
-            handoffIndex === 0 ? (arriving ? 0 : 2.2) : 1,
-            pull,
-          ),
+          coarsePointer
+            ? baseTransform
+            : composeIdleTransform(
+                idleFor(el),
+                baseTransform,
+                now,
+                dt,
+                handoffIndex + 3,
+                atRest,
+                travelT,
+                handoffIndex === 0 ? (arriving ? 0 : 2.2) : 1,
+                pull,
+              ),
         );
         el.style.pointerEvents =
           el === emailRef.current && opacity > 0.65 ? "auto" : "none";
@@ -671,7 +679,6 @@ export function BrandingScene({
                   visibility: "hidden",
                   transformOrigin: "50% 50%",
                   transformStyle: "preserve-3d",
-                  filter: `blur(${LOAD_CLEAR_BLUR_PX}px)`,
                 }}
               >
                 <TitleShine as="h1" className={TITLE_CLASS}>
