@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { ArriveMedia } from "@/components/ArriveMedia";
 import { ContactForm } from "@/components/ContactForm";
 import { EmailShineLink } from "@/components/EmailShineLink";
+import { IntroBlur, applyIntroBlur } from "@/components/IntroBlur";
 import { MobileBreakText } from "@/components/MobileBreakText";
 import { ScrollCue, freezeScrollCueMotion } from "@/components/ScrollCue";
 import { TitleShine } from "@/components/TitleShine";
@@ -45,7 +46,11 @@ import {
 } from "@/lib/mousePull";
 import {
   applyPinStage,
+  createLoadClearState,
+  LOAD_CLEAR_BLUR_PX,
+  pageHasScrolled,
   pinProgress,
+  stepLoadClear,
   viewHeight,
   visualRectTop,
 } from "@/lib/loadClear";
@@ -119,9 +124,9 @@ function paint(
 ) {
   if (!el) return;
   el.style.opacity = opacity.toFixed(3);
-  el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none";
   el.style.transformStyle = "preserve-3d";
   el.style.transform = transform;
+  applyIntroBlur(el, blur);
   el.style.visibility =
     hideWhenGone && opacity < 0.02 ? "hidden" : "visible";
 }
@@ -166,6 +171,7 @@ export function BrandingScene({
     const born = cueBornRef.current;
     const idleMap = new WeakMap<HTMLElement, IdleHoverState>();
     const pullMap = new WeakMap<HTMLElement, MousePullState>();
+    const loadClear = createLoadClearState();
 
     const idleFor = (el: HTMLElement) => {
       let state = idleMap.get(el);
@@ -332,15 +338,20 @@ export function BrandingScene({
             freezeScrollCueMotion(el);
           }
         }
+        const loadBlend =
+          !coarsePointer && handoffIndex === 1
+            ? stepLoadClear(
+                loadClear,
+                dt,
+                pageHasScrolled() || progress > 0.002,
+              )
+            : 0;
         const opacity =
           handoffIndex === 0 ? cueHoldOpacity(lifeT) : vis.opacity;
-        const isTitle = handoffIndex === 1;
         const blur =
-          coarsePointer || isTitle
+          handoffIndex === 0
             ? 0
-            : handoffIndex === 0
-              ? (1 - opacity) * enterExitBlurPx
-              : vis.blur;
+            : vis.blur + loadBlend * LOAD_CLEAR_BLUR_PX;
         const arriving =
           handoffIndex === 0 && now - born < ABOUT_INTRO.cueArriveMs;
         const atRest =
@@ -387,7 +398,6 @@ export function BrandingScene({
                   : 1,
                 coarsePointer ? undefined : pull,
               ),
-          !isTitle,
         );
         el.style.pointerEvents =
           el === emailRef.current && opacity > 0.65 ? "auto" : "none";
@@ -422,11 +432,13 @@ export function BrandingScene({
           const start = lifeStart + i * stagger;
           const t = clamp((progress - start) / itemSpan, 0, 1);
           const flow = sampleAdsTagFlow(t, i);
-          const useBlur = !coarsePointer && flow.blur > 0.05;
+          const blurEl =
+            (el.querySelector(":scope > [data-intro-blur]") as HTMLElement | null) ??
+            el;
           el.style.opacity = flow.opacity.toFixed(3);
-          el.style.filter = useBlur
-            ? `blur(${flow.blur.toFixed(2)}px)`
-            : "none";
+          el.style.filter = "none";
+          blurEl.style.filter =
+            flow.blur > 0.05 ? `blur(${flow.blur.toFixed(2)}px)` : "none";
           el.style.transform = `translate3d(0, 0, ${flow.z.toFixed(1)}px) scale(${flow.scale.toFixed(4)})`;
           el.style.visibility = flow.opacity < 0.02 ? "hidden" : "visible";
           el.style.zIndex = String(i);
@@ -681,9 +693,11 @@ export function BrandingScene({
                   transformStyle: "preserve-3d",
                 }}
               >
+                <IntroBlur>
                 <TitleShine as="h1" className={TITLE_CLASS}>
                   {introTitle}
                 </TitleShine>
+                </IntroBlur>
               </div>
             </div>
 
@@ -699,9 +713,11 @@ export function BrandingScene({
                     transformStyle: "preserve-3d",
                   }}
                 >
+                  <IntroBlur>
                   <p className={SUBTITLE_CLASS}>
                     <MobileBreakText text={introSubtitle} />
                   </p>
+                  </IntroBlur>
                 </div>
               </div>
             ) : null}
@@ -720,9 +736,11 @@ export function BrandingScene({
                     transformStyle: "preserve-3d",
                   }}
                 >
+                  <IntroBlur>
                   <p className={`${BODY_CLASS} mx-auto mb-0 max-w-xl`}>
                     {preventOrphan(introLines.join(" "))}
                   </p>
+                  </IntroBlur>
                 </div>
               </div>
             ) : null}
@@ -753,9 +771,11 @@ export function BrandingScene({
                         overflow: "visible",
                       }}
                     >
+                      <IntroBlur>
                       <p className={`${SUBTITLE_CLASS} whitespace-nowrap`}>
                         {tag}
                       </p>
+                      </IntroBlur>
                     </div>
                   ))}
                 </div>
@@ -778,9 +798,11 @@ export function BrandingScene({
                       transformStyle: "preserve-3d",
                     }}
                   >
+                    <IntroBlur>
                     <TitleShine as="h2" className={TITLE_CLASS}>
                       {tag}
                     </TitleShine>
+                    </IntroBlur>
                   </div>
                 </div>
               ))
@@ -798,7 +820,9 @@ export function BrandingScene({
                     transformStyle: "preserve-3d",
                   }}
                 >
+                  <IntroBlur>
                   <EmailShineLink email={introEmail} />
+                  </IntroBlur>
                 </div>
               </div>
             ) : null}
@@ -816,9 +840,11 @@ export function BrandingScene({
                       transformStyle: "preserve-3d",
                     }}
                   >
+                    <IntroBlur>
                     <TitleShine as="p" className={FORM_TITLE_CLASS}>
                       {contact.subtitle}
                     </TitleShine>
+                    </IntroBlur>
                   </div>
                   <div
                     ref={formLockupRef}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { IntroBlur, applyIntroBlur } from "@/components/IntroBlur";
 import { MobileBreakText } from "@/components/MobileBreakText";
 import { ScrollCue, freezeScrollCueMotion } from "@/components/ScrollCue";
 import { TitleShine } from "@/components/TitleShine";
@@ -49,9 +50,9 @@ function applyHandoffStyle(
   transform: string,
 ) {
   el.style.opacity = opacity.toFixed(3);
-  el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none";
   el.style.transformStyle = "preserve-3d";
   el.style.transform = transform;
+  applyIntroBlur(el, blur);
   el.style.visibility = opacity < 0.02 ? "hidden" : "visible";
 }
 
@@ -181,10 +182,10 @@ export function AboutIntroStage({
             : pose;
         const transform =
           opacity < 0.02 ? "none" : poseToTransform(poseForPaint);
-        const blur = coarsePointer
-          ? 0
-          : (handoffIndex === 0 ? (1 - opacity) * enterExitBlurPx : vis.blur) +
-            loadBlend * LOAD_CLEAR_BLUR_PX;
+        const blur =
+          handoffIndex === 0
+            ? 0
+            : vis.blur + loadBlend * LOAD_CLEAR_BLUR_PX;
         const arriving =
           handoffIndex === 0 && now - born < ABOUT_INTRO.cueArriveMs;
         const atRest = !arriving && opacity >= 0.98 && blur < 0.4;
@@ -272,17 +273,18 @@ export function AboutIntroStage({
               style={{
                 opacity: 0,
                 visibility: "hidden",
-                filter: `blur(${LOAD_CLEAR_BLUR_PX}px)`,
                 transformOrigin: "50% 54%",
                 transformStyle: "preserve-3d",
               }}
             >
+              <IntroBlur style={{ filter: `blur(${LOAD_CLEAR_BLUR_PX}px)` }}>
               <TitleShine
                 as="h1"
                 className="pointer-events-none select-none font-display text-[clamp(3.2rem,14vw,8rem)] font-black uppercase leading-[0.88] tracking-[0.04em] xl:text-[clamp(5rem,10vw,9.5rem)]"
               >
                 {aboutWord}
               </TitleShine>
+              </IntroBlur>
             </div>
           </div>
 
@@ -298,12 +300,14 @@ export function AboutIntroStage({
               }}
             >
               {/* Identical treatment + type to ABOUT (short word → slightly larger letters) */}
+              <IntroBlur>
               <TitleShine
                 as="h2"
                 className="pointer-events-none select-none font-display text-[clamp(4.5rem,22vw,12rem)] font-black uppercase leading-[0.88] tracking-[0.04em] xl:text-[clamp(7rem,16vw,14rem)]"
               >
                 {meWord}
               </TitleShine>
+              </IntroBlur>
             </div>
           </div>
 
@@ -325,9 +329,11 @@ export function AboutIntroStage({
                 }}
               >
                 {/* Cream readable type; zoom path starts small → much larger */}
+                <IntroBlur>
                 <p className="text-balance text-center font-display text-[clamp(1.12rem,3.4vw,2.4rem)] font-medium leading-[1.22] tracking-[0.02em] text-[rgb(232_223_196)] xl:text-[clamp(1.65rem,2.8vw,2.6rem)]">
                   <MobileBreakText text={line} alwaysBreak />
                 </p>
+                </IntroBlur>
               </div>
             </div>
           ))}
