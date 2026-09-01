@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { ArriveMedia } from "@/components/ArriveMedia";
 import { ContactForm } from "@/components/ContactForm";
 import { EmailShineLink } from "@/components/EmailShineLink";
-import { LogoPlate } from "@/components/LogoPlate";
-import { MediaCarousel } from "@/components/MediaCarousel";
 import { MobileBreakText } from "@/components/MobileBreakText";
 import { ScrollCue, freezeScrollCueMotion } from "@/components/ScrollCue";
 import { TitleShine } from "@/components/TitleShine";
@@ -64,7 +63,7 @@ import {
   sampleIntroPose,
 } from "@/lib/cinematicDepth";
 import { SeeMenuArrive } from "@/components/SeeMenuBlock";
-import { contact, type CaseStudy as CaseStudyType, type MediaItem } from "@/lib/content";
+import { contact, type CaseStudy as CaseStudyType } from "@/lib/content";
 import { preventOrphan } from "@/lib/text";
 
 const TITLE_CLASS =
@@ -366,9 +365,10 @@ export function BrandingScene({
               : "body",
           1 - travelT,
         );
-        const poseForPaint = coarsePointer
-          ? { ...pose, rotX: 0, rotY: 0 }
-          : pose;
+        const poseForPaint =
+          coarsePointer && handoffIndex !== 0
+            ? { ...pose, rotX: 0, rotY: 0 }
+            : pose;
         const baseTransform =
           opacity < 0.02 ? "none" : poseToTransform(poseForPaint);
         paint(
@@ -1001,38 +1001,6 @@ export function BrandingScene({
       </div>
       ) : null}
       {menu ? <SeeMenuArrive angleStart={angleCursor} /> : null}
-    </div>
-  );
-}
-
-function ArriveMedia({
-  items,
-  label,
-  angle,
-  lag = 36,
-  variant = "carousel",
-}: {
-  items: MediaItem[];
-  label: string;
-  angle: number;
-  lag?: number;
-  variant?: "carousel" | "plate";
-}) {
-  const plate = variant === "plate" ? items[0] : null;
-  return (
-    <div
-      data-arrive
-      data-kind="media"
-      data-angle={angle}
-      data-lag={lag}
-      className="pointer-events-auto mt-12 w-full max-w-5xl md:will-change-transform xl:mt-14 xl:max-w-6xl 2xl:max-w-7xl"
-      style={{ opacity: 0, transformOrigin: "50% 40%" }}
-    >
-      {plate ? (
-        <LogoPlate src={plate.src} alt={plate.alt} />
-      ) : (
-        <MediaCarousel items={items} label={label} />
-      )}
     </div>
   );
 }

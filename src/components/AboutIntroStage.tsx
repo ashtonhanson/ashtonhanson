@@ -49,7 +49,7 @@ function applyHandoffStyle(
   transform: string,
 ) {
   el.style.opacity = opacity.toFixed(3);
-  el.style.filter = `blur(${Math.max(0, blur).toFixed(2)}px)`;
+  el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none";
   el.style.transformStyle = "preserve-3d";
   el.style.transform = transform;
   el.style.visibility = opacity < 0.02 ? "hidden" : "visible";
@@ -83,6 +83,7 @@ export function AboutIntroStage({
     const idleMap = new WeakMap<HTMLElement, IdleHoverState>();
     const pullMap = new WeakMap<HTMLElement, ReturnType<typeof createMousePullState>>();
     const loadClear = createLoadClearState();
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
 
     const idleFor = (el: HTMLElement) => {
       let state = idleMap.get(el);
@@ -163,7 +164,7 @@ export function AboutIntroStage({
           }
         }
         const loadBlend =
-          handoffIndex === 1
+          !coarsePointer && handoffIndex === 1
             ? stepLoadClear(
                 loadClear,
                 dt,
@@ -172,11 +173,16 @@ export function AboutIntroStage({
             : 0;
         const opacity =
           handoffIndex === 0 ? cueHoldOpacity(lifeT) : vis.opacity;
+        const poseForPaint =
+          coarsePointer && handoffIndex !== 0
+            ? { ...pose, rotX: 0, rotY: 0 }
+            : pose;
         const transform =
-          opacity < 0.02 ? "none" : poseToTransform(pose);
-        const blur =
-          (handoffIndex === 0 ? (1 - opacity) * enterExitBlurPx : vis.blur) +
-          loadBlend * LOAD_CLEAR_BLUR_PX;
+          opacity < 0.02 ? "none" : poseToTransform(poseForPaint);
+        const blur = coarsePointer
+          ? 0
+          : (handoffIndex === 0 ? (1 - opacity) * enterExitBlurPx : vis.blur) +
+            loadBlend * LOAD_CLEAR_BLUR_PX;
         const arriving =
           handoffIndex === 0 && now - born < ABOUT_INTRO.cueArriveMs;
         const atRest = !arriving && opacity >= 0.98 && blur < 0.4;
@@ -197,17 +203,19 @@ export function AboutIntroStage({
           el,
           opacity,
           blur,
-          composeIdleTransform(
-            idleFor(el),
-            transform,
-            now,
-            dt,
-            handoffIndex + 3,
-            atRest && !inBodyZoom,
-            travelT,
-            isBodyLine ? 0 : handoffIndex === 0 ? (arriving ? 0 : 2.2) : 1,
-            pull,
-          ),
+          coarsePointer
+            ? transform
+            : composeIdleTransform(
+                idleFor(el),
+                transform,
+                now,
+                dt,
+                handoffIndex + 3,
+                atRest && !inBodyZoom,
+                travelT,
+                isBodyLine ? 0 : handoffIndex === 0 ? (arriving ? 0 : 2.2) : 1,
+                pull,
+              ),
         );
       };
 
