@@ -95,7 +95,7 @@ export const brandingCases: CaseStudy[] = [
     id: "hub-tablet",
     title: "HUB TABLET",
     subtitle: "NORWEGIAN\nTECH START-UP",
-    body: "In designing this brand I wanted to create something as clean as possible without the use of unnecessary graphics, while at the same time creating a solid visually appealing brand. The client is seeking to stand out as modern, yet classy, being that this piece of tech will be for the hotel industry guest experience. So far we have two hotel branches on board: Smart Hotel and Comfort Xpress, with beta testing and we have also gotten a grant from “Innovasjon Norge”, a Norwegian Federal Government Grant institution. This is a fun piece of work in progress!",
+    body: "In designing this brand I wanted to create something as clean as possible without unnecessary graphics, while still making a solid, visually appealing identity. The client wanted to stand out as modern yet classy, since this piece of tech is for the hotel guest experience. So far two hotel branches are on board, Smart Hotel and Comfort Xpress, with beta testing under way, and we have also received a grant from Innovasjon Norge, a Norwegian federal grant institution. This is a fun piece of work in progress!",
     sections: [
       {
         heading: "OLD HUB TABLET LAYOUT",
@@ -146,7 +146,7 @@ export const brandingCases: CaseStudy[] = [
     id: "wagyu-yume",
     title: "WAGYU YUME",
     subtitle: "JAPANESE FOOD TRUCK",
-    body: "This client was seeking something fun yet professional in efforts to imitate the direction of a currently popular Asian trend within the advertising market, which is a fun cartoonish illustrated branding style. The client has been very pleased with the logo and the vehicle wrap so far. I will continue to assist them with branding.",
+    body: "This client was looking for something fun yet professional, in an effort to follow a popular illustrated, cartoonish branding style in the advertising market. The client has been very pleased with the logo and the vehicle wrap so far. I will continue to assist them with branding.",
     media: [
       {
         src: "/branding/wagyu-yume/logo.jpg",
@@ -179,7 +179,7 @@ export const brandingCases: CaseStudy[] = [
     id: "red-rover",
     title: "RED ROVER",
     subtitle: "DOG OBEDIENCE\nTRAINING",
-    body: "This client was requested a logo that they could use for their dog training business. They were seeking something professional that would depict a solid, dependable organization that people could trust. Red was considered as the main color in efforts to convey a serious yet professional presence. The client was extremely happy with the final result. Now they have become a very popular dog training business in town with a 5 star rating and over 211 positive reviews.",
+    body: "This client requested a logo they could use for their dog training business. They wanted something professional that would depict a solid, dependable organization people could trust. Red was chosen as the main color to convey a serious yet professional presence. The client was extremely happy with the final result. They have become a popular dog training business in town, with a 5-star rating and over 211 positive reviews.",
     media: [
       {
         src: "/branding/red-rover/sketch.jpg",
@@ -223,7 +223,7 @@ export const adCategories = ["DIRECT MAIL", "PRINT", "SOCIAL MEDIA"] as const;
 
 function directMailAd(file: string, alt: string): MediaItem {
   return {
-    src: `/ads/${encodeURIComponent("Direct Mail")}/${encodeURIComponent(file)}`,
+    src: `/ads/direct-mail/${file}`,
     alt,
   };
 }
@@ -235,24 +235,24 @@ export const adCases: CaseStudy[] = [
     subtitle: "",
     body: "Mailers, print ads, and illustrated pieces made to work in the real world: clear hierarchy, strong imagery, and layouts that still read when they land in a mailbox or on a page.",
     media: [
-      directMailAd("Illustration AD.jpg", "J&J Exterminating illustrated print ad"),
+      directMailAd("illustration-ad.jpg", "J&J Exterminating illustrated print ad"),
       directMailAd(
-        "Illustrated and printed AD.jpg",
+        "illustrated-printed-ad.jpg",
         "J&J Exterminating illustrated ad in print",
       ),
-      directMailAd("Luna Bar & Grill 4TR PG SQ.jpg", "Luna Bar and Grill print ad"),
-      directMailAd("Campus Collectables.jpg", "Campus Collectibles vintage shop print ad"),
-      directMailAd("Floor Connection.jpg", "Floor Connection print ad"),
-      directMailAd("Ichiban.jpg", "Ichiban Restaurant direct mail flyer"),
-      directMailAd("Lockhart Jewelers.jpg", "Lockhart Jewelers print ad"),
-      directMailAd("Maids of Many.jpg", "Maids of Many print ad"),
-      directMailAd("Halls Sml Pwr Wrp.jpg", "Hall’s Fitness Center print ad"),
+      directMailAd("luna-bar-grill.jpg", "Luna Bar and Grill print ad"),
+      directMailAd("campus-collectables.jpg", "Campus Collectibles vintage shop print ad"),
+      directMailAd("floor-connection.jpg", "Floor Connection print ad"),
+      directMailAd("ichiban.jpg", "Ichiban Restaurant direct mail flyer"),
+      directMailAd("lockhart-jewelers.jpg", "Lockhart Jewelers print ad"),
+      directMailAd("maids-of-many.jpg", "Maids of Many print ad"),
+      directMailAd("halls-fitness.jpg", "Hall’s Fitness Center print ad"),
       directMailAd(
-        "Gorham's Potting Soil Nusery Fence Banner_Proof 4 copy.jpg",
+        "gorhams-nursery-banner.jpg",
         "Gorham’s Potting Soil nursery fence banner",
       ),
       directMailAd(
-        "Bossier Olympiad Brochure.jpg",
+        "bossier-olympiad-brochure.jpg",
         "Bossier Olympiad brochure layout",
       ),
     ],
@@ -315,7 +315,7 @@ export const logoCases: CaseStudy[] = [
     id: "hub-tablet",
     title: "HUB TABLET",
     subtitle: "NORWEGIAN\nTECH START-UP",
-    body: "A Norwegian tech start-up client seeking to establish a solid/clean visual for their branding. With an intent to establish a foundation of trust and in efforts to “fit in” with the hotel industry. Being that that is where the HUB Tablet will be utilized by hotel guests. The color foundations are warm grey, and orange. Being that this company is based out of Norway, the visual of the logo and the brand really seems to fit the vibe of the current Norwegian marketing culture.",
+    body: "A Norwegian tech start-up looking for a solid, clean visual identity. The aim was to build trust and fit in with the hotel industry, where hotel guests will use the HUB Tablet. The color foundations are warm grey and orange. Because the company is based in Norway, the logo and brand also feel at home in current Norwegian marketing culture.",
     media: [
       {
         src: "/logos/hub-tablet.jpeg",
@@ -327,7 +327,7 @@ export const logoCases: CaseStudy[] = [
     id: "red-rover",
     title: "RED ROVER",
     subtitle: "DOG OBEDIENCE\nTRAINING",
-    body: "I was requested to design a logo that they could use for their dog training business. They were seeking something professional that would depict a solid, dependable organization that people could trust. Red was considered as the main color in efforts to convey a serious yet professional presence. The client was extremely happy with the final result. Now they have become a very popular dog training business in town with a 5 star rating and over 211 positive reviews.",
+    body: "I was asked to design a logo for their dog training business. They wanted something professional that would depict a solid, dependable organization people could trust. Red was chosen as the main color to convey a serious yet professional presence. The client was extremely happy with the final result. They have become a popular dog training business in town, with a 5-star rating and over 211 positive reviews.",
     media: [
       {
         src: "/logos/red-rover.jpeg",
@@ -387,7 +387,7 @@ export const logoCases: CaseStudy[] = [
     id: "3rd-coast",
     title: "3RD COAST",
     subtitle: "VETERAN-OWNED\nEXTERIOR SERVICES",
-    body: "An acquaintance was starting a veteran owned & operated turnkey exterior services business focused on: equipment rental/construction, fencing, pressure washing, small concrete driveway, pergola and patio deck building. They were seeking a clever yet professional vibe. 3rd Coast was used in the name because it is what Houston is now referred to as due to the Gulf of Mexico being in Galveston.",
+    body: "An acquaintance was starting a veteran-owned and operated turnkey exterior services business focused on equipment rental and construction, fencing, pressure washing, small concrete driveways, pergolas, and patio decks. They wanted a clever yet professional vibe. 3rd Coast is in the name because that is what Houston is often called, with the Gulf of Mexico at Galveston.",
     media: [
       {
         src: "/logos/3rd-coast.jpeg",
@@ -399,7 +399,7 @@ export const logoCases: CaseStudy[] = [
     id: "wagyu-yume",
     title: "WAGYU YUME",
     subtitle: "JAPANESE FOOD TRUCK",
-    body: "This client was seeking something fun yet professional in efforts to imitate the direction of a currently popular Asian trend within the advertising market, which is a fun cartoonish illustrated branding style. The client has been very pleased with the logo and the vehicle wrap.",
+    body: "This client was looking for something fun yet professional, in an effort to follow a popular illustrated, cartoonish branding style in the advertising market. The client has been very pleased with the logo and the vehicle wrap.",
     media: [
       {
         src: "/logos/wagyu-yume.jpeg",
@@ -409,9 +409,9 @@ export const logoCases: CaseStudy[] = [
   },
   {
     id: "garrison-creek",
-    title: "GARRISON CREEK CANDELS",
+    title: "GARRISON CREEK CANDLES",
     subtitle: "SOY CANDLES,\nSOAPS & SCRUBS",
-    body: "This business specializes in soy candles, soaps and scrubs and was looking for something that looked vintage, since they were planning on using mason jars as their candle containers. Ah, the warm scent seems to just pop up off the logo!",
+    body: "This business specializes in soy candles, soaps, and scrubs, and wanted something that looked vintage, since they planned to use mason jars as candle containers. The warm scent seems to pop right off the logo.",
     media: [
       {
         src: "/logos/garrison-creek.jpeg",
