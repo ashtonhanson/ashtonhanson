@@ -16,8 +16,12 @@ import {
 } from "@/lib/idleHover";
 import { createMousePullState, stepMousePull } from "@/lib/mousePull";
 
-function AhMark() {
-  return <span>AH</span>;
+function glowVars(index: number): CSSProperties {
+  return {
+    "--nav-glow-delay": `${(index * 1.15).toFixed(2)}s`,
+    "--nav-glow-duration": `${(10.5 + (index % 3) * 2.2).toFixed(1)}s`,
+    "--nav-glow-pulse": `${(6.2 + (index % 4) * 0.9).toFixed(1)}s`,
+  } as CSSProperties;
 }
 
 /** Same idle + mouse-pull used by titles and copy, scoped to one menu item. */
@@ -80,6 +84,20 @@ function NavHover({
   );
 }
 
+function NavGlowMark({ children }: { children: string }) {
+  return (
+    <>
+      <span className="nav-glow-base">{children}</span>
+      <span aria-hidden className="nav-glow-bloom">
+        {children}
+      </span>
+      <span aria-hidden className="nav-glow-live">
+        {children}
+      </span>
+    </>
+  );
+}
+
 function NavGlowLink({
   href,
   label,
@@ -106,10 +124,7 @@ function NavGlowLink({
       aria-current={active ? "page" : undefined}
     >
       <NavHover seed={seed}>
-        <span className="nav-glow-base">{label}</span>
-        <span aria-hidden className="nav-glow-live">
-          {label}
-        </span>
+        <NavGlowMark>{label}</NavGlowMark>
       </NavHover>
     </Link>
   );
@@ -155,12 +170,13 @@ export function SiteHeader() {
       <div className="site-header-row mx-auto flex max-w-6xl items-center px-5 py-3 md:px-8 xl:max-w-7xl xl:px-12 2xl:px-16">
         <Link
           href="/"
-          className="shrink-0 text-[1.45rem] font-semibold leading-none tracking-[0.06em] text-muted no-underline transition-colors hover:text-ink"
+          className="nav-glow is-active nav-brand shrink-0 no-underline"
           aria-label="Ashton Hanson Design home"
+          style={glowVars(0)}
           onClick={() => setOpen(false)}
         >
           <NavHover seed={2}>
-            <AhMark />
+            <NavGlowMark>AH</NavGlowMark>
           </NavHover>
         </Link>
 
@@ -178,13 +194,7 @@ export function SiteHeader() {
                 active={active}
                 seed={index + 5}
                 className="text-[0.78rem]"
-                style={
-                  {
-                    "--nav-glow-delay": `${index * 0.85}s`,
-                    "--nav-glow-duration": `${8.2 + (index % 3) * 1.4}s`,
-                    "--nav-glow-pulse": `${4.8 + (index % 4) * 0.7}s`,
-                  } as CSSProperties
-                }
+                style={glowVars(index + 1)}
               />
             );
           })}
@@ -228,13 +238,7 @@ export function SiteHeader() {
                     active={active}
                     seed={index + 12}
                     className="text-[0.85rem]"
-                    style={
-                      {
-                        "--nav-glow-delay": `${index * 0.85}s`,
-                        "--nav-glow-duration": `${8.2 + (index % 3) * 1.4}s`,
-                        "--nav-glow-pulse": `${4.8 + (index % 4) * 0.7}s`,
-                      } as CSSProperties
-                    }
+                    style={glowVars(index + 1)}
                     onClick={() => setOpen(false)}
                   />
                 </li>
