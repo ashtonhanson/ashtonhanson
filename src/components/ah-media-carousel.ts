@@ -10,11 +10,11 @@ const SCALE_MIN = 0.9;
 const SCALE_MAX = 1.08;
 const OPACITY_MIN = 0.5;
 const OPACITY_MAX = 1;
-const BLUR_MAX = 3;
+const BLUR_MAX = 4;
 const AUTO_PX_PER_SEC = 46;
 const USER_PAUSE_MS = 4200;
-const AUTO_VEL_BLEND_MS = 820;
-const AUTO_VEL_MAX = 1600;
+const AUTO_VEL_BLEND_MS = 920;
+const AUTO_VEL_MAX = 1400;
 const FOCUS_GLIDE_MS = 2400;
 /** Time constant for hover scroll pursuit — higher = softer glide. */
 const HOVER_SCROLL_TAU_MS = 680;
@@ -68,7 +68,7 @@ const STYLES = /* css */ `
   scrollbar-width: none;
   touch-action: pan-y;
   overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .track::-webkit-scrollbar {
@@ -400,6 +400,7 @@ export class AhMediaCarousel extends ElementBase {
   #android: boolean | null = null;
   #autoVel = AUTO_PX_PER_SEC;
   #scrollPx = 0;
+  #windowDrag = false;
   #suppressClick = false;
   #pointerId = -1;
   #onMediaOpen: ((detail: GalleryOpenDetail) => void) | null = null;
@@ -580,6 +581,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#ro = null;
     this.#stopAutoplay();
     this.#stopMotion();
+    this.#bindWindowDrag(false);
     if (this.#userPauseTimer) window.clearTimeout(this.#userPauseTimer);
     if (this.#scrollRaf) window.cancelAnimationFrame(this.#scrollRaf);
     if (this.#scrollFrame) window.cancelAnimationFrame(this.#scrollFrame);
@@ -663,9 +665,19 @@ export class AhMediaCarousel extends ElementBase {
   #setScrollLeft(target: number) {
     if (!this.#track) return;
     this.#loopAdjusting = true;
-    const next = this.#wrapScrollLeft(target);
-    this.#track.scrollLeft = next;
+    const period = this.#loopPeriod();
+    let next = target;
+    if (period >= 1) {
+      const start = this.#loopBandStart();
+      if (target < start - 2 || target >= start + period + 2) {
+        next = this.#wrapScrollLeft(target);
+      }
+    }
+    next = Math.max(0, Math.min(this.#maxScroll(), next));
     this.#scrollPx = next;
+    if (Math.abs(this.#track.scrollLeft - next) >= 0.35) {
+      this.#track.scrollLeft = next;
+    }
     this.#loopAdjusting = false;
   }
 
@@ -850,14 +862,18 @@ export class AhMediaCarousel extends ElementBase {
         this.#dragging = false;
         this.#pointerId = -1;
         this.#track.style.touchAction = "";
+        this.#bindWindowDrag(false);
         this.#syncAutoPause();
         return;
       }
       this.#dragMoved = true;
       this.#track.classList.add("is-dragging");
       this.#track.style.touchAction = "none";
-      this.#pauseForUser();
-      if (!this.#track.hasPointerCapture(event.pointerId)) {
+      if (event.pointerType === "touch") this.#bindWindowDrag(true);
+      if (
+        event.pointerType !== "touch" &&
+        !this.#track.hasPointerCapture(event.pointerId)
+      ) {
         this.#track.setPointerCapture(event.pointerId);
       }
     }
@@ -887,6 +903,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#pointerId = -1;
     this.#track?.classList.remove("is-dragging");
     if (this.#track) this.#track.style.touchAction = "";
+    this.#bindWindowDrag(false);
     if (this.#track?.hasPointerCapture(event.pointerId)) {
       this.#track.releasePointerCapture(event.pointerId);
     }
@@ -899,6 +916,22 @@ export class AhMediaCarousel extends ElementBase {
     this.#dragMoved = false;
     this.#syncAutoPause();
   };
+
+  #bindWindowDrag(on: boolean) {
+    if (this.#windowDrag === on) return;
+    this.#windowDrag = on;
+    if (on) {
+      window.addEventListener("pointermove", this.#onPointerMove, {
+        passive: false,
+      });
+      window.addEventListener("pointerup", this.#onPointerUp);
+      window.addEventListener("pointercancel", this.#onPointerUp);
+    } else {
+      window.removeEventListener("pointermove", this.#onPointerMove);
+      window.removeEventListener("pointerup", this.#onPointerUp);
+      window.removeEventListener("pointercancel", this.#onPointerUp);
+    }
+  }
 
   #sampleDrag(scrollLeft: number) {
     const now = performance.now();
@@ -925,7 +958,8 @@ export class AhMediaCarousel extends ElementBase {
   #handoffSwipe() {
     if (!this.#track) return;
     const raw = this.#releaseVelocity() * 1000;
-    this.#autoVel = Math.max(-AUTO_VEL_MAX, Math.min(AUTO_VEL_MAX, raw));
+    const sampled = Math.max(-AUTO_VEL_MAX, Math.min(AUTO_VEL_MAX, raw));
+    this.#autoVel = Math.abs(sampled) < 48 ? 0 : sampled;
     this.#scrollPx = this.#track.scrollLeft;
     if (this.#userPauseTimer) {
       window.clearTimeout(this.#userPauseTimer);
@@ -1421,11 +1455,9 @@ export class AhMediaCarousel extends ElementBase {
 
     const trackRect = this.#track.getBoundingClientRect();
     const falloff = Math.max(trackRect.width * FOCUS_FALLOFF, 1);
-    const flattenVideo =
-      this.#reduced ||
-      !this.#isDesktop() ||
-      this.#isAndroid() ||
-      window.matchMedia("(pointer: coarse)").matches;
+    const flattenAndroid = this.#isAndroid();
+    const skipScale =
+      this.#reduced || !this.#isDesktop() || flattenAndroid;
 
     let best = 0;
     let bestAmount = -1;
@@ -1468,16 +1500,15 @@ export class AhMediaCarousel extends ElementBase {
       const blur = smoothed.blur;
       const pose = `scale(${scale.toFixed(4)})`;
       visual.style.transformOrigin = "50% 50%";
-      if (flattenVideo) {
-        // Opacity, filter, and scale on a video ancestor paint black on Android.
+      if (flattenAndroid) {
         visual.style.transform = "none";
         visual.style.transformStyle = "flat";
         visual.style.filter = "none";
         visual.style.opacity = "1";
       } else {
-        visual.style.transformStyle = "preserve-3d";
-        visual.style.transform = pose;
-        visual.style.opacity = String(opacity);
+        visual.style.transformStyle = skipScale ? "flat" : "preserve-3d";
+        visual.style.transform = skipScale ? "none" : pose;
+        visual.style.opacity = this.#isDesktop() ? String(opacity) : "1";
         visual.style.filter =
           blur < 0.08 ? "none" : `blur(${blur.toFixed(2)}px)`;
       }

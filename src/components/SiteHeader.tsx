@@ -17,14 +17,7 @@ import {
 import { createMousePullState, stepMousePull } from "@/lib/mousePull";
 
 function AhMark() {
-  return (
-    <>
-      <span className="nav-glow-base">AH</span>
-      <span aria-hidden className="nav-glow-live">
-        AH
-      </span>
-    </>
-  );
+  return <span>AH</span>;
 }
 
 /** Same idle + mouse-pull used by titles and copy, scoped to one menu item. */
@@ -162,14 +155,7 @@ export function SiteHeader() {
       <div className="site-header-row mx-auto flex max-w-6xl items-center px-5 py-3 md:px-8 xl:max-w-7xl xl:px-12 2xl:px-16">
         <Link
           href="/"
-          className="nav-glow is-active shrink-0 text-[1.45rem] font-semibold leading-none tracking-[0.06em]"
-          style={
-            {
-              "--nav-glow-delay": "0.2s",
-              "--nav-glow-duration": "10.5s",
-              "--nav-glow-pulse": "6.2s",
-            } as CSSProperties
-          }
+          className="shrink-0 text-[1.45rem] font-semibold leading-none tracking-[0.06em] text-muted no-underline transition-colors hover:text-ink"
           aria-label="Ashton Hanson Design home"
           onClick={() => setOpen(false)}
         >

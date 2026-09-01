@@ -627,7 +627,7 @@ body {
   perspective-origin: 50% 40%;
 }
 
-/* Nav links — living uneven glow on active + hover */
+/* Nav links: evolving glow on the selected item only (no metallic shine). */
 .nav-glow {
   position: relative;
   display: inline-block;
@@ -643,7 +643,7 @@ body {
 .nav-glow-base {
   position: relative;
   z-index: 0;
-  transition: opacity 0.55s ease;
+  transition: opacity 0.55s ease, color 0.55s ease;
 }
 
 .nav-glow-live {
@@ -651,24 +651,7 @@ body {
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background-image: linear-gradient(
-    105deg,
-    #7a7a78 0%,
-    #c8c8c4 12%,
-    #8e8e8c 24%,
-    #ffffff 38%,
-    #9a9a98 50%,
-    #ececea 62%,
-    #858583 74%,
-    #f4f4f0 86%,
-    #7a7a78 100%
-  );
-  background-size: 320% 140%;
-  background-position: 0% 40%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
+  color: var(--ink);
   opacity: 0;
   filter: drop-shadow(0 0 0 transparent);
   transition:
@@ -676,40 +659,24 @@ body {
     filter 0.55s ease;
 }
 
-.nav-glow.is-active .nav-glow-base,
-.nav-glow:hover .nav-glow-base {
+.nav-glow.is-active .nav-glow-base {
   opacity: 0;
 }
 
-.nav-glow.is-active .nav-glow-live,
-.nav-glow:hover .nav-glow-live {
+.nav-glow.is-active .nav-glow-live {
   opacity: 1;
   filter: drop-shadow(0 0 6px rgb(255 255 255 / 0.28))
     drop-shadow(0 0 14px rgb(220 220 210 / 0.16));
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .nav-glow.is-active .nav-glow-live,
-  .nav-glow:hover .nav-glow-live {
-    animation:
-      nav-glow-drift var(--nav-glow-duration, 9s) ease-in-out infinite alternate,
-      nav-glow-pulse var(--nav-glow-pulse, 5.5s) ease-in-out infinite;
-    animation-delay: var(--nav-glow-delay, 0s), var(--nav-glow-delay, 0s);
-  }
+.nav-glow:hover:not(.is-active) {
+  color: var(--ink);
 }
 
-@keyframes nav-glow-drift {
-  0% {
-    background-position: 0% 30%;
-  }
-  35% {
-    background-position: 48% 70%;
-  }
-  70% {
-    background-position: 82% 25%;
-  }
-  100% {
-    background-position: 100% 60%;
+@media (prefers-reduced-motion: no-preference) {
+  .nav-glow.is-active .nav-glow-live {
+    animation: nav-glow-pulse var(--nav-glow-pulse, 5.5s) ease-in-out infinite;
+    animation-delay: var(--nav-glow-delay, 0s);
   }
 }
 
@@ -789,32 +756,7 @@ body {
 
 .nav-burger:hover .nav-burger-bars span,
 .nav-burger.is-open .nav-burger-bars span {
-  background-image: linear-gradient(
-    105deg,
-    #7a7a78 0%,
-    #c8c8c4 12%,
-    #8e8e8c 24%,
-    #ffffff 38%,
-    #9a9a98 50%,
-    #ececea 62%,
-    #858583 74%,
-    #f4f4f0 86%,
-    #7a7a78 100%
-  );
-  background-size: 320% 140%;
-  background-position: 0% 40%;
-  filter: drop-shadow(0 0 6px rgb(255 255 255 / 0.28))
-    drop-shadow(0 0 14px rgb(220 220 210 / 0.16));
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .nav-burger:hover .nav-burger-bars span,
-  .nav-burger.is-open .nav-burger-bars span {
-    animation:
-      nav-glow-drift 10.5s ease-in-out infinite alternate,
-      nav-glow-pulse 6.2s ease-in-out infinite;
-    animation-delay: 0.2s, 0.2s;
-  }
+  background: var(--ink);
 }
 
 .nav-burger.is-open .nav-burger-bars span:nth-child(1) {
