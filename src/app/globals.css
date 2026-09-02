@@ -618,6 +618,9 @@ body {
 
 .site-header-frost {
   height: var(--site-header-frost-height, 3.6rem);
+  background: rgb(12 12 13 / 0.28);
+  -webkit-backdrop-filter: blur(24px) saturate(1.85);
+  backdrop-filter: blur(24px) saturate(1.85);
 }
 
 .site-header-panel {

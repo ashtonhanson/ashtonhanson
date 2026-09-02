@@ -265,7 +265,9 @@
   align-items: center;
   gap: 1.25rem;
   padding: 0.85rem 1.25rem;
-  background: var(--logo-blue);
+  background: rgb(41 171 226 / 0.42);
+  -webkit-backdrop-filter: blur(20px) saturate(1.55);
+  backdrop-filter: blur(20px) saturate(1.55);
 }
 
 .experiment-root .experiment-logo {
@@ -356,7 +358,9 @@
   align-items: flex-end;
   gap: 0.85rem;
   padding: 0.85rem 1.25rem 1.1rem;
-  background: var(--logo-blue);
+  background: rgb(41 171 226 / 0.42);
+  -webkit-backdrop-filter: blur(20px) saturate(1.55);
+  backdrop-filter: blur(20px) saturate(1.55);
 }
 
 @media (min-width: 768px) {
