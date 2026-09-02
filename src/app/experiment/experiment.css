@@ -252,20 +252,26 @@
   }
 }
 
-.experiment-root > :not(.experiment-sky) {
+.experiment-root > :not(.experiment-sky):not(.experiment-chrome) {
   position: relative;
   z-index: 1;
 }
 
-.experiment-root .experiment-header {
+.experiment-root .experiment-chrome {
   position: sticky;
   top: 0;
-  z-index: 40;
+  z-index: 200;
+  pointer-events: auto;
+}
+
+.experiment-root .experiment-header {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 1.25rem;
   padding: 0.85rem 1.25rem;
-  background: rgb(41 171 226 / 0.42);
+  background: rgb(41 171 226 / 0.86);
   -webkit-backdrop-filter: blur(20px) saturate(1.55);
   backdrop-filter: blur(20px) saturate(1.55);
 }
@@ -318,12 +324,15 @@
   justify-content: center;
   gap: 5px;
   margin-left: auto;
-  width: 2.2rem;
-  height: 2.2rem;
-  padding: 0;
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0.45rem;
   border: 0;
   background: transparent;
   cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .experiment-root .experiment-burger span {
@@ -353,12 +362,14 @@
 }
 
 .experiment-root .experiment-nav-mobile {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 0.85rem;
-  padding: 0.85rem 1.25rem 1.1rem;
-  background: rgb(41 171 226 / 0.42);
+  padding: 0.35rem 1.25rem 1.1rem;
+  background: rgb(41 171 226 / 0.92);
   -webkit-backdrop-filter: blur(20px) saturate(1.55);
   backdrop-filter: blur(20px) saturate(1.55);
 }

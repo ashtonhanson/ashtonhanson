@@ -64,6 +64,7 @@ export function ExperimentShell({ children }: { children: React.ReactNode }) {
         </span>
         <span className="experiment-sky-vignette" />
       </div>
+      <div className="experiment-chrome">
       <header className="experiment-header">
         <Link
           href="/"
@@ -115,6 +116,7 @@ export function ExperimentShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
       ) : null}
+      </div>
       {children}
     </div>
   );
