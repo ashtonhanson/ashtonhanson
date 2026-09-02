@@ -15,7 +15,6 @@ function easeInOut(t: number) {
 }
 
 const WORK_LINKS = [
-  { href: "/branding", label: "BRANDING" },
   { href: "/ads", label: "ADS" },
   { href: "/logos", label: "LOGOS" },
   { href: "/contact", label: "CONTACT" },
@@ -63,20 +62,6 @@ function lineMotion(progress: number, index: number, reduced: boolean): LineMoti
   return { y, blur, opacity };
 }
 
-function isLogoStudy(pathname: string) {
-  return pathname === "/experiment" || pathname.startsWith("/experiment/");
-}
-
-function studyPath(pathname: string) {
-  if (!isLogoStudy(pathname)) return pathname;
-  return pathname.slice("/experiment".length) || "/";
-}
-
-function studyHref(href: string, pathname: string) {
-  if (!isLogoStudy(pathname)) return href;
-  return href === "/" ? "/experiment" : `/experiment${href}`;
-}
-
 function WorkLinks({
   className = "",
   style,
@@ -86,19 +71,14 @@ function WorkLinks({
   style?: CSSProperties;
 } & HTMLAttributes<HTMLDivElement>) {
   const pathname = usePathname();
-  const current = studyPath(pathname);
-  const links = WORK_LINKS.filter((link) => {
-    if (link.href === current) return false;
-    if (isLogoStudy(pathname) && link.href === "/branding") return false;
-    return true;
-  });
+  const links = WORK_LINKS.filter((link) => link.href !== pathname);
 
   return (
     <div className={className} style={style} {...rest}>
       {links.map((link) => (
         <Link
           key={link.href}
-          href={studyHref(link.href, pathname)}
+          href={link.href}
           className="font-display text-[0.78rem] font-medium tracking-[0.2em] text-ink transition-opacity hover:opacity-55"
         >
           {link.label}

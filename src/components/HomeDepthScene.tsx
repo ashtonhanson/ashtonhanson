@@ -3,6 +3,7 @@
 import { useSyncExternalStore, type ReactNode } from "react";
 import { AboutIntroStage } from "@/components/AboutIntroStage";
 import { CinematicChapter } from "@/components/CinematicChapter";
+import { LogoArrowCue } from "@/components/LogoArrowCue";
 import { home } from "@/lib/content";
 import { HOME_CHAPTER } from "@/lib/homeMotion";
 
@@ -33,6 +34,7 @@ type HomeDepthSceneProps = {
   aboutLines: string[];
   gallery: ReactNode;
   menu: ReactNode;
+  Cue?: typeof LogoArrowCue;
 };
 
 /**
@@ -47,6 +49,7 @@ export function HomeDepthScene({
   aboutLines,
   gallery,
   menu,
+  Cue,
 }: HomeDepthSceneProps) {
   const desktopIntro = useDesktopIntroLayout();
 
@@ -57,6 +60,7 @@ export function HomeDepthScene({
         meWord={meWord}
         bodyLines={desktopIntro ? [home.aboutParagraph] : aboutLines}
         bodyRotateLeft={desktopIntro}
+        Cue={Cue}
       />
 
       <CinematicChapter

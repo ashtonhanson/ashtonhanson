@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { BrandingScene } from "@/components/BrandingScene";
-import { adCases, adCategories, adsIntroLines } from "@/lib/content";
+import { adCases, adCategories, adsIntro } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "Ads",
@@ -12,7 +12,7 @@ export default function AdsPage() {
     <>
       <BrandingScene
         introTitle="ADS"
-        introLines={adsIntroLines}
+        introLines={[adsIntro]}
         introTags={adCategories}
         cases={adCases}
         menu

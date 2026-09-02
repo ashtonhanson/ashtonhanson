@@ -1,6 +1,7 @@
 "use client";
 
 import { HomeDepthScene } from "@/components/HomeDepthScene";
+import { LogoArrowCue } from "@/components/LogoArrowCue";
 import { MediaCarousel } from "@/components/MediaCarousel";
 import { SeeMenuChapter } from "@/components/SeeMenuBlock";
 import { TitleShine } from "@/components/TitleShine";
@@ -12,6 +13,7 @@ export default function HomePage() {
       aboutWord={home.aboutWord}
       meWord={home.meWord}
       aboutLines={home.aboutLines}
+      Cue={LogoArrowCue}
       gallery={
         <div className="home-gallery-lockup mx-auto flex w-full max-w-5xl flex-col items-center xl:max-w-6xl 2xl:max-w-7xl">
           <header className="mb-4 flex flex-col items-center text-center md:mb-8">

@@ -1,22 +1,5 @@
-import type { Metadata } from "next";
-import { BrandingScene } from "@/components/BrandingScene";
-import { brandingCases, brandingIntroLines } from "@/lib/content";
-
-export const metadata: Metadata = {
-  title: "Branding",
-  description: "Brand identity case studies by Ashton Hanson Design.",
-};
+import { redirect } from "next/navigation";
 
 export default function BrandingPage() {
-  return (
-    <>
-      <BrandingScene
-        introTitle="BRANDING"
-        introLines={brandingIntroLines}
-        cases={brandingCases}
-        menu
-        brandingMotion
-      />
-    </>
-  );
+  redirect("/logos");
 }

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { IntroBlur, applyIntroBlur } from "@/components/IntroBlur";
 import { MobileBreakText } from "@/components/MobileBreakText";
+import { LogoArrowCue } from "@/components/LogoArrowCue";
 import { ScrollCue, freezeScrollCueMotion } from "@/components/ScrollCue";
 import { TitleShine } from "@/components/TitleShine";
 import {
@@ -42,7 +43,7 @@ type AboutIntroStageProps = {
   bodyLines: string[];
   /** Fires with 0–1 progress through this sticky intro chapter. */
   onProgress?: (progress: number) => void;
-  /** Defaults to the live-site down-arrow cue. */
+  /** Defaults to the mark’s down-arrow cue. */
   Cue?: typeof ScrollCue;
   /** Body copy rolls left as it scales toward camera. */
   bodyRotateLeft?: boolean;
@@ -71,7 +72,7 @@ export function AboutIntroStage({
   meWord,
   bodyLines,
   onProgress,
-  Cue = ScrollCue,
+  Cue = LogoArrowCue,
   bodyRotateLeft = false,
 }: AboutIntroStageProps) {
   const pinRef = useRef<HTMLElement>(null);

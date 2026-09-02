@@ -1,4 +1,4 @@
-/* Isolated logo-study landing. Does not change the live site palette. */
+/* Logo-mark site theme: sky, blue type, yellow nav. */
 
 .experiment-root {
   --logo-pink: #efb7c0;
@@ -403,20 +403,31 @@
 .experiment-root .about-intro-stage .intro-layer [data-intro-blur]:has(p),
 .experiment-root p.max-w-xl {
   display: block;
-  width: min(20.5rem, 82vw);
-  max-width: min(20.5rem, 82vw) !important;
 }
 
 .experiment-root .about-intro-stage .intro-layer p,
 .experiment-root p.max-w-xl {
   color: var(--logo-blue) !important;
+  margin-inline: auto;
+  text-wrap: pretty;
+}
+
+.experiment-root p.max-w-xl {
   width: min(20.5rem, 82vw);
   max-width: min(20.5rem, 82vw) !important;
-  margin-inline: auto;
   font-size: clamp(1.02rem, 2.2vw, 1.4rem) !important;
   font-weight: 400 !important;
   line-height: 1.5 !important;
-  text-wrap: pretty;
+}
+
+@media (min-width: 1024px) and (pointer: fine) {
+  .experiment-root .about-intro-stage .intro-layer p {
+    width: min(38rem, 82vw);
+    max-width: min(38rem, 82vw) !important;
+    font-size: clamp(1.02rem, 2.2vw, 1.4rem) !important;
+    font-weight: 400 !important;
+    line-height: 1.32 !important;
+  }
 }
 
 .experiment-root p.font-normal:not(.max-w-xl) {

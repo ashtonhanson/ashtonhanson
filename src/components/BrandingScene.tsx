@@ -6,7 +6,8 @@ import { ContactForm } from "@/components/ContactForm";
 import { EmailShineLink } from "@/components/EmailShineLink";
 import { IntroBlur, applyIntroBlur } from "@/components/IntroBlur";
 import { MobileBreakText } from "@/components/MobileBreakText";
-import { ScrollCue, freezeScrollCueMotion } from "@/components/ScrollCue";
+import { LogoArrowCue } from "@/components/LogoArrowCue";
+import { freezeScrollCueMotion } from "@/components/ScrollCue";
 import { TitleShine } from "@/components/TitleShine";
 import {
   arriveAngle,
@@ -116,8 +117,8 @@ type BrandingSceneProps = {
   introBodyLowerExit?: boolean;
   /** Intro paragraph scales out from screen center. */
   introBodyCenteredExit?: boolean;
-  /** Defaults to the live-site down-arrow cue. */
-  Cue?: typeof ScrollCue;
+  /** Defaults to the mark’s down-arrow cue. */
+  Cue?: typeof LogoArrowCue;
 };
 
 function paint(
@@ -153,7 +154,7 @@ export function BrandingScene({
   adsMotion = false,
   introBodyLowerExit = false,
   introBodyCenteredExit = false,
-  Cue = ScrollCue,
+  Cue = LogoArrowCue,
 }: BrandingSceneProps) {
   const pinRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);

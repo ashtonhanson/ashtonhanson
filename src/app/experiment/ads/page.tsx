@@ -1,20 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { BrandingScene } from "@/components/BrandingScene";
-import { adCases, adCategories, adsIntro } from "@/lib/content";
-import { LogoArrowCue } from "../LogoArrowCue";
-
-export default function ExperimentAdsPage() {
-  return (
-    <BrandingScene
-      introTitle="ADS"
-      introLines={[adsIntro]}
-      introTags={adCategories}
-      cases={adCases}
-      menu
-      adsMotion
-      introBodyLowerExit
-      Cue={LogoArrowCue}
-    />
-  );
+export default function ExperimentAdsRedirect() {
+  redirect("/ads");
 }

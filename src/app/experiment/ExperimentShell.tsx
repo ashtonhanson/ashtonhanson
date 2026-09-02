@@ -5,14 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const experimentNav = [
-  { href: "/experiment", label: "HOME" },
-  { href: "/experiment/ads", label: "ADS" },
-  { href: "/experiment/logos", label: "LOGOS" },
-  { href: "/experiment/contact", label: "CONTACT" },
+  { href: "/", label: "HOME" },
+  { href: "/ads", label: "ADS" },
+  { href: "/logos", label: "LOGOS" },
+  { href: "/contact", label: "CONTACT" },
 ] as const;
 
 function isActive(href: string, pathname: string) {
-  if (href === "/experiment") return pathname === "/experiment";
+  if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -66,14 +66,14 @@ export function ExperimentShell({ children }: { children: React.ReactNode }) {
       </div>
       <header className="experiment-header">
         <Link
-          href="/experiment"
+          href="/"
           className="experiment-logo"
-          aria-label="Logo study home"
+          aria-label="Ashton Hanson Design home"
           onClick={() => setOpen(false)}
         >
           <img src="/experiment/ah-logo.svg" alt="" width={38} height={40} />
         </Link>
-        <nav className="experiment-nav" aria-label="Experiment">
+        <nav className="experiment-nav" aria-label="Primary">
           {experimentNav.map((link) => (
             <Link
               key={link.href}
@@ -96,15 +96,12 @@ export function ExperimentShell({ children }: { children: React.ReactNode }) {
           <span />
           <span />
         </button>
-        <Link href="/" className="experiment-note">
-          Live site
-        </Link>
       </header>
       {open ? (
         <nav
           id="experiment-mobile-nav"
           className="experiment-nav-mobile"
-          aria-label="Experiment mobile"
+          aria-label="Primary"
         >
           {experimentNav.map((link) => (
             <Link

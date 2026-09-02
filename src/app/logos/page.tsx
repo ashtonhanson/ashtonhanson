@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { BrandingScene } from "@/components/BrandingScene";
-import { logoCases, logosIntroLines } from "@/lib/content";
+import { logosIntro } from "@/lib/content";
+import { logosWithBrandingGalleries } from "@/lib/logosWithBranding";
 
 export const metadata: Metadata = {
   title: "Logos",
@@ -12,8 +13,8 @@ export default function LogosPage() {
     <>
       <BrandingScene
         introTitle="LOGOS"
-        introLines={logosIntroLines}
-        cases={logoCases}
+        introLines={[logosIntro]}
+        cases={logosWithBrandingGalleries()}
         mediaVariant="plate"
         menu
         introBodyLowerExit

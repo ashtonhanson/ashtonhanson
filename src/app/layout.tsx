@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
-import { AmbientOrbs } from "@/components/AmbientOrbs";
 import { ScrollRestore } from "@/components/ScrollRestore";
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
+import { ExperimentShell } from "@/app/experiment/ExperimentShell";
 import "./globals.css";
+import "./experiment/experiment.css";
 
 /* Display + body share Montserrat (menu typeface) */
 const display = Montserrat({
@@ -28,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${display.variable} min-h-full`}>
+    <html lang="en" className={`${display.variable} is-logo-study min-h-full`}>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -37,18 +36,12 @@ export default function RootLayout({
         />
       </head>
       <body className="w-full max-w-full bg-background font-display text-foreground antialiased">
-        <div
-          className="site-header-frost pointer-events-none fixed inset-x-0 top-0 z-[99]"
-          aria-hidden="true"
-        />
         <ScrollRestore />
-        <AmbientOrbs />
-        <SiteHeader />
-        <div className="site-header-slot" aria-hidden="true" />
-        <div className="relative w-full max-w-full overflow-x-clip">
-          <main className="w-full max-w-full overflow-x-clip">{children}</main>
-          <SiteFooter />
-        </div>
+        <ExperimentShell>
+          <div className="relative w-full max-w-full overflow-x-clip">
+            <main className="w-full max-w-full overflow-x-clip">{children}</main>
+          </div>
+        </ExperimentShell>
       </body>
     </html>
   );
