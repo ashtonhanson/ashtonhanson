@@ -262,6 +262,10 @@
   top: 0;
   z-index: 200;
   pointer-events: auto;
+  overflow: hidden;
+  background: rgb(41 171 226 / 0.42);
+  -webkit-backdrop-filter: blur(24px) saturate(1.85);
+  backdrop-filter: blur(24px) saturate(1.85);
 }
 
 .experiment-root .experiment-header {
@@ -271,9 +275,7 @@
   align-items: center;
   gap: 1.25rem;
   padding: 0.85rem 1.25rem;
-  background: rgb(41 171 226 / 0.86);
-  -webkit-backdrop-filter: blur(20px) saturate(1.55);
-  backdrop-filter: blur(20px) saturate(1.55);
+  background: transparent;
 }
 
 .experiment-root .experiment-logo {
@@ -308,13 +310,20 @@
   font-weight: 600;
   letter-spacing: 0.18em;
   text-decoration: none;
+  color: #fff;
+  display: inline-block;
+  padding: 0.35rem 0.15rem;
+  transform: none;
+  transition: color 160ms ease;
+}
+
+.experiment-root .experiment-nav a:hover,
+.experiment-root .experiment-nav-mobile a:hover {
   color: var(--logo-yellow);
 }
 
 .experiment-root .experiment-nav a.is-active,
-.experiment-root .experiment-nav a:hover,
-.experiment-root .experiment-nav-mobile a.is-active,
-.experiment-root .experiment-nav-mobile a:hover {
+.experiment-root .experiment-nav-mobile a.is-active {
   color: var(--logo-yellow);
 }
 
@@ -339,7 +348,7 @@
   display: block;
   height: 2px;
   width: 100%;
-  background: var(--logo-yellow);
+  background: #fff;
   transition: transform 180ms ease, opacity 180ms ease;
 }
 
@@ -367,11 +376,9 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.85rem;
-  padding: 0.35rem 1.25rem 1.1rem;
-  background: rgb(41 171 226 / 0.92);
-  -webkit-backdrop-filter: blur(20px) saturate(1.55);
-  backdrop-filter: blur(20px) saturate(1.55);
+  gap: 0.35rem;
+  padding: 0.15rem 1.25rem 1rem;
+  background: transparent;
 }
 
 @media (min-width: 768px) {
