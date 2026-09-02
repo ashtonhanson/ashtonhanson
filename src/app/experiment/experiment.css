@@ -263,7 +263,7 @@
   z-index: 200;
   pointer-events: auto;
   overflow: hidden;
-  background: rgb(41 171 226 / 0.42);
+  background: rgb(41 171 226 / 0.28);
   -webkit-backdrop-filter: blur(24px) saturate(1.85);
   backdrop-filter: blur(24px) saturate(1.85);
 }
