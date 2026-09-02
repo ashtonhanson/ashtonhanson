@@ -63,6 +63,20 @@ function lineMotion(progress: number, index: number, reduced: boolean): LineMoti
   return { y, blur, opacity };
 }
 
+function isLogoStudy(pathname: string) {
+  return pathname === "/experiment" || pathname.startsWith("/experiment/");
+}
+
+function studyPath(pathname: string) {
+  if (!isLogoStudy(pathname)) return pathname;
+  return pathname.slice("/experiment".length) || "/";
+}
+
+function studyHref(href: string, pathname: string) {
+  if (!isLogoStudy(pathname)) return href;
+  return href === "/" ? "/experiment" : `/experiment${href}`;
+}
+
 function WorkLinks({
   className = "",
   style,
@@ -72,14 +86,19 @@ function WorkLinks({
   style?: CSSProperties;
 } & HTMLAttributes<HTMLDivElement>) {
   const pathname = usePathname();
-  const links = WORK_LINKS.filter((link) => link.href !== pathname);
+  const current = studyPath(pathname);
+  const links = WORK_LINKS.filter((link) => {
+    if (link.href === current) return false;
+    if (isLogoStudy(pathname) && link.href === "/branding") return false;
+    return true;
+  });
 
   return (
     <div className={className} style={style} {...rest}>
       {links.map((link) => (
         <Link
           key={link.href}
-          href={link.href}
+          href={studyHref(link.href, pathname)}
           className="font-display text-[0.78rem] font-medium tracking-[0.2em] text-ink transition-opacity hover:opacity-55"
         >
           {link.label}
@@ -95,7 +114,7 @@ const LINE_CLASS =
 /** Same [data-arrive] lockup as a case study — BrandingScene paints these. */
 export function SeeMenuArrive({ angleStart }: { angleStart: number }) {
   return (
-    <article className="relative overflow-x-clip px-5 pb-[clamp(4.5rem,12vh,8rem)] pt-[clamp(8rem,28vh,14rem)] md:px-8 xl:px-12 xl:pb-[clamp(5.5rem,13vh,11rem)] xl:pt-[clamp(9rem,26vh,16rem)] 2xl:px-16">
+    <article className="see-menu-arrive relative overflow-x-clip px-5 pb-[clamp(4.5rem,12vh,8rem)] pt-[clamp(8rem,28vh,14rem)] md:px-8 xl:px-12 xl:pb-[clamp(5.5rem,13vh,11rem)] xl:pt-[clamp(9rem,26vh,16rem)] 2xl:px-16">
       <div className="mx-auto flex max-w-3xl flex-col items-center gap-y-6 text-center xl:max-w-4xl xl:gap-y-7 2xl:max-w-5xl">
         {home.seeMenuLines.map((line, index) => (
           <div

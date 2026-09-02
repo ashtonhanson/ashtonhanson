@@ -50,7 +50,7 @@ const STYLES = /* css */ `
   max-width: 100%;
   overflow: hidden;
   cursor: pointer;
-  border: 1px solid rgb(214 208 186 / 0.42);
+  border: 1px solid var(--ah-gallery-stroke, rgb(214 208 186 / 0.42));
   border-radius: 1.35rem;
   background: transparent;
 }
@@ -122,7 +122,7 @@ const STYLES = /* css */ `
   aspect-ratio: 1 / 1;
   overflow: hidden;
   border-radius: 1.25rem;
-  border: 1.5px solid rgb(214 208 186 / 0.38);
+  border: 1.5px solid var(--ah-slide-stroke, rgb(214 208 186 / 0.38));
   background: transparent;
   pointer-events: none;
 }

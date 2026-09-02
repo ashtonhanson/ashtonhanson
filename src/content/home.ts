@@ -1,14 +1,18 @@
+const aboutLines = [
+  "As a graphic designer\nof 10+ years",
+  "with a strong focus on\nIllustration, Adobe Creative Suite,",
+  "AI-assisted visual storytelling\nand Music Production,",
+  "blending traditional design principles\nwith emerging tools.",
+] as const;
+
 export const home = {
   aboutTitle: "ABOUT ME",
   aboutWord: "ABOUT",
   meWord: "ME",
   /** One scroll beat per entry; `\n` splits into two display lines. */
-  aboutLines: [
-    "As a graphic designer\nof 10+ years",
-    "with a strong focus on\nIllustration, Adobe Creative Suite,",
-    "AI-assisted visual storytelling\nand Music Production,",
-    "blending traditional design principles\nwith emerging tools.",
-  ],
+  aboutLines: [...aboutLines],
+  /** Desktop home intro — same copy as one flowing paragraph. */
+  aboutParagraph: aboutLines.map((line) => line.replace(/\n/g, " ")).join(" "),
   recentWorkTitle: "RECENT WORK",
   seeMenuLines: ["SEE MENU", "FOR OTHER", "WORK."] as const,
   aiAnimationTitle: "AI ANIMATION",

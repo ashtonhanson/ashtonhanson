@@ -399,7 +399,7 @@ export function cueHoldOpacity(lifeT: number) {
 
 /**
  * Pose: cue uses a bigger Z-exit; ABOUT/ME arrive small then surge; body uses the small→huge zoom.
- * `lifeT` is 0→1 through the cue’s on-screen life (tilt recoil + drop).
+ * `lifeT` is 0→1 through the cue’s on-screen life (drop, then pitch as it passes the camera).
  */
 export function sampleIntroPose(
   index: number,
@@ -407,19 +407,19 @@ export function sampleIntroPose(
   lifeT = zoomT,
 ): PathPose {
   if (index === 0) {
-    const dropT = smootherstep(lifeT / 0.48);
+    const dropT = easeOutCubic(lifeT);
     const scaleT = smootherstep((lifeT - 0.04) / 0.96);
     const zoom = sampleBezierPath(scaleT, cueZoomPath());
-    const dropY = 8 * dropT + 26 * dropT * dropT;
     const exitY = -ABOUT_INTRO.cueRestY + 14;
-    const y = dropY + (exitY - dropY) * scaleT;
+    const y = exitY * dropT;
+    const pitchT = cueTiltAmount((scaleT - 0.28) / 0.72);
     return {
       x: 0,
       y,
       z: zoom.z,
       scale: zoom.scale,
       rot: 0,
-      rotX: 8 + 100 * cueTiltAmount(scaleT),
+      rotX: 96 * smootherstep(pitchT),
     };
   }
   const content = index - 1;
@@ -444,6 +444,35 @@ export function sampleIntroPose(
     rot: lateral.rot + lean.leanRot,
     rotX: lean.rotX,
     rotY: lean.rotY,
+  };
+}
+
+/**
+ * Home body copy — arrives from the right, holds center, rolls left as it scales.
+ * Extra downward bias counters the lift from perspective + scale.
+ */
+export function homeCenteredBodyPath(): BezierPath {
+  return {
+    p0: { x: 6, y: 2.5, z: 0, scale: 1, rot: 1 },
+    p1: { x: 2.4, y: 1.2, z: 0, scale: 1, rot: 0.4 },
+    p2: { x: 0.5, y: 0.4, z: 0, scale: 1, rot: 0.08 },
+    p3: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
+  };
+}
+
+export function sampleHomeBodyExitPose(zoomT: number): PathPose {
+  const lateralPath = homeCenteredBodyPath();
+  const lateral = sampleBezierPath(zoomT, lateralPath);
+  const zoom = sampleBezierPath(zoomT, bodyZoomPath());
+  const lean = introDirectionalLean(lateralPath, zoomT, zoom.scale, 2);
+  return {
+    x: lateral.x,
+    y: lateral.y + ABOUT_INTRO.zoomAnchorY * zoomT + 5 * zoomT,
+    z: zoom.z,
+    scale: zoom.scale,
+    rot: lateral.rot + lean.leanRot * 0.32 - 22 * zoomT,
+    rotX: (lean.rotX ?? 0) * 0.22,
+    rotY: (lean.rotY ?? 0) * 0.22,
   };
 }
 

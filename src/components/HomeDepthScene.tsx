@@ -1,9 +1,31 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { AboutIntroStage } from "@/components/AboutIntroStage";
 import { CinematicChapter } from "@/components/CinematicChapter";
+import { home } from "@/lib/content";
 import { HOME_CHAPTER } from "@/lib/homeMotion";
+
+/** Desktop mouse/trackpad only — tablets and phones keep the stacked line beats. */
+const DESKTOP_INTRO_MQ = "(min-width: 1024px) and (pointer: fine)";
+
+function subscribeDesktopIntro(onChange: () => void) {
+  const mq = window.matchMedia(DESKTOP_INTRO_MQ);
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+
+function desktopIntroMatches() {
+  return window.matchMedia(DESKTOP_INTRO_MQ).matches;
+}
+
+function useDesktopIntroLayout() {
+  return useSyncExternalStore(
+    subscribeDesktopIntro,
+    desktopIntroMatches,
+    () => false,
+  );
+}
 
 type HomeDepthSceneProps = {
   aboutWord: string;
@@ -26,12 +48,15 @@ export function HomeDepthScene({
   gallery,
   menu,
 }: HomeDepthSceneProps) {
+  const desktopIntro = useDesktopIntroLayout();
+
   return (
     <div className="home-depth-scene">
       <AboutIntroStage
         aboutWord={aboutWord}
         meWord={meWord}
-        bodyLines={aboutLines}
+        bodyLines={desktopIntro ? [home.aboutParagraph] : aboutLines}
+        bodyRotateLeft={desktopIntro}
       />
 
       <CinematicChapter

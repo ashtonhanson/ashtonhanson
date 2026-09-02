@@ -217,6 +217,14 @@ body {
   visibility: visible;
 }
 
+/* ADS intro — slightly wider on desktop; phones/tablets keep max-w-xl. */
+@media (min-width: 1024px) {
+  p.max-w-xl.ads-intro-copy {
+    width: min(42rem, 72vw);
+    max-width: min(42rem, 72vw);
+  }
+}
+
 .home-depth-rest {
   position: relative;
   z-index: 15;

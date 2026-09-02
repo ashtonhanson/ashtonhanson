@@ -363,6 +363,38 @@ export function sampleIntroBodyPose(zoomT: number): PathPose {
   };
 }
 
+/**
+ * Branding intro copy — arrives from the opposite side of the title,
+ * then settles on center as it scales toward camera.
+ */
+export function brandingCenteredBodyPath(): BezierPath {
+  return {
+    p0: { x: 14, y: 5, z: 0, scale: 1, rot: 3.4 },
+    p1: { x: 8, y: 2.4, z: 0, scale: 1, rot: 1.8 },
+    p2: { x: 2.2, y: 0.6, z: 0, scale: 1, rot: 0.4 },
+    p3: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
+  };
+}
+
+export function sampleCenteredBodyExitPose(zoomT: number): PathPose {
+  const lateralPath = towardOppositeSide(
+    brandingIntroElementPath(0),
+    brandingCenteredBodyPath(),
+  );
+  const lateral = sampleBezierPath(zoomT, lateralPath);
+  const zoom = sampleBezierPath(zoomT, aboutZoomPath());
+  const lean = introDirectionalLean(lateralPath, zoomT, zoom.scale, 1);
+  return {
+    x: lateral.x,
+    y: lateral.y + ABOUT_INTRO.zoomAnchorY * zoomT,
+    z: zoom.z,
+    scale: zoom.scale,
+    rot: lateral.rot + lean.leanRot,
+    rotX: lean.rotX,
+    rotY: lean.rotY,
+  };
+}
+
 /** Branding page intro — title arrives from the left, rests near center, exits lower. */
 export function brandingIntroElementPath(content: number): BezierPath {
   switch (content) {

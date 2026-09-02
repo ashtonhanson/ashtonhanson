@@ -27,6 +27,7 @@ import {
   sampleAdsIntroPose,
   sampleAdsTagFlow,
   sampleBrandingIntroPose,
+  sampleCenteredBodyExitPose,
   sampleIntroBodyPose,
   TEXT_DIRECTIONAL_LEAN,
   type ArriveKind,
@@ -113,6 +114,10 @@ type BrandingSceneProps = {
   adsMotion?: boolean;
   /** ADS / LOGOS — intro paragraph exits a little lower. */
   introBodyLowerExit?: boolean;
+  /** Intro paragraph scales out from screen center. */
+  introBodyCenteredExit?: boolean;
+  /** Defaults to the live-site down-arrow cue. */
+  Cue?: typeof ScrollCue;
 };
 
 function paint(
@@ -147,6 +152,8 @@ export function BrandingScene({
   brandingMotion = false,
   adsMotion = false,
   introBodyLowerExit = false,
+  introBodyCenteredExit = false,
+  Cue = ScrollCue,
 }: BrandingSceneProps) {
   const pinRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -324,7 +331,9 @@ export function BrandingScene({
         const pose =
           adsMotion
             ? sampleAdsIntroPose(handoffIndex, vis.zoomT, lifeT)
-            : introBodyLowerExit && handoffIndex === introBodyHandoff
+            : introBodyCenteredExit && handoffIndex === introBodyHandoff
+              ? sampleCenteredBodyExitPose(vis.zoomT)
+              : introBodyLowerExit && handoffIndex === introBodyHandoff
               ? sampleIntroBodyPose(vis.zoomT)
               : brandingMotion
                 ? sampleBrandingIntroPose(handoffIndex, vis.zoomT, lifeT)
@@ -356,7 +365,7 @@ export function BrandingScene({
           handoffIndex === 0 && now - born < ABOUT_INTRO.cueArriveMs;
         const atRest =
           !arriving && opacity >= 0.98 && blur < 0.4 && vis.zoomT < 0.04;
-        const travelT = 1 - opacity;
+        const travelT = handoffIndex === 0 ? lifeT : 1 - opacity;
         const pull = stepMousePull(
           pullFor(el),
           el,
@@ -652,7 +661,7 @@ export function BrandingScene({
       window.visualViewport?.removeEventListener("scroll", onScroll);
       window.visualViewport?.removeEventListener("resize", onScroll);
     };
-  }, [introLines.length, introTags.length, introSubtitle, introEmail, introForm, finale, cases.length, brandingMotion, adsMotion, introBodyLowerExit, intro.pinHeightVh, intro.linesStart, intro.lineSpan, intro.holdAfter, intro.exitSpan, handoff.lead, handoff.span, handoff.finish]);
+  }, [introLines.length, introTags.length, introSubtitle, introEmail, introForm, finale, cases.length, brandingMotion, adsMotion, introBodyLowerExit, introBodyCenteredExit, intro.pinHeightVh, intro.linesStart, intro.lineSpan, intro.holdAfter, intro.exitSpan, handoff.lead, handoff.span, handoff.finish]);
 
   let angleCursor =
     (introLines.length ? 1 : 0) +
@@ -679,7 +688,7 @@ export function BrandingScene({
         >
           <div className="relative z-10 h-full w-full max-w-full text-center">
             <div className="absolute inset-0 flex items-center justify-center px-2">
-              <ScrollCue ref={cueRef} />
+              <Cue ref={cueRef} />
             </div>
 
             <div className="absolute inset-0 flex items-center justify-center px-2">
@@ -737,7 +746,9 @@ export function BrandingScene({
                   }}
                 >
                   <IntroBlur>
-                  <p className={`${BODY_CLASS} mx-auto mb-0 max-w-xl`}>
+                  <p
+                    className={`${BODY_CLASS} mx-auto mb-0 max-w-xl${brandingMotion ? " branding-intro-copy" : ""}${adsMotion ? " ads-intro-copy" : ""}${mediaVariant === "plate" ? " logos-intro-copy" : ""}`}
+                  >
                     {preventOrphan(introLines.join(" "))}
                   </p>
                   </IntroBlur>
@@ -985,15 +996,21 @@ export function BrandingScene({
                 ) : null}
 
                 {sections.map((section) => {
-                  const headingAngle = angleCursor++;
+                  const heading = section.heading.trim();
+                  const headingAngle = heading ? angleCursor++ : -1;
                   const galleryAngle = section.media?.length
                     ? angleCursor++
                     : -1;
                   return (
                     <div
-                      key={section.heading}
-                      className="mt-16 w-full xl:mt-20"
+                      key={heading || section.media?.[0]?.src || "gallery"}
+                      className={
+                        heading
+                          ? "mt-16 w-full xl:mt-20"
+                          : "mt-2 w-full"
+                      }
                     >
+                      {heading ? (
                       <div
                         data-arrive
                         data-kind="title"
@@ -1008,13 +1025,14 @@ export function BrandingScene({
                           {section.heading}
                         </TitleShine>
                       </div>
+                      ) : null}
                       {section.media?.length ? (
                         <ArriveMedia
                           items={section.media}
-                          label={`${section.heading} gallery`}
+                          label={`${heading || study.title} gallery`}
                           angle={galleryAngle}
                           lag={28}
-                          variant={mediaVariant}
+                          variant="carousel"
                         />
                       ) : null}
                     </div>

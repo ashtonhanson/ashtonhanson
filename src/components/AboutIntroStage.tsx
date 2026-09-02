@@ -14,6 +14,7 @@ import {
   handoffVisibility,
   introHandoffs,
   poseToTransform,
+  sampleHomeBodyExitPose,
   sampleIntroPose,
 } from "@/lib/cinematicDepth";
 import {
@@ -41,6 +42,10 @@ type AboutIntroStageProps = {
   bodyLines: string[];
   /** Fires with 0–1 progress through this sticky intro chapter. */
   onProgress?: (progress: number) => void;
+  /** Defaults to the live-site down-arrow cue. */
+  Cue?: typeof ScrollCue;
+  /** Body copy rolls left as it scales toward camera. */
+  bodyRotateLeft?: boolean;
 };
 
 function applyHandoffStyle(
@@ -66,6 +71,8 @@ export function AboutIntroStage({
   meWord,
   bodyLines,
   onProgress,
+  Cue = ScrollCue,
+  bodyRotateLeft = false,
 }: AboutIntroStageProps) {
   const pinRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -156,7 +163,10 @@ export function AboutIntroStage({
         );
         const lifeT =
           handoffIndex === 0 ? cueLifeT(progress, win) : vis.zoomT;
-        const pose = sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
+        const pose =
+          bodyRotateLeft && handoffIndex >= 3
+            ? sampleHomeBodyExitPose(vis.zoomT)
+            : sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
         if (handoffIndex === 0) {
           const arrived = now - born >= ABOUT_INTRO.cueArriveMs;
           const exiting = progress >= ABOUT_INTRO.cueExitStart;
@@ -188,8 +198,12 @@ export function AboutIntroStage({
             : vis.blur + loadBlend * LOAD_CLEAR_BLUR_PX;
         const arriving =
           handoffIndex === 0 && now - born < ABOUT_INTRO.cueArriveMs;
-        const atRest = !arriving && opacity >= 0.98 && blur < 0.4;
-        const travelT = 1 - opacity;
+        const atRest =
+          !arriving &&
+          opacity >= 0.98 &&
+          blur < 0.4 &&
+          (handoffIndex !== 0 || progress < 0.002);
+        const travelT = handoffIndex === 0 ? lifeT : 1 - opacity;
         const isBodyLine = handoffIndex >= 3;
         const inBodyZoom = isBodyLine && vis.zoomT > 0.06 && vis.zoomT < 0.94;
         const pull = inBodyZoom
@@ -242,7 +256,7 @@ export function AboutIntroStage({
     return () => {
       window.cancelAnimationFrame(frame);
     };
-  }, [bodyLines, onProgress, aboutWord, meWord]);
+  }, [bodyLines, onProgress, aboutWord, meWord, Cue, bodyRotateLeft]);
 
   return (
     <section
@@ -263,7 +277,7 @@ export function AboutIntroStage({
         {/* Absolute stack — each element takes center stage in turn */}
         <div className="relative z-10 h-full w-full text-center">
           <div className="absolute inset-0 flex items-center justify-center">
-            <ScrollCue ref={cueRef} />
+            <Cue ref={cueRef} />
           </div>
 
           <div className="absolute inset-0 flex items-center justify-center">
@@ -330,8 +344,17 @@ export function AboutIntroStage({
               >
                 {/* Cream readable type; zoom path starts small → much larger */}
                 <IntroBlur>
-                <p className="text-balance text-center font-display text-[clamp(1.12rem,3.4vw,2.4rem)] font-medium leading-[1.22] tracking-[0.02em] text-[rgb(232_223_196)] xl:text-[clamp(1.65rem,2.8vw,2.6rem)]">
-                  <MobileBreakText text={line} alwaysBreak />
+                <p
+                  className={`text-balance text-center font-display text-[clamp(1.12rem,3.4vw,2.4rem)] font-medium tracking-[0.02em] text-[rgb(232_223_196)] xl:text-[clamp(1.65rem,2.8vw,2.6rem)]${
+                    bodyLines.length === 1
+                      ? " mx-auto w-[min(38rem,82vw)] max-w-[min(38rem,82vw)] leading-[1.32]"
+                      : " leading-[1.22]"
+                  }`}
+                >
+                  <MobileBreakText
+                    text={line}
+                    alwaysBreak={bodyLines.length > 1}
+                  />
                 </p>
                 </IntroBlur>
               </div>

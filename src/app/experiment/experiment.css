@@ -1,0 +1,518 @@
+/* Isolated logo-study landing. Does not change the live site palette. */
+
+.experiment-root {
+  --logo-pink: #efb7c0;
+  --logo-blue: #29abe2;
+  --logo-yellow: #fff197;
+  --logo-rose-ink: #6b3340;
+  --background: #f4fbfe;
+  --foreground: #29abe2;
+  --ink: #29abe2;
+  --muted: #29abe2;
+  --line: #29abe2;
+  --surface: #f4fbfe;
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+  background: transparent;
+  color: var(--logo-blue);
+}
+
+.experiment-sky {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 54% 48% at 50% 46%, #f4fbff 0%, #dff3fb 46%, #c5e6f4 100%);
+}
+
+.experiment-sky-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background:
+    radial-gradient(ellipse 64% 60% at 50% 48%, transparent 46%, rgb(154 206 230 / 0.22) 82%, rgb(132 194 224 / 0.38) 100%);
+}
+
+.experiment-cloud {
+  position: absolute;
+  z-index: 1;
+  display: block;
+  filter: blur(18px);
+  will-change: transform;
+}
+
+.experiment-cloud span {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.94);
+  box-shadow: 0 10px 28px rgb(110 176 208 / 0.18);
+}
+
+.experiment-cloud span:nth-child(2) {
+  animation: experiment-puff-bob 9s ease-in-out infinite;
+}
+
+.experiment-cloud span:nth-child(3) {
+  animation: experiment-puff-bob 12s ease-in-out infinite reverse;
+}
+
+.experiment-cloud-a {
+  width: 28rem;
+  height: 12rem;
+  left: -4vw;
+  top: 10vh;
+  animation: experiment-cloud-ltr 52s linear infinite;
+  animation-delay: -8s;
+}
+
+.experiment-cloud-a span:nth-child(1) {
+  width: 11.5rem;
+  height: 8.5rem;
+  left: 1.5rem;
+  top: 2.2rem;
+}
+
+.experiment-cloud-a span:nth-child(2) {
+  width: 14.5rem;
+  height: 10.5rem;
+  left: 7.5rem;
+  top: 0.4rem;
+}
+
+.experiment-cloud-a span:nth-child(3) {
+  width: 10rem;
+  height: 7.5rem;
+  left: 16.5rem;
+  top: 2.8rem;
+}
+
+.experiment-cloud-b {
+  width: 26rem;
+  height: 11rem;
+  right: -3vw;
+  top: 20vh;
+  animation: experiment-cloud-ltr 68s linear infinite;
+  animation-delay: -22s;
+}
+
+.experiment-cloud-b span:nth-child(1) {
+  width: 10rem;
+  height: 7.5rem;
+  right: 1rem;
+  top: 2.4rem;
+}
+
+.experiment-cloud-b span:nth-child(2) {
+  width: 13.5rem;
+  height: 10rem;
+  right: 6.5rem;
+  top: 0.2rem;
+}
+
+.experiment-cloud-b span:nth-child(3) {
+  width: 9rem;
+  height: 6.8rem;
+  right: 15rem;
+  top: 3rem;
+}
+
+.experiment-cloud-c {
+  width: 32rem;
+  height: 13rem;
+  left: -6vw;
+  bottom: 6vh;
+  animation: experiment-cloud-ltr 58s linear infinite;
+  animation-delay: -14s;
+}
+
+.experiment-cloud-c span:nth-child(1) {
+  width: 13rem;
+  height: 9rem;
+  left: 0.5rem;
+  bottom: 1.2rem;
+}
+
+.experiment-cloud-c span:nth-child(2) {
+  width: 16rem;
+  height: 11.5rem;
+  left: 8rem;
+  bottom: 0;
+}
+
+.experiment-cloud-c span:nth-child(3) {
+  width: 11rem;
+  height: 8rem;
+  left: 19rem;
+  bottom: 1.6rem;
+}
+
+.experiment-cloud-d {
+  width: 30rem;
+  height: 12rem;
+  right: -5vw;
+  bottom: 10vh;
+  animation: experiment-cloud-ltr 74s linear infinite;
+  animation-delay: -36s;
+}
+
+.experiment-cloud-d span:nth-child(1) {
+  width: 12rem;
+  height: 8.5rem;
+  right: 0.8rem;
+  bottom: 1.4rem;
+}
+
+.experiment-cloud-d span:nth-child(2) {
+  width: 15rem;
+  height: 11rem;
+  right: 7.5rem;
+  bottom: 0.2rem;
+}
+
+.experiment-cloud-d span:nth-child(3) {
+  width: 9.5rem;
+  height: 7.2rem;
+  right: 18rem;
+  bottom: 2rem;
+}
+
+.experiment-cloud-e {
+  width: 20rem;
+  height: 9rem;
+  left: 22vw;
+  top: -2vh;
+  animation: experiment-cloud-ltr 44s linear infinite;
+  animation-delay: -18s;
+}
+
+.experiment-cloud-e span:nth-child(1) {
+  width: 9.5rem;
+  height: 7rem;
+  left: 0.4rem;
+  top: 1.4rem;
+}
+
+.experiment-cloud-e span:nth-child(2) {
+  width: 12rem;
+  height: 8.5rem;
+  left: 6.5rem;
+  top: 0.2rem;
+}
+
+.experiment-cloud-f {
+  width: 18rem;
+  height: 8.5rem;
+  right: 24vw;
+  bottom: -1vh;
+  animation: experiment-cloud-ltr 80s linear infinite;
+  animation-delay: -48s;
+}
+
+.experiment-cloud-f span:nth-child(1) {
+  width: 8.5rem;
+  height: 6.4rem;
+  right: 0.6rem;
+  bottom: 1rem;
+}
+
+.experiment-cloud-f span:nth-child(2) {
+  width: 11rem;
+  height: 8rem;
+  right: 5.5rem;
+  bottom: 0;
+}
+
+@keyframes experiment-cloud-ltr {
+  from {
+    transform: translate3d(-32vw, 0, 0);
+  }
+  to {
+    transform: translate3d(92vw, 0, 0);
+  }
+}
+
+@keyframes experiment-puff-bob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -0.7rem, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .experiment-cloud,
+  .experiment-cloud span {
+    animation: none;
+  }
+}
+
+.experiment-root > :not(.experiment-sky) {
+  position: relative;
+  z-index: 1;
+}
+
+.experiment-root .experiment-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.85rem 1.25rem;
+  background: var(--logo-blue);
+}
+
+.experiment-root .experiment-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.experiment-root .experiment-logo img {
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 0.55rem;
+}
+
+.experiment-root .experiment-nav {
+  display: none;
+  margin-left: auto;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .experiment-root .experiment-nav {
+    display: flex;
+  }
+}
+
+.experiment-root .experiment-nav a,
+.experiment-root .experiment-nav-mobile a {
+  font-family: var(--font-display), Montserrat, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-decoration: none;
+  color: var(--logo-yellow);
+}
+
+.experiment-root .experiment-nav a.is-active,
+.experiment-root .experiment-nav a:hover,
+.experiment-root .experiment-nav-mobile a.is-active,
+.experiment-root .experiment-nav-mobile a:hover {
+  color: var(--logo-yellow);
+}
+
+.experiment-root .experiment-burger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  margin-left: auto;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.experiment-root .experiment-burger span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background: var(--logo-yellow);
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+.experiment-root .experiment-burger.is-open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.experiment-root .experiment-burger.is-open span:nth-child(2) {
+  opacity: 0;
+}
+
+.experiment-root .experiment-burger.is-open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+@media (min-width: 768px) {
+  .experiment-root .experiment-burger {
+    display: none;
+  }
+}
+
+.experiment-root .experiment-nav-mobile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.85rem;
+  padding: 0.85rem 1.25rem 1.1rem;
+  background: var(--logo-blue);
+}
+
+@media (min-width: 768px) {
+  .experiment-root .experiment-nav-mobile {
+    display: none;
+  }
+}
+
+.experiment-root .experiment-note {
+  font-family: var(--font-display), Montserrat, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--logo-yellow);
+  text-decoration: none;
+}
+
+.experiment-root .scroll-cue-icon path {
+  fill: var(--logo-blue);
+}
+
+.experiment-root .experiment-logo-arrow {
+  filter: none;
+}
+
+.experiment-root .title-shine-fill {
+  background: none;
+  background-image: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  color: var(--logo-blue);
+  -webkit-text-fill-color: var(--logo-blue);
+}
+
+.experiment-root .title-shine-beam {
+  display: none;
+}
+
+.experiment-root .about-intro-stage .intro-layer [data-intro-blur]:has(p),
+.experiment-root p.max-w-xl {
+  display: block;
+  width: min(20.5rem, 82vw);
+  max-width: min(20.5rem, 82vw) !important;
+}
+
+.experiment-root .about-intro-stage .intro-layer p,
+.experiment-root p.max-w-xl {
+  color: var(--logo-blue) !important;
+  width: min(20.5rem, 82vw);
+  max-width: min(20.5rem, 82vw) !important;
+  margin-inline: auto;
+  font-size: clamp(1.02rem, 2.2vw, 1.4rem) !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  text-wrap: pretty;
+}
+
+.experiment-root p.font-normal:not(.max-w-xl) {
+  color: var(--logo-blue) !important;
+  font-weight: 400 !important;
+}
+
+.experiment-root p.max-w-xl.branding-intro-copy {
+  width: min(26.5rem, 86vw);
+  max-width: min(26.5rem, 86vw) !important;
+  line-height: 1.45 !important;
+}
+
+.experiment-root p.max-w-xl.ads-intro-copy {
+  width: min(32rem, 88vw);
+  max-width: min(32rem, 88vw) !important;
+  line-height: 1.45 !important;
+}
+
+@media (min-width: 768px) {
+  .experiment-root p.max-w-xl.ads-intro-copy {
+    width: min(38rem, 72vw);
+    max-width: min(38rem, 72vw) !important;
+  }
+
+  .experiment-root p.max-w-xl.logos-intro-copy {
+    width: min(38rem, 68vw);
+    max-width: min(38rem, 68vw) !important;
+  }
+}
+
+.experiment-root p.uppercase {
+  color: var(--logo-blue) !important;
+  font-weight: 700 !important;
+}
+
+.experiment-root ah-media-gallery-v32 {
+  --ah-gallery-stroke: var(--logo-blue);
+  --ah-slide-stroke: transparent;
+}
+
+.experiment-root .logo-plate-bezel {
+  border-color: var(--logo-yellow);
+  box-shadow: none;
+}
+
+.experiment-root .contact-label,
+.experiment-root .contact-form-thanks,
+.experiment-root .contact-form-error,
+.experiment-root .email-shine {
+  color: var(--logo-yellow);
+}
+
+.experiment-root .contact-field {
+  color: var(--logo-yellow);
+  border-color: var(--logo-yellow);
+  background: transparent;
+}
+
+.experiment-root .contact-field:focus {
+  background: transparent;
+  border-color: var(--logo-yellow);
+}
+
+.experiment-root .contact-field option {
+  background: #efb7c0;
+  color: #6b3340;
+}
+
+.experiment-root .contact-submit {
+  color: var(--logo-yellow);
+  border-color: var(--logo-yellow);
+  background: transparent;
+}
+
+.experiment-root .contact-submit:hover:not(:disabled) {
+  background: transparent;
+  border-color: var(--logo-yellow);
+}
+
+.experiment-root .see-menu-arrive {
+  padding-bottom: clamp(38vh, 52vh, 58vh);
+}
+
+html:has(.experiment-root) .site-header-shell,
+html:has(.experiment-root) .site-header-frost,
+html:has(.experiment-root) .site-header-slot,
+html:has(.experiment-root) .site-atmosphere,
+html:has(.experiment-root) footer,
+html.is-logo-study .site-header-shell,
+html.is-logo-study .site-header-frost,
+html.is-logo-study .site-header-slot,
+html.is-logo-study .site-atmosphere,
+html.is-logo-study footer {
+  display: none !important;
+}
+
+html:has(.experiment-root),
+html:has(.experiment-root) body,
+html.is-logo-study,
+html.is-logo-study body {
+  background: #eef9fd;
+}
