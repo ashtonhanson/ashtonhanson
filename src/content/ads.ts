@@ -1,12 +1,12 @@
 import type { CaseStudy, MediaItem } from "@/content/types";
 
 export const adsIntro =
-  "The art of ad design is about crafting compelling visuals that capture attention, drive engagement, and inspire action. With over 10 years of experience, I bring a strategic blend of creativity and purpose to every project, leveraging powerful imagery, thoughtful layouts, and persuasive messaging to ensure your advertisements make a lasting impression and achieve tangible results.";
+  "The art of ad design is about crafting compelling visuals that capture attention, drive engagement, and inspire action. With 15 years of experience, I bring a strategic blend of creativity and purpose to every project, leveraging powerful imagery, thoughtful layouts, and persuasive messaging to ensure your advertisements make a lasting impression and achieve tangible results.";
 
 /** Sentence-length segments so the intro can wrap like a normal paragraph. */
 export const adsIntroLines = [
   "The art of ad design is about crafting compelling visuals that capture attention, drive engagement, and inspire action.",
-  "With over 10 years of experience, I bring a strategic blend of creativity and purpose to every project, leveraging powerful imagery, thoughtful layouts, and persuasive messaging to ensure your advertisements make a lasting impression and achieve tangible results.",
+  "With 15 years of experience, I bring a strategic blend of creativity and purpose to every project, leveraging powerful imagery, thoughtful layouts, and persuasive messaging to ensure your advertisements make a lasting impression and achieve tangible results.",
 ] as const;
 
 export const adCategories = ["DIRECT MAIL", "PRINT", "SOCIAL MEDIA"] as const;

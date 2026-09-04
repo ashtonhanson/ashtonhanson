@@ -1,5 +1,5 @@
 const aboutLines = [
-  "As a graphic designer\nof 10+ years",
+  "As a graphic designer\nof 15 years",
   "with a strong focus on\nIllustration, Adobe Creative Suite,",
   "AI-assisted visual storytelling\nand Music Production,",
   "blending traditional design principles\nwith emerging tools.",
