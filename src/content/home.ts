@@ -22,6 +22,7 @@ export const home = {
       alt: "Early Birds Intro",
       type: "video" as const,
       cropTop: 16,
+      cropBottom: 16,
     },
     {
       src: "/media/home/ai-animation/04-manicure-for-strangers-web.mp4",

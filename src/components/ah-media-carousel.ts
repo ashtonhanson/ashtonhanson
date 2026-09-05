@@ -4,6 +4,7 @@ export type CarouselMediaItem = {
   type?: "image" | "video";
   objectPosition?: string;
   cropTop?: number;
+  cropBottom?: number;
 };
 
 export type GalleryOpenDetail = CarouselMediaItem & { index: number };
@@ -1209,9 +1210,11 @@ export class AhMediaCarousel extends ElementBase {
       if (item.objectPosition) {
         video.style.objectPosition = item.objectPosition;
       }
-      if (item.cropTop) {
-        video.style.top = `-${item.cropTop}%`;
-        video.style.height = `${100 + item.cropTop}%`;
+      const cropTop = item.cropTop ?? 0;
+      const cropBottom = item.cropBottom ?? 0;
+      if (cropTop || cropBottom) {
+        video.style.top = `-${cropTop}%`;
+        video.style.height = `${100 + cropTop + cropBottom}%`;
       }
 
       const markLoaded = () => {

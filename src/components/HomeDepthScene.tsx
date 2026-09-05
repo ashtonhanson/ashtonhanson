@@ -33,6 +33,7 @@ type HomeDepthSceneProps = {
   meWord: string;
   aboutLines: string[];
   gallery: ReactNode;
+  videos?: ReactNode;
   menu: ReactNode;
   Cue?: typeof LogoArrowCue;
 };
@@ -40,14 +41,16 @@ type HomeDepthSceneProps = {
 /**
  * Home cinematic scroll:
  * 1) Sticky ABOUT intro
- * 2) RECENT WORK / AI ANIMATION / gallery — unique-angle enter, hold, scale-up exit
- * 3) SEE MENU / FOR OTHER / WORK — same unique-angle arrive as the gallery
+ * 2) RECENT WORK / AI ANIMATION — unique-angle enter, hold, scale-up exit
+ * 3) Static AI clips
+ * 4) SEE MENU / FOR OTHER / WORK
  */
 export function HomeDepthScene({
   aboutWord,
   meWord,
   aboutLines,
   gallery,
+  videos,
   menu,
   Cue,
 }: HomeDepthSceneProps) {
@@ -76,9 +79,11 @@ export function HomeDepthScene({
         {gallery}
       </CinematicChapter>
 
+      {videos}
+
       <CinematicChapter
         pinHeight={HOME_CHAPTER.menuPinVh}
-        overlap={HOME_CHAPTER.overlapGallery}
+        overlap={videos ? undefined : HOME_CHAPTER.overlapGallery}
         angleOffset={4}
         exitMode="hold"
         zIndex={14}

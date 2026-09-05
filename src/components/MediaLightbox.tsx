@@ -46,7 +46,7 @@ export function MediaLightbox({ item, onClose }: MediaLightboxProps) {
 
   return createPortal(
     <div
-      className="media-lightbox fixed inset-0 z-[80] flex items-center justify-center p-5 md:p-10"
+      className="media-lightbox fixed inset-0 z-[400] flex items-center justify-center p-5 md:p-10"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}

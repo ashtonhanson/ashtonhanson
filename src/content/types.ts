@@ -6,6 +6,8 @@ export type MediaItem = {
   objectPosition?: string;
   /** Extra cover from the top, as a percent of the frame, to hide letterbox. */
   cropTop?: number;
+  /** Extra cover from the bottom, as a percent of the frame, to hide letterbox. */
+  cropBottom?: number;
 };
 
 export type CaseStudy = {

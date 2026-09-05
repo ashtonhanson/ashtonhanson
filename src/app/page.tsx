@@ -1,8 +1,8 @@
 "use client";
 
 import { HomeDepthScene } from "@/components/HomeDepthScene";
+import { HomeVideos } from "@/components/HomeVideos";
 import { LogoArrowCue } from "@/components/LogoArrowCue";
-import { MediaCarousel } from "@/components/MediaCarousel";
 import { SeeMenuChapter } from "@/components/SeeMenuBlock";
 import { TitleShine } from "@/components/TitleShine";
 import { home } from "@/lib/content";
@@ -43,20 +43,9 @@ export default function HomePage() {
               </TitleShine>
             </div>
           </header>
-          <div
-            data-home-arrive
-            data-kind="media"
-            data-index="2"
-            className="pointer-events-auto w-full"
-            style={{ opacity: 0, visibility: "hidden", transformOrigin: "50% 40%" }}
-          >
-            <MediaCarousel
-              items={home.aiAnimations}
-              label="AI animation gallery"
-            />
-          </div>
         </div>
       }
+      videos={<HomeVideos items={home.aiAnimations} />}
       menu={<SeeMenuChapter />}
     />
   );
