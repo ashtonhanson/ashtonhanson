@@ -2,6 +2,10 @@ export type MediaItem = {
   src: string;
   alt: string;
   type?: "image" | "video";
+  /** CSS object-position when the slide uses cover crop. */
+  objectPosition?: string;
+  /** Extra cover from the top, as a percent of the frame, to hide letterbox. */
+  cropTop?: number;
 };
 
 export type CaseStudy = {

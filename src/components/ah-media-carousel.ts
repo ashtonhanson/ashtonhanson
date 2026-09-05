@@ -2,6 +2,8 @@ export type CarouselMediaItem = {
   src: string;
   alt: string;
   type?: "image" | "video";
+  objectPosition?: string;
+  cropTop?: number;
 };
 
 export type GalleryOpenDetail = CarouselMediaItem & { index: number };
@@ -121,6 +123,9 @@ const STYLES = /* css */ `
   height: auto;
   aspect-ratio: 1 / 1;
   overflow: hidden;
+  isolation: isolate;
+  clip-path: inset(0 round 1.25rem);
+  -webkit-clip-path: inset(0 round 1.25rem);
   border-radius: 1.25rem;
   border: 1.5px solid var(--ah-slide-stroke, rgb(214 208 186 / 0.38));
   background: transparent;
@@ -166,6 +171,7 @@ const STYLES = /* css */ `
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   transform: none;
   transform-origin: center center;
   opacity: 1;
@@ -775,12 +781,10 @@ export class AhMediaCarousel extends ElementBase {
 
   #layoutSlides() {
     if (!this.#track) return;
-    const fallback = this.#defaultRatio();
+    const ratio = this.#defaultRatio();
+    const width = this.#fitSlideWidth(ratio);
+    if (width < 1) return;
     this.#track.querySelectorAll<HTMLElement>(".slide").forEach((slide) => {
-      const index = Number(slide.dataset.slide);
-      const ratio = this.#mediaRatio.get(index) ?? fallback;
-      const width = this.#fitSlideWidth(ratio);
-      if (width < 1) return;
       slide.style.flex = `0 0 ${width}px`;
       slide.style.width = `${width}px`;
       const frame = slide.querySelector<HTMLElement>(".frame");
@@ -1200,6 +1204,13 @@ export class AhMediaCarousel extends ElementBase {
       video.setAttribute("muted", "");
       video.setAttribute("aria-label", item.alt);
       video.controls = false;
+      if (item.objectPosition) {
+        video.style.objectPosition = item.objectPosition;
+      }
+      if (item.cropTop) {
+        video.style.top = `-${item.cropTop}%`;
+        video.style.height = `${100 + item.cropTop}%`;
+      }
 
       const markLoaded = () => {
         video.classList.add("is-loaded");
