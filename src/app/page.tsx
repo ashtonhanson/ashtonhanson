@@ -47,7 +47,7 @@ export default function HomePage() {
             data-home-arrive
             data-kind="media"
             data-index="2"
-            className="pointer-events-auto w-full md:will-change-transform"
+            className="pointer-events-auto w-full"
             style={{ opacity: 0, visibility: "hidden", transformOrigin: "50% 40%" }}
           >
             <MediaCarousel

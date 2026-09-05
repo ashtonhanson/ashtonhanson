@@ -47,7 +47,9 @@ function paint(
   el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none";
   el.style.transformStyle = flat ? "flat" : "preserve-3d";
   el.style.transform = transform;
-  el.style.visibility = opacity < 0.02 ? "hidden" : "visible";
+  // Keep media in layout (like ads/logos) so the carousel can measure and hydrate.
+  el.style.visibility =
+    el.dataset.kind === "media" || opacity >= 0.02 ? "visible" : "hidden";
   el.style.pointerEvents =
     opacity > (el.dataset.kind === "title" ? 0.65 : 0.05) ? "auto" : "none";
 }
@@ -116,21 +118,29 @@ export function CinematicChapter({
       ].sort(
         (a, b) => Number(a.dataset.index || 0) - Number(b.dataset.index || 0),
       );
-      const stage = stageRef.current;
-      if (stage) {
-        const use3d =
-          perspective &&
-          !(
-            isCoarsePointer() &&
-            nodes.some((node) => node.dataset.kind === "media")
-          );
-        stage.style.perspective = use3d ? "1180px" : "none";
-        stage.style.perspectiveOrigin = use3d ? "50% 42%" : "";
-      }
       if (!nodes.length) return;
 
       const progress = pinProgress(pin);
       const { ins, outs } = chapterWindows(nodes.length);
+      const mediaIndex = nodes.findIndex((node) => node.dataset.kind === "media");
+      const mediaIn = mediaIndex >= 0 ? ins[mediaIndex] : undefined;
+      const mediaOut = mediaIndex >= 0 ? outs[mediaIndex] : undefined;
+      const mediaArrived = mediaIn ? windowT(progress, mediaIn) >= 0.985 : false;
+      const mediaExiting =
+        exitMode !== "hold" && !!mediaOut && progress >= mediaOut.start;
+      const stage = stageRef.current;
+      if (stage) {
+        // Parent perspective makes overflow-x / scrollLeft a no-op. Ads and
+        // logos galleries sit in document flow; flatten this stage while the
+        // home gallery is at rest so crawl / drag / hover match them.
+        const use3d =
+          perspective &&
+          !(isCoarsePointer() && mediaIndex >= 0) &&
+          !(mediaArrived && !mediaExiting);
+        stage.style.perspective = use3d ? "1180px" : "none";
+        stage.style.perspectiveOrigin = use3d ? "50% 42%" : "";
+        stage.style.transformStyle = use3d ? "preserve-3d" : "flat";
+      }
       let lastTitleAngle = arriveAngle(angleOffset);
 
       nodes.forEach((el, i) => {
