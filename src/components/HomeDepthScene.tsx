@@ -67,11 +67,11 @@ export function HomeDepthScene({
 
       <CinematicChapter
         pinHeight={HOME_CHAPTER.galleryPinVh}
-        overlap={HOME_CHAPTER.overlapAbout}
+        overlap="-8vh"
         angleOffset={0}
         exitMode="hold"
         layout="flow"
-        zIndex={12}
+        zIndex={20}
         perspective
         stageClassName="home-gallery-stage"
         aria-label="Recent work"

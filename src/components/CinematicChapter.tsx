@@ -137,9 +137,11 @@ export function CinematicChapter({
         // logos galleries sit in document flow; flatten this stage while the
         // home gallery is at rest so crawl / drag / hover match them.
         const use3d =
-          perspective &&
-          !(isCoarsePointer() && mediaIndex >= 0) &&
-          !(mediaArrived && !mediaExiting);
+          layout === "flow"
+            ? perspective && !isCoarsePointer()
+            : perspective &&
+              !(isCoarsePointer() && mediaIndex >= 0) &&
+              !(mediaArrived && !mediaExiting);
         stage.style.perspective = use3d ? "1180px" : "none";
         stage.style.perspectiveOrigin = use3d ? "50% 42%" : "";
         stage.style.transformStyle = use3d ? "preserve-3d" : "flat";

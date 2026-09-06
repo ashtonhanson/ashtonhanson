@@ -98,11 +98,12 @@ export function HomeVideos({ items }: { items: MediaItem[] }) {
   if (!items.length) return null;
 
   return (
-    <div className="pointer-events-auto mt-8 flex w-full flex-col gap-10 md:mt-10 md:gap-14 xl:gap-16">
+    <div className="pointer-events-auto mt-6 flex w-full max-w-xl flex-col gap-8 md:mt-8 md:max-w-2xl md:gap-10 xl:max-w-3xl">
       {items.map((item, index) => (
         <div
           key={item.src}
           data-home-arrive
+          data-grow
           data-kind="media"
           data-index={String(2 + index)}
           className="w-full"
