@@ -32,7 +32,7 @@ type HomeDepthSceneProps = {
   aboutWord: string;
   meWord: string;
   aboutLines: string[];
-  gallery?: ReactNode;
+  gallery: ReactNode;
   videos?: ReactNode;
   menu: ReactNode;
   Cue?: typeof LogoArrowCue;
@@ -41,8 +41,8 @@ type HomeDepthSceneProps = {
 /**
  * Home cinematic scroll:
  * 1) Sticky ABOUT intro
- * 2) Optional title lockup
- * 3) RECENT WORK / AI ANIMATION / clips in page flow
+ * 2) RECENT WORK / AI ANIMATION — unique-angle enter, hold, scale-up exit
+ * 3) AI clips land under that lockup
  * 4) SEE MENU / FOR OTHER / WORK
  */
 export function HomeDepthScene({
@@ -66,20 +66,18 @@ export function HomeDepthScene({
         Cue={Cue}
       />
 
-      {gallery ? (
-        <CinematicChapter
-          pinHeight={HOME_CHAPTER.galleryPinVh}
-          overlap={HOME_CHAPTER.overlapAbout}
-          angleOffset={0}
-          exitMode="scale"
-          zIndex={12}
-          perspective
-          stageClassName="home-gallery-stage !overflow-visible"
-          aria-label="Recent work"
-        >
-          {gallery}
-        </CinematicChapter>
-      ) : null}
+      <CinematicChapter
+        pinHeight={HOME_CHAPTER.galleryPinVh}
+        overlap={HOME_CHAPTER.overlapAbout}
+        angleOffset={0}
+        exitMode="scale"
+        zIndex={12}
+        perspective
+        stageClassName="home-gallery-stage !overflow-visible"
+        aria-label="Recent work"
+      >
+        {gallery}
+      </CinematicChapter>
 
       {videos}
 
