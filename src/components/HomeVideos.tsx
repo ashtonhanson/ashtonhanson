@@ -2,29 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MediaLightbox } from "@/components/MediaLightbox";
-import {
-  arriveAngle,
-  arriveT,
-  arriveTransform,
-  type ArriveKind,
-} from "@/lib/brandingMotion";
-import { viewHeight, visualRectTop } from "@/lib/loadClear";
 import type { MediaItem } from "@/lib/content";
-
-function paintArrive(
-  el: HTMLElement,
-  opacity: number,
-  blur: number,
-  transform: string,
-  flat: boolean,
-) {
-  el.style.opacity = opacity.toFixed(3);
-  el.style.filter = flat || blur < 0.05 ? "none" : `blur(${blur.toFixed(2)}px)`;
-  el.style.transformStyle = flat ? "flat" : "preserve-3d";
-  el.style.transform = transform;
-  el.style.visibility = "visible";
-  el.style.pointerEvents = opacity > 0.05 ? "auto" : "none";
-}
 
 function HomeVideoThumb({
   item,
@@ -114,74 +92,26 @@ function HomeVideoThumb({
 }
 
 export function HomeVideos({ items }: { items: MediaItem[] }) {
-  const rootRef = useRef<HTMLElement>(null);
   const [open, setOpen] = useState<MediaItem | null>(null);
   const close = useCallback(() => setOpen(null), []);
-
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
-    let frame = 0;
-    const coarse = window.matchMedia("(pointer: coarse)").matches;
-    const android = /Android/i.test(navigator.userAgent);
-
-    const tick = () => {
-      const viewH = viewHeight();
-      root.querySelectorAll<HTMLElement>("[data-arrive]").forEach((el) => {
-        const kind = (el.dataset.kind || "media") as ArriveKind;
-        const angle = arriveAngle(Number(el.dataset.angle || 0));
-        const lag = Number(el.dataset.lag || 0);
-        const t = arriveT(visualRectTop(el), viewH, kind, lag);
-        const pose = arriveTransform(t, angle, kind);
-        const atRest = t >= 0.985;
-        const flatten = coarse || android || atRest;
-        paintArrive(
-          el,
-          android ? (pose.opacity > 0.08 ? 1 : 0) : pose.opacity,
-          flatten ? 0 : pose.blur,
-          flatten ? "none" : pose.transform,
-          flatten,
-        );
-      });
-    };
-
-    const loop = () => {
-      frame = window.requestAnimationFrame(loop);
-      if (!document.hidden) tick();
-    };
-    frame = window.requestAnimationFrame(loop);
-    window.addEventListener("scroll", tick, { passive: true });
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", tick);
-    };
-  }, []);
 
   if (!items.length) return null;
 
   return (
-    <section
-      ref={rootRef}
-      aria-label="AI animation"
-      className="relative z-[13] mx-auto w-full max-w-5xl px-5 py-[clamp(3rem,10vh,7rem)] md:px-8 xl:max-w-6xl xl:px-12 2xl:max-w-7xl"
-      style={{ perspective: "1180px", perspectiveOrigin: "50% 40%" }}
-    >
-      <div className="flex flex-col gap-10 md:gap-14 xl:gap-16">
-        {items.map((item, index) => (
-          <div
-            key={item.src}
-            data-arrive
-            data-kind="media"
-            data-angle={String(2 + index)}
-            data-lag={String(36 + index * 28)}
-            className="w-full"
-            style={{ opacity: 0, transformOrigin: "50% 40%" }}
-          >
-            <HomeVideoThumb item={item} onOpen={() => setOpen(item)} />
-          </div>
-        ))}
-      </div>
+    <div className="pointer-events-auto mt-8 flex w-full flex-col gap-10 md:mt-10 md:gap-14 xl:gap-16">
+      {items.map((item, index) => (
+        <div
+          key={item.src}
+          data-home-arrive
+          data-kind="media"
+          data-index={String(2 + index)}
+          className="w-full"
+          style={{ opacity: 0, visibility: "hidden", transformOrigin: "50% 40%" }}
+        >
+          <HomeVideoThumb item={item} onOpen={() => setOpen(item)} />
+        </div>
+      ))}
       <MediaLightbox item={open} onClose={close} />
-    </section>
+    </div>
   );
 }

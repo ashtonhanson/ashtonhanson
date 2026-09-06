@@ -43,9 +43,9 @@ export default function HomePage() {
               </TitleShine>
             </div>
           </header>
+          <HomeVideos items={home.aiAnimations} />
         </div>
       }
-      videos={<HomeVideos items={home.aiAnimations} />}
       menu={<SeeMenuChapter />}
     />
   );

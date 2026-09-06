@@ -41,9 +41,8 @@ type HomeDepthSceneProps = {
 /**
  * Home cinematic scroll:
  * 1) Sticky ABOUT intro
- * 2) RECENT WORK / AI ANIMATION — unique-angle enter, hold, scale-up exit
- * 3) AI clips land under that lockup
- * 4) SEE MENU / FOR OTHER / WORK
+ * 2) RECENT WORK / AI ANIMATION, then each clip lands under that title
+ * 3) SEE MENU / FOR OTHER / WORK
  */
 export function HomeDepthScene({
   aboutWord,
@@ -70,10 +69,11 @@ export function HomeDepthScene({
         pinHeight={HOME_CHAPTER.galleryPinVh}
         overlap={HOME_CHAPTER.overlapAbout}
         angleOffset={0}
-        exitMode="scale"
+        exitMode="hold"
+        layout="flow"
         zIndex={12}
         perspective
-        stageClassName="home-gallery-stage !overflow-visible"
+        stageClassName="home-gallery-stage"
         aria-label="Recent work"
       >
         {gallery}

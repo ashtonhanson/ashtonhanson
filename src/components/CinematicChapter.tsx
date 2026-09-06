@@ -32,6 +32,8 @@ type CinematicChapterProps = {
   exitMode?: "shrink" | "scale" | "hold";
   zIndex?: number;
   perspective?: boolean;
+  /** `flow` keeps children in page order so later pieces can land under the title. */
+  layout?: "pin" | "flow";
   stageClassName?: string;
   "aria-label"?: string;
 };
@@ -75,6 +77,7 @@ export function CinematicChapter({
   exitMode = "shrink",
   zIndex = 14,
   perspective = false,
+  layout = "pin",
   stageClassName = "",
   "aria-label": ariaLabel,
 }: CinematicChapterProps) {
@@ -112,7 +115,7 @@ export function CinematicChapter({
       if (document.hidden) return;
       const pin = pinRef.current;
       if (!pin) return;
-      applyPinStage(pin, stageRef.current);
+      if (layout === "pin") applyPinStage(pin, stageRef.current);
       const nodes = [
         ...pin.querySelectorAll<HTMLElement>("[data-home-arrive]"),
       ].sort(
@@ -239,13 +242,22 @@ export function CinematicChapter({
 
     frame = window.requestAnimationFrame(loop);
     return () => window.cancelAnimationFrame(frame);
-  }, [angleOffset, exitMode, perspective]);
+  }, [angleOffset, exitMode, layout, perspective]);
 
   const pinStyle: CSSProperties = {
-    height: pinHeight,
     zIndex,
   };
+  if (layout === "flow") {
+    pinStyle.paddingBottom = "55vh";
+  } else {
+    pinStyle.height = pinHeight;
+  }
   if (overlap) pinStyle.marginTop = overlap;
+
+  const stageClass =
+    layout === "flow"
+      ? `pointer-events-none relative z-20 flex w-full flex-col items-center justify-start overflow-visible px-5 py-[clamp(2.5rem,8vh,5rem)] md:px-8 xl:px-12 2xl:px-16 ${stageClassName}`.trim()
+      : `pointer-events-none absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-clip px-5 md:px-8 xl:px-12 2xl:px-16 ${stageClassName}`.trim();
 
   return (
     <section
@@ -256,7 +268,7 @@ export function CinematicChapter({
     >
       <div
         ref={stageRef}
-        className={`pointer-events-none absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] flex-col items-center justify-center overflow-clip px-5 md:px-8 xl:px-12 2xl:px-16 ${stageClassName}`.trim()}
+        className={stageClass}
         style={
           perspective
             ? { perspective: "1180px", perspectiveOrigin: "50% 42%" }
