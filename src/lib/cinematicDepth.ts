@@ -448,14 +448,14 @@ export function sampleIntroPose(
 }
 
 /**
- * Home body copy — arrives from the right, holds center, rolls left as it scales.
- * Extra downward bias counters the lift from perspective + scale.
+ * Home body copy — enters from the side while scaling up, then leaves
+ * on the horizontal center with almost no roll.
  */
 export function homeCenteredBodyPath(): BezierPath {
   return {
-    p0: { x: 6, y: 2.5, z: 0, scale: 1, rot: 1 },
-    p1: { x: 2.4, y: 1.2, z: 0, scale: 1, rot: 0.4 },
-    p2: { x: 0.5, y: 0.4, z: 0, scale: 1, rot: 0.08 },
+    p0: { x: 6, y: 2.5, z: 0, scale: 1, rot: 0.35 },
+    p1: { x: 2.4, y: 1.2, z: 0, scale: 1, rot: 0.14 },
+    p2: { x: 0.5, y: 0.4, z: 0, scale: 1, rot: 0.03 },
     p3: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
   };
 }
@@ -464,15 +464,14 @@ export function sampleHomeBodyExitPose(zoomT: number): PathPose {
   const lateralPath = homeCenteredBodyPath();
   const lateral = sampleBezierPath(zoomT, lateralPath);
   const zoom = sampleBezierPath(zoomT, bodyZoomPath());
-  const lean = introDirectionalLean(lateralPath, zoomT, zoom.scale, 2);
   return {
     x: lateral.x,
     y: lateral.y + ABOUT_INTRO.zoomAnchorY * zoomT + 5 * zoomT,
     z: zoom.z,
     scale: zoom.scale,
-    rot: lateral.rot + lean.leanRot * 0.32 - 22 * zoomT,
-    rotX: (lean.rotX ?? 0) * 0.22,
-    rotY: (lean.rotY ?? 0) * 0.22,
+    rot: lateral.rot,
+    rotX: 0,
+    rotY: 0,
   };
 }
 
