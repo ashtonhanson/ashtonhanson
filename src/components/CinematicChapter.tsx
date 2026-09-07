@@ -5,13 +5,14 @@ import {
   arriveAngle,
   oppositeArriveAngle,
   arriveGrowTransform,
+  arriveT,
   arriveTransform,
   finaleExitPose,
   shrinkOutPose,
   type ArriveKind,
 } from "@/lib/brandingMotion";
 import { chapterWindows, windowT } from "@/lib/homeMotion";
-import { applyPinStage, pinProgress } from "@/lib/loadClear";
+import { applyPinStage, pinProgress, viewHeight, visualRectTop } from "@/lib/loadClear";
 import {
   createIdleHoverState,
   composeIdleTransform,
@@ -123,7 +124,7 @@ export function CinematicChapter({
       );
       if (!nodes.length) return;
 
-      const progress = pinProgress(pin);
+      const progress = layout === "flow" ? 0 : pinProgress(pin);
       const { ins, outs } = chapterWindows(nodes.length);
       const mediaIndex = nodes.findIndex((node) => node.dataset.kind === "media");
       const mediaIn = mediaIndex >= 0 ? ins[mediaIndex] : undefined;
@@ -131,6 +132,7 @@ export function CinematicChapter({
       const mediaArrived = mediaIn ? windowT(progress, mediaIn) >= 0.985 : false;
       const mediaExiting =
         exitMode !== "hold" && !!mediaOut && progress >= mediaOut.start;
+      const viewH = viewHeight();
       const stage = stageRef.current;
       if (stage) {
         // Parent perspective makes overflow-x / scrollLeft a no-op. Ads and
@@ -155,7 +157,7 @@ export function CinematicChapter({
         else if (kind === "copy") angle = oppositeArriveAngle(lastTitleAngle);
         const inn = ins[i];
         const out = outs[i];
-        if (!inn || !out) return;
+        if (layout !== "flow" && (!inn || !out)) return;
 
         const pullKind: MousePullKind | null =
           kind === "media"
@@ -216,7 +218,7 @@ export function CinematicChapter({
           );
         };
 
-        if (exitMode !== "hold" && progress >= out.start) {
+        if (layout !== "flow" && exitMode !== "hold" && out && progress >= out.start) {
           const exitT = windowT(progress, out);
           const pose =
             exitMode === "scale"
@@ -233,7 +235,17 @@ export function CinematicChapter({
           return;
         }
 
-        const t = windowT(progress, inn);
+        const t =
+          layout === "flow"
+            ? arriveT(
+                visualRectTop(el),
+                viewH,
+                kind,
+                Number(el.dataset.lag || 0),
+              )
+            : inn
+              ? windowT(progress, inn)
+              : 0;
         const pose = el.hasAttribute("data-grow")
           ? arriveGrowTransform(t, angle, kind)
           : arriveTransform(t, angle, kind);
