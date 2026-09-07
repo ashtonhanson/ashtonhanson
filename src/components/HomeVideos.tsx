@@ -43,51 +43,46 @@ function HomeVideoThumb({
   }, [item.src]);
 
   return (
-    <figure className="m-0 w-full">
-      <figcaption className="mb-3 text-center font-display text-[clamp(0.92rem,2.1vw,1.2rem)] font-semibold uppercase tracking-[0.16em] text-foreground md:mb-4">
-        {item.alt}
-      </figcaption>
-      <button
-        type="button"
-        className="group relative block w-full cursor-pointer border-0 bg-transparent p-0"
-        onClick={onOpen}
-        aria-label={`Play ${item.alt}`}
-      >
-        <div className="relative aspect-video w-full overflow-hidden rounded-[1.25rem] [clip-path:inset(0_round_1.25rem)]">
-          <video
-            ref={ref}
-            className="pointer-events-none absolute w-full object-cover object-center"
-            style={
-              cropped
-                ? {
-                    top: `-${cropTop}%`,
-                    left: 0,
-                    height: `${100 + cropTop + cropBottom}%`,
-                  }
-                : { inset: 0, height: "100%" }
-            }
-            src={item.src}
-            muted
-            playsInline
-            preload="metadata"
-            controls={false}
-            aria-hidden="true"
-          />
-          <span
-            className="pointer-events-none absolute inset-0 bg-black/15 transition-colors group-hover:bg-black/25"
-            aria-hidden="true"
-          />
-          <span
-            className="pointer-events-none absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[rgb(8_8_9_/_0.62)] text-white shadow-[0_0_24px_rgb(0_0_0_/_0.35)] transition-transform group-hover:scale-105 md:h-16 md:w-16"
-            aria-hidden="true"
-          >
-            <svg viewBox="0 0 24 24" className="ml-0.5 h-6 w-6 md:h-7 md:w-7" fill="currentColor">
-              <path d="M8 5.14v13.72L19.5 12 8 5.14Z" />
-            </svg>
-          </span>
-        </div>
-      </button>
-    </figure>
+    <button
+      type="button"
+      className="group relative block w-full cursor-pointer border-0 bg-transparent p-0"
+      onClick={onOpen}
+      aria-label={`Play ${item.alt}`}
+    >
+      <div className="relative aspect-video w-full overflow-hidden rounded-[1.25rem] [clip-path:inset(0_round_1.25rem)]">
+        <video
+          ref={ref}
+          className="pointer-events-none absolute w-full object-cover object-center"
+          style={
+            cropped
+              ? {
+                  top: `-${cropTop}%`,
+                  left: 0,
+                  height: `${100 + cropTop + cropBottom}%`,
+                }
+              : { inset: 0, height: "100%" }
+          }
+          src={item.src}
+          muted
+          playsInline
+          preload="metadata"
+          controls={false}
+          aria-hidden="true"
+        />
+        <span
+          className="pointer-events-none absolute inset-0 bg-black/15 transition-colors group-hover:bg-black/25"
+          aria-hidden="true"
+        />
+        <span
+          className="pointer-events-none absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[rgb(8_8_9_/_0.62)] text-white shadow-[0_0_24px_rgb(0_0_0_/_0.35)] transition-transform group-hover:scale-105 md:h-16 md:w-16"
+          aria-hidden="true"
+        >
+          <svg viewBox="0 0 24 24" className="ml-0.5 h-6 w-6 md:h-7 md:w-7" fill="currentColor">
+            <path d="M8 5.14v13.72L19.5 12 8 5.14Z" />
+          </svg>
+        </span>
+      </div>
+    </button>
   );
 }
 
@@ -98,20 +93,39 @@ export function HomeVideos({ items }: { items: MediaItem[] }) {
   if (!items.length) return null;
 
   return (
-    <div className="pointer-events-auto mt-6 flex w-full max-w-xl flex-col gap-8 md:mt-8 md:max-w-2xl md:gap-10 xl:max-w-3xl">
-      {items.map((item, index) => (
-        <div
-          key={item.src}
-          data-home-arrive
-          data-grow
-          data-kind="media"
-          data-index={String(2 + index)}
-          className="w-full"
-          style={{ opacity: 0, visibility: "hidden", transformOrigin: "50% 40%" }}
-        >
-          <HomeVideoThumb item={item} onOpen={() => setOpen(item)} />
-        </div>
-      ))}
+    <div className="pointer-events-auto mt-6 flex w-full flex-col md:mt-8">
+      {items.map((item, index) => {
+        const titleIndex = 2 + index * 2;
+        const mediaIndex = 3 + index * 2;
+        return (
+          <div
+            key={item.src}
+            className={index === 0 ? "w-full" : "mt-16 w-full xl:mt-20"}
+          >
+            <div
+              data-home-arrive
+              data-kind="title"
+              data-index={String(titleIndex)}
+              className="will-change-transform"
+              style={{ opacity: 0, transformOrigin: "50% 50%" }}
+            >
+              <p className="mb-3 text-center font-display text-[clamp(0.92rem,2.1vw,1.2rem)] font-semibold uppercase tracking-[0.16em] text-foreground md:mb-4">
+                {item.alt}
+              </p>
+            </div>
+            <div
+              data-home-arrive
+              data-kind="media"
+              data-index={String(mediaIndex)}
+              data-lag="28"
+              className="pointer-events-auto mt-3 w-full will-change-transform md:mt-4 md:will-change-transform"
+              style={{ opacity: 0, transformOrigin: "50% 40%" }}
+            >
+              <HomeVideoThumb item={item} onOpen={() => setOpen(item)} />
+            </div>
+          </div>
+        );
+      })}
       <MediaLightbox item={open} onClose={close} />
     </div>
   );

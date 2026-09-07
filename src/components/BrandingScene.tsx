@@ -364,21 +364,35 @@ export function BrandingScene({
             : vis.blur + loadBlend * LOAD_CLEAR_BLUR_PX;
         const arriving =
           handoffIndex === 0 && now - born < ABOUT_INTRO.cueArriveMs;
+        const inBodyZoom =
+          handoffIndex === introBodyHandoff &&
+          vis.zoomT > 0.06 &&
+          vis.zoomT < 0.94;
         const atRest =
-          !arriving && opacity >= 0.98 && blur < 0.4 && vis.zoomT < 0.04;
-        const travelT = handoffIndex === 0 ? lifeT : 1 - opacity;
-        const pull = stepMousePull(
-          pullFor(el),
-          el,
-          now,
-          dt,
-          handoffIndex === introBodyHandoff
-            ? "body"
-            : handoffIndex <= 2 || adsMotion
-              ? "title"
-              : "body",
-          1 - travelT,
-        );
+          !arriving &&
+          !inBodyZoom &&
+          opacity >= 0.98 &&
+          blur < 0.4 &&
+          vis.zoomT < 0.04;
+        const travelT = inBodyZoom
+          ? 0
+          : handoffIndex === 0
+            ? lifeT
+            : 1 - opacity;
+        const pull = inBodyZoom
+          ? undefined
+          : stepMousePull(
+              pullFor(el),
+              el,
+              now,
+              dt,
+              handoffIndex === introBodyHandoff
+                ? "body"
+                : handoffIndex <= 2 || adsMotion
+                  ? "title"
+                  : "body",
+              1 - travelT,
+            );
         const poseForPaint =
           coarsePointer && handoffIndex !== 0
             ? { ...pose, rotX: 0, rotY: 0 }
@@ -399,13 +413,15 @@ export function BrandingScene({
                 handoffIndex + 3,
                 atRest,
                 travelT,
-                handoffIndex === 0
-                  ? arriving
-                    ? 0
-                    : coarsePointer
-                      ? 3.6
-                      : 2.2
-                  : 1,
+                inBodyZoom || handoffIndex === introBodyHandoff
+                  ? 0
+                  : handoffIndex === 0
+                    ? arriving
+                      ? 0
+                      : coarsePointer
+                        ? 3.6
+                        : 2.2
+                    : 1,
                 coarsePointer ? undefined : pull,
               ),
         );

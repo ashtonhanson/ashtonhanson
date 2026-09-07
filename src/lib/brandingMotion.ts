@@ -489,6 +489,29 @@ export function adsTagPath(index: number): BezierPath {
   }
 }
 
+/** ADS intro copy — slight counterclockwise rest, then true center on scale-out. */
+export function adsCenteredBodyPath(): BezierPath {
+  return {
+    p0: { x: -4.8, y: 2.4, z: 0, scale: 1, rot: -3.8 },
+    p1: { x: -2.2, y: 1.1, z: 0, scale: 1, rot: -1.7 },
+    p2: { x: -0.5, y: 0.3, z: 0, scale: 1, rot: -0.35 },
+    p3: { x: 0, y: 0, z: 0, scale: 1, rot: 0 },
+  };
+}
+
+export function sampleAdsBodyExitPose(zoomT: number): PathPose {
+  const lateralPath = adsCenteredBodyPath();
+  const lateral = sampleBezierPath(zoomT, lateralPath);
+  const zoom = sampleBezierPath(zoomT, aboutZoomPath());
+  return {
+    x: lateral.x,
+    y: lateral.y + ABOUT_INTRO.zoomAnchorY * zoomT * 0.15 - 4 * zoomT,
+    z: zoom.z,
+    scale: zoom.scale,
+    rot: lateral.rot,
+  };
+}
+
 /**
  * ADS intro pin: cue → ADS (centered scale) → category stack → body.
  */
@@ -531,7 +554,7 @@ export function sampleAdsIntroPose(
       rotY: (lean.rotY ?? 0) * 0.28,
     };
   }
-  return sampleIntroBodyPose(zoomT);
+  return sampleAdsBodyExitPose(zoomT);
 }
 
 /**
