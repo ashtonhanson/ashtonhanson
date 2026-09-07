@@ -166,6 +166,13 @@ export function CinematicChapter({
               ? "title"
               : "subtitle";
 
+        // Flow chapters measure the wrapper, then pose the first child —
+        // same as ads/logos — so scale cannot feed back into arriveT.
+        const poseEl =
+          layout === "flow"
+            ? ((el.firstElementChild as HTMLElement) ?? el)
+            : el;
+
         const paintItem = (
           opacity: number,
           blur: number,
@@ -178,13 +185,13 @@ export function CinematicChapter({
           if (kind === "media" && (isCoarsePointer() || isAndroid() || atRest)) {
             const android = isAndroid();
             paint(
-              el,
+              poseEl,
               android ? (opacity > 0.08 ? 1 : 0) : opacity,
               android || atRest ? 0 : blur,
               "none",
               true,
             );
-            el.style.filter = "none";
+            poseEl.style.filter = "none";
             return;
           }
           const pull =
@@ -192,29 +199,31 @@ export function CinematicChapter({
             pullKind !== "gallery" &&
             opacity > 0.04
               ? stepMousePull(
-                  pullFor(el),
-                  el,
+                  pullFor(poseEl),
+                  poseEl,
                   now,
                   dt,
                   pullKind,
                   1 - Math.min(1, Math.max(0, travelT)),
                 )
               : undefined;
+          const idleTravel = layout === "flow" && !atRest ? 0 : travelT;
           paint(
-            el,
+            poseEl,
             opacity,
             blur,
             composeIdleTransform(
-              idleFor(el),
+              idleFor(poseEl),
               transform,
               now,
               dt,
               i + angleOffset,
               kind === "media" ? false : atRest,
-              travelT,
-              kind === "media" ? 0 : 1,
+              idleTravel,
+              kind === "media" || (layout === "flow" && !atRest) ? 0 : 1,
               pull,
             ),
+            kind === "media",
           );
         };
 
@@ -224,7 +233,7 @@ export function CinematicChapter({
             exitMode === "scale"
               ? finaleExitPose(exitT, angle, kind)
               : shrinkOutPose(exitT, angle, kind);
-          el.style.transformOrigin = pose.origin;
+          poseEl.style.transformOrigin = pose.origin;
           paintItem(
             pose.opacity,
             pose.blur,
@@ -233,6 +242,18 @@ export function CinematicChapter({
             pose.travelT,
           );
           return;
+        }
+
+        if (layout === "flow") {
+          el.style.transform = "none";
+          el.style.filter = "none";
+          el.style.opacity = "1";
+          el.style.visibility = "visible";
+          el.style.pointerEvents = "none";
+          if (poseEl !== el) {
+            poseEl.style.transform = "none";
+            poseEl.style.filter = "none";
+          }
         }
 
         const t =
@@ -248,8 +269,14 @@ export function CinematicChapter({
               : 0;
         const pose = el.hasAttribute("data-grow")
           ? arriveGrowTransform(t, angle, kind)
-          : arriveTransform(t, angle, kind);
-        el.style.transformOrigin = pose.origin;
+          : arriveTransform(
+              t,
+              angle,
+              kind,
+              undefined,
+              layout === "flow" && kind === "media",
+            );
+        poseEl.style.transformOrigin = pose.origin;
         paintItem(pose.opacity, pose.blur, pose.transform, t >= 0.985, 1 - t);
       });
     };

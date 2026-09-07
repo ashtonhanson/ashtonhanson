@@ -299,17 +299,29 @@ export function arriveTransform(
   angle: ArriveAngle,
   kind: ArriveKind,
   leanStrength = TEXT_DIRECTIONAL_LEAN,
+  /** 2D scale-in — videos glitch under perspective tilt + blur. */
+  flat = false,
 ) {
   const u = 1 - easeOutCubic(t);
   const extra = kind === "title" ? 2.4 : kind === "media" ? 1.35 : 1.15;
   const scale = 1 + extra * u;
+  const origin = `${angle.x >= 0 ? "82%" : "18%"} ${angle.y >= 0 ? "78%" : "22%"}`;
+  const opacity = easeOutCubic(t);
+  if (flat) {
+    return {
+      opacity,
+      blur: 0,
+      origin,
+      transform: `translate3d(${(angle.x * u).toFixed(2)}vw, ${(angle.y * u).toFixed(2)}vh, 0px) rotate(${(angle.rot * u).toFixed(2)}deg) scale(${scale.toFixed(4)})`,
+    };
+  }
   const blur = (kind === "title" ? 20 : 14) * u;
   const lean = textLean(kind, leanStrength);
   const tilt = perspectiveTilt(angle, u, lean);
   return {
-    opacity: easeOutCubic(t),
+    opacity,
     blur,
-    origin: `${angle.x >= 0 ? "82%" : "18%"} ${angle.y >= 0 ? "78%" : "22%"}`,
+    origin,
     transform: `translate3d(${(angle.x * u).toFixed(2)}vw, ${(angle.y * u).toFixed(2)}vh, ${tilt.depth.toFixed(1)}px) rotateY(${tilt.yaw.toFixed(2)}deg) rotateX(${tilt.pitch.toFixed(2)}deg) rotateZ(${(angle.rot * u + tilt.roll).toFixed(2)}deg) scale(${scale.toFixed(4)})`,
   };
 }
