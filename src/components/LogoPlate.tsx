@@ -42,14 +42,9 @@ export function LogoPlate({ src, alt }: LogoPlateProps) {
   useEffect(() => {
     const glow = createLogoGlowState();
     let frameId = 0;
-    let visible = false;
     let lastNow = performance.now();
 
     const loop = (now: number) => {
-      if (!visible) {
-        frameId = 0;
-        return;
-      }
       frameId = window.requestAnimationFrame(loop);
       const dt = Math.min(48, now - lastNow);
       lastNow = now;
@@ -107,31 +102,8 @@ export function LogoPlate({ src, alt }: LogoPlateProps) {
       el.style.boxShadow = stepped.boxShadow;
     };
 
-    const start = () => {
-      if (visible && !frameId) {
-        lastNow = performance.now();
-        frameId = window.requestAnimationFrame(loop);
-      }
-    };
-
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        visible = !!entry?.isIntersecting;
-        if (visible) start();
-        else if (frameId) {
-          window.cancelAnimationFrame(frameId);
-          frameId = 0;
-        }
-      },
-      { rootMargin: "45% 0px" },
-    );
-    const anchor = ref.current;
-    if (anchor) io.observe(anchor);
-
-    return () => {
-      io.disconnect();
-      window.cancelAnimationFrame(frameId);
-    };
+    frameId = window.requestAnimationFrame(loop);
+    return () => window.cancelAnimationFrame(frameId);
   }, [reduced]);
 
   return (
@@ -153,8 +125,6 @@ export function LogoPlate({ src, alt }: LogoPlateProps) {
               src={src}
               alt={alt}
               className="logo-plate-image block h-auto w-full select-none"
-              loading="lazy"
-              decoding="async"
               draggable={false}
             />
           </div>

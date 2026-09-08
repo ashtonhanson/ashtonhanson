@@ -280,7 +280,7 @@ export function BrandingScene({
     const tagSlots = adsMotion && introTags.length ? 1 : introTags.length;
     const extraCount =
       (introSubtitle ? 1 : 0) +
-      (introLines.length ? 1 : 0) +
+      introLines.length +
       tagSlots +
       (introEmail ? 1 : 0) +
       (introForm ? 1 : 0);
@@ -329,12 +329,16 @@ export function BrandingScene({
         );
         const lifeT =
           handoffIndex === 0 ? cueLifeT(progress, win) : vis.zoomT;
+        const isIntroBody =
+          introBodyHandoff >= 0 &&
+          handoffIndex >= introBodyHandoff &&
+          handoffIndex < introBodyHandoff + introLines.length;
         const pose =
           adsMotion
             ? sampleAdsIntroPose(handoffIndex, vis.zoomT, lifeT)
-            : introBodyCenteredExit && handoffIndex === introBodyHandoff
+            : introBodyCenteredExit && isIntroBody
               ? sampleCenteredBodyExitPose(vis.zoomT)
-              : introBodyLowerExit && handoffIndex === introBodyHandoff
+              : introBodyLowerExit && isIntroBody
               ? sampleIntroBodyPose(vis.zoomT)
               : brandingMotion
                 ? sampleBrandingIntroPose(handoffIndex, vis.zoomT, lifeT)
@@ -365,9 +369,7 @@ export function BrandingScene({
         const arriving =
           handoffIndex === 0 && now - born < ABOUT_INTRO.cueArriveMs;
         const inBodyZoom =
-          handoffIndex === introBodyHandoff &&
-          vis.zoomT > 0.06 &&
-          vis.zoomT < 0.94;
+          isIntroBody && vis.zoomT > 0.06 && vis.zoomT < 0.94;
         const atRest =
           !arriving &&
           !inBodyZoom &&
@@ -386,7 +388,7 @@ export function BrandingScene({
               el,
               now,
               dt,
-              handoffIndex === introBodyHandoff
+              isIntroBody
                 ? "body"
                 : handoffIndex <= 2 || adsMotion
                   ? "title"
@@ -413,7 +415,7 @@ export function BrandingScene({
                 handoffIndex + 3,
                 atRest,
                 travelT,
-                inBodyZoom || handoffIndex === introBodyHandoff
+                inBodyZoom || isIntroBody
                   ? 0
                   : handoffIndex === 0
                     ? arriving
@@ -470,9 +472,13 @@ export function BrandingScene({
           el.style.zIndex = String(i);
         });
         handoffIndex++;
-        if (introLines.length) applyElement(lineRefs.current[0] ?? null, handoffIndex++);
+        introLines.forEach((_, i) => {
+          applyElement(lineRefs.current[i] ?? null, handoffIndex++);
+        });
       } else {
-        if (introLines.length) applyElement(lineRefs.current[0] ?? null, handoffIndex++);
+        introLines.forEach((_, i) => {
+          applyElement(lineRefs.current[i] ?? null, handoffIndex++);
+        });
         introTags.forEach((_, i) => {
           applyElement(tagRefs.current[i] ?? null, handoffIndex++);
         });
@@ -668,7 +674,6 @@ export function BrandingScene({
 
     const onScroll = () => tick(performance.now());
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("touchmove", onScroll, { passive: true });
     window.visualViewport?.addEventListener("scroll", onScroll);
     window.visualViewport?.addEventListener("resize", onScroll);
 
@@ -676,7 +681,6 @@ export function BrandingScene({
     return () => {
       window.cancelAnimationFrame(frame);
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("touchmove", onScroll);
       window.visualViewport?.removeEventListener("scroll", onScroll);
       window.visualViewport?.removeEventListener("resize", onScroll);
     };
@@ -750,11 +754,14 @@ export function BrandingScene({
               </div>
             ) : null}
 
-            {introLines.length ? (
-              <div className="absolute inset-0 flex items-center justify-center px-3">
+            {introLines.map((line, i) => (
+              <div
+                key={line}
+                className="absolute inset-0 flex items-center justify-center px-3"
+              >
                 <div
                   ref={(el) => {
-                    lineRefs.current[0] = el;
+                    lineRefs.current[i] = el;
                   }}
                   className="will-change-transform"
                   style={{
@@ -765,22 +772,15 @@ export function BrandingScene({
                   }}
                 >
                   <IntroBlur>
-                  <div
-                    className={`mx-auto${brandingMotion ? " branding-intro-copy" : ""}${adsMotion ? " ads-intro-copy" : ""}${mediaVariant === "plate" ? " logos-intro-copy" : ""}`}
+                  <p
+                    className={`${BODY_CLASS} mx-auto mb-0 max-w-xl${brandingMotion ? " branding-intro-copy" : ""}${adsMotion ? " ads-intro-copy" : ""}${mediaVariant === "plate" ? " logos-intro-copy" : ""}`}
                   >
-                    {introLines.map((line) => (
-                      <p
-                        key={line}
-                        className={`${BODY_CLASS} mx-auto mb-0 max-w-xl`}
-                      >
-                        {preventOrphan(line)}
-                      </p>
-                    ))}
-                  </div>
+                    {preventOrphan(line)}
+                  </p>
                   </IntroBlur>
                 </div>
               </div>
-            ) : null}
+            ))}
 
             {adsMotion && introTags.length ? (
               <div className="absolute inset-0 flex items-center justify-center overflow-visible px-2">

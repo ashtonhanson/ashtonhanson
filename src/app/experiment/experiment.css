@@ -1,7 +1,6 @@
 /* Logo-mark site theme: sky, blue type, yellow nav. */
 
 .experiment-root {
-  touch-action: pan-y;
   --logo-pink: #efb7c0;
   --logo-blue: #29abe2;
   --logo-yellow: #fff197;
@@ -459,27 +458,21 @@
   line-height: 1.45 !important;
 }
 
-.experiment-root .ads-intro-copy,
-.experiment-root .logos-intro-copy {
-  display: flex;
-  width: min(19.25rem, 72vw);
-  max-width: min(19.25rem, 72vw);
-  flex-direction: column;
-  gap: 1.15em;
-}
-
-.experiment-root .ads-intro-copy p,
-.experiment-root .logos-intro-copy p {
-  width: 100%;
-  max-width: none;
-  line-height: 1.55 !important;
+.experiment-root p.max-w-xl.ads-intro-copy {
+  width: min(32rem, 88vw);
+  max-width: min(32rem, 88vw) !important;
+  line-height: 1.45 !important;
 }
 
 @media (min-width: 768px) {
-  .experiment-root .ads-intro-copy,
-  .experiment-root .logos-intro-copy {
-    width: min(21.5rem, 34vw);
-    max-width: min(21.5rem, 34vw);
+  .experiment-root p.max-w-xl.ads-intro-copy {
+    width: min(38rem, 72vw);
+    max-width: min(38rem, 72vw) !important;
+  }
+
+  .experiment-root p.max-w-xl.logos-intro-copy {
+    width: min(38rem, 68vw);
+    max-width: min(38rem, 68vw) !important;
   }
 }
 
@@ -568,6 +561,4 @@ html:has(.experiment-root) body,
 html.is-logo-study,
 html.is-logo-study body {
   background: #eef9fd;
-  overflow-y: auto;
-  touch-action: pan-y;
 }
