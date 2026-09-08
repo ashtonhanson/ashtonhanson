@@ -99,11 +99,12 @@ export function pinProgress(pin: HTMLElement) {
   const stageH = pinnedStageHeight(pin);
   const range = pin.offsetHeight - stageH;
   if (range < 64) return 0;
-  const pinnedTop = viewTop() + header;
-  return Math.min(
-    1,
-    Math.max(0, (pinnedTop - pin.getBoundingClientRect().top) / range),
-  );
+  const rectTop = pin.getBoundingClientRect().top;
+  const fromLayout = (header - rectTop) / range;
+  const fromVisual = (viewTop() + header - rectTop) / range;
+  // iOS can shift the visual viewport and the layout rect together, which
+  // cancels the usual viewTop math and leaves the intro frozen until later.
+  return Math.min(1, Math.max(0, Math.max(fromLayout, fromVisual)));
 }
 
 const STICKY_TOP_REM = 3.6;

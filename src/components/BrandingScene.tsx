@@ -668,6 +668,7 @@ export function BrandingScene({
 
     const onScroll = () => tick(performance.now());
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("touchmove", onScroll, { passive: true });
     window.visualViewport?.addEventListener("scroll", onScroll);
     window.visualViewport?.addEventListener("resize", onScroll);
 
@@ -675,6 +676,7 @@ export function BrandingScene({
     return () => {
       window.cancelAnimationFrame(frame);
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("touchmove", onScroll);
       window.visualViewport?.removeEventListener("scroll", onScroll);
       window.visualViewport?.removeEventListener("resize", onScroll);
     };
@@ -763,11 +765,18 @@ export function BrandingScene({
                   }}
                 >
                   <IntroBlur>
-                  <p
-                    className={`${BODY_CLASS} mx-auto mb-0 max-w-xl${brandingMotion ? " branding-intro-copy" : ""}${adsMotion ? " ads-intro-copy" : ""}${mediaVariant === "plate" ? " logos-intro-copy" : ""}`}
+                  <div
+                    className={`mx-auto${brandingMotion ? " branding-intro-copy" : ""}${adsMotion ? " ads-intro-copy" : ""}${mediaVariant === "plate" ? " logos-intro-copy" : ""}`}
                   >
-                    {preventOrphan(introLines.join(" "))}
-                  </p>
+                    {introLines.map((line) => (
+                      <p
+                        key={line}
+                        className={`${BODY_CLASS} mx-auto mb-0 max-w-xl`}
+                      >
+                        {preventOrphan(line)}
+                      </p>
+                    ))}
+                  </div>
                   </IntroBlur>
                 </div>
               </div>
