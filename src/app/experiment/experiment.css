@@ -476,6 +476,18 @@
   }
 }
 
+@media (max-width: 767px) {
+  .experiment-root .about-intro-stage .intro-layer p,
+  .experiment-root p.max-w-xl,
+  .experiment-root p.max-w-xl.ads-intro-copy,
+  .experiment-root p.max-w-xl.logos-intro-copy,
+  .experiment-root p.max-w-xl.branding-intro-copy,
+  .experiment-root p.font-normal:not(.uppercase) {
+    width: min(17.5rem, 70vw) !important;
+    max-width: min(17.5rem, 70vw) !important;
+  }
+}
+
 .experiment-root p.uppercase {
   color: var(--logo-blue) !important;
   font-weight: 700 !important;
