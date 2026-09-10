@@ -57,7 +57,7 @@
 .sky-cloud-drift {
   display: block;
   width: 100%;
-  animation: sky-cloud-ltr var(--cloud-dur, 80s) linear var(--cloud-delay, 0s)
+  animation: sky-cloud-ltr var(--cloud-dur, 200s) linear var(--cloud-delay, 0s)
     infinite;
 }
 
@@ -88,7 +88,7 @@
   opacity: var(--cloud-opacity, 0.85);
   user-select: none;
   pointer-events: none;
-  animation: sky-cloud-bob var(--cloud-bob, 7s) ease-in-out
+  animation: sky-cloud-bob var(--cloud-bob, 13s) ease-in-out
     calc(var(--cloud-delay, 0s) * 0.2) infinite;
 }
 
