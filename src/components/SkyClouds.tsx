@@ -60,32 +60,41 @@ const CLOUDS: CloudSpec[] = [
 export function SkyClouds() {
   return (
     <div className="sky-clouds" aria-hidden="true">
-      {CLOUDS.map((cloud) => (
-        <span
-          key={cloud.src}
-          className={`sky-cloud is-${cloud.dir}`}
-          style={
-            {
-              top: cloud.top,
-              width: cloud.width,
-              "--cloud-dur": cloud.dur,
-              "--cloud-bob": cloud.bob,
-              "--cloud-delay": cloud.delay,
-              "--cloud-opacity": String(cloud.opacity),
-            } as CSSProperties
-          }
-        >
-          <span className="sky-cloud-drift">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              className="sky-cloud-art"
-              src={cloud.src}
-              alt=""
-              draggable={false}
-            />
+      {CLOUDS.map((cloud) => {
+        const driftName =
+          cloud.dir === "rtl" ? "sky-cloud-rtl" : "sky-cloud-ltr";
+        return (
+          <span
+            key={cloud.src}
+            className={`sky-cloud is-${cloud.dir}`}
+            style={
+              {
+                top: cloud.top,
+                width: cloud.width,
+                "--cloud-opacity": String(cloud.opacity),
+              } as CSSProperties
+            }
+          >
+            <span
+              className="sky-cloud-drift"
+              style={{
+                animation: `${driftName} ${cloud.dur} linear ${cloud.delay} infinite`,
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                className="sky-cloud-art"
+                src={cloud.src}
+                alt=""
+                draggable={false}
+                style={{
+                  animation: `sky-cloud-bob ${cloud.bob} ease-in-out ${cloud.delay} infinite`,
+                }}
+              />
+            </span>
           </span>
-        </span>
-      ))}
+        );
+      })}
     </div>
   );
 }

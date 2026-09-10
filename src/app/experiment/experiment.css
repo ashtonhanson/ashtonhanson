@@ -55,17 +55,12 @@
 .sky-cloud-drift {
   display: block;
   width: 100%;
-  will-change: transform, opacity;
-  animation-name: sky-cloud-ltr;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-  animation-duration: var(--cloud-dur, 90s);
-  animation-delay: var(--cloud-delay, 0s);
-  animation-fill-mode: both;
+  transform: translate3d(-42vw, 0, 0);
+  backface-visibility: hidden;
 }
 
 .sky-cloud.is-rtl .sky-cloud-drift {
-  animation-name: sky-cloud-rtl;
+  transform: translate3d(122vw, 0, 0);
 }
 
 .sky-cloud-art {
@@ -75,11 +70,7 @@
   opacity: var(--cloud-opacity, 0.9);
   user-select: none;
   pointer-events: none;
-  animation-name: sky-cloud-bob;
-  animation-timing-function: ease-in-out;
-  animation-iteration-count: infinite;
-  animation-duration: var(--cloud-bob, 10s);
-  animation-delay: var(--cloud-delay, 0s);
+  backface-visibility: hidden;
 }
 
 @keyframes sky-cloud-ltr {
@@ -126,16 +117,12 @@
   }
 }
 
+/* Keep a gentle drift even when the OS asks to reduce motion —
+   desktop Chrome / device-mode inherit macOS Reduce Motion and would
+   otherwise freeze clouds while a real phone still moves them. */
 @media (prefers-reduced-motion: reduce) {
-  .sky-cloud-drift,
   .sky-cloud-art {
     animation: none !important;
-    will-change: auto;
-  }
-
-  .sky-cloud-drift {
-    transform: translate3d(18vw, 0, 0);
-    opacity: 0.85;
   }
 }
 
