@@ -8,12 +8,13 @@ type CloudSpec = {
   width: string;
   dur: string;
   bob: string;
-  delay: string;
+  /** 0–1 progress through the drift when the page loads. */
+  start: number;
   opacity: number;
   dir: "ltr" | "rtl";
 };
 
-/** A few clouds from links/clouds/clouds.svg, drifting with edge fades. */
+/** A few clouds from links/clouds/clouds.svg, staggered across the sky. */
 const CLOUDS: CloudSpec[] = [
   {
     src: "/experiment/clouds/01.svg",
@@ -21,7 +22,7 @@ const CLOUDS: CloudSpec[] = [
     width: "18rem",
     dur: "88s",
     bob: "10s",
-    delay: "-22s",
+    start: 0.16,
     opacity: 0.95,
     dir: "ltr",
   },
@@ -31,7 +32,7 @@ const CLOUDS: CloudSpec[] = [
     width: "14rem",
     dur: "72s",
     bob: "9s",
-    delay: "-40s",
+    start: 0.38,
     opacity: 0.9,
     dir: "rtl",
   },
@@ -41,7 +42,7 @@ const CLOUDS: CloudSpec[] = [
     width: "16rem",
     dur: "96s",
     bob: "11s",
-    delay: "-14s",
+    start: 0.58,
     opacity: 0.92,
     dir: "ltr",
   },
@@ -51,11 +52,17 @@ const CLOUDS: CloudSpec[] = [
     width: "12rem",
     dur: "80s",
     bob: "8s",
-    delay: "-51s",
+    start: 0.78,
     opacity: 0.88,
     dir: "rtl",
   },
 ];
+
+function delayFor(dur: string, start: number) {
+  const seconds = Number.parseFloat(dur);
+  if (!Number.isFinite(seconds)) return "0s";
+  return `${(-(seconds * start)).toFixed(2)}s`;
+}
 
 export function SkyClouds() {
   return (
@@ -63,6 +70,7 @@ export function SkyClouds() {
       {CLOUDS.map((cloud) => {
         const driftName =
           cloud.dir === "rtl" ? "sky-cloud-rtl" : "sky-cloud-ltr";
+        const delay = delayFor(cloud.dur, cloud.start);
         return (
           <span
             key={cloud.src}
@@ -78,7 +86,7 @@ export function SkyClouds() {
             <span
               className="sky-cloud-drift"
               style={{
-                animation: `${driftName} ${cloud.dur} linear ${cloud.delay} infinite`,
+                animation: `${driftName} ${cloud.dur} linear ${delay} infinite`,
               }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -88,7 +96,7 @@ export function SkyClouds() {
                 alt=""
                 draggable={false}
                 style={{
-                  animation: `sky-cloud-bob ${cloud.bob} ease-in-out ${cloud.delay} infinite`,
+                  animation: `sky-cloud-bob ${cloud.bob} ease-in-out ${delay} infinite`,
                 }}
               />
             </span>

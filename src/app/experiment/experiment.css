@@ -55,12 +55,7 @@
 .sky-cloud-drift {
   display: block;
   width: 100%;
-  transform: translate3d(-42vw, 0, 0);
   backface-visibility: hidden;
-}
-
-.sky-cloud.is-rtl .sky-cloud-drift {
-  transform: translate3d(122vw, 0, 0);
 }
 
 .sky-cloud-art {
