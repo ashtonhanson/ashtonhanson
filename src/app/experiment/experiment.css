@@ -24,8 +24,6 @@
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  contain: layout paint;
-  transform: translateZ(0);
   background:
     radial-gradient(ellipse 54% 48% at 50% 46%, #f4fbff 0%, #dff3fb 46%, #c5e6f4 100%);
 }
@@ -57,92 +55,49 @@
 .sky-cloud-drift {
   display: block;
   width: 100%;
-  animation: sky-cloud-ltr var(--cloud-dur, 200s) linear var(--cloud-delay, 0s)
-    infinite;
+  will-change: transform;
+  animation-name: sky-cloud-ltr;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-duration: var(--cloud-dur, 90s);
+  animation-delay: var(--cloud-delay, 0s);
+  animation-fill-mode: both;
 }
 
 .sky-cloud.is-rtl .sky-cloud-drift {
   animation-name: sky-cloud-rtl;
 }
 
-.sky-cloud.is-ltr-up .sky-cloud-drift {
-  animation-name: sky-cloud-ltr-up;
-}
-
-.sky-cloud.is-ltr-down .sky-cloud-drift {
-  animation-name: sky-cloud-ltr-down;
-}
-
-.sky-cloud.is-rtl-up .sky-cloud-drift {
-  animation-name: sky-cloud-rtl-up;
-}
-
-.sky-cloud.is-rtl-down .sky-cloud-drift {
-  animation-name: sky-cloud-rtl-down;
-}
-
 .sky-cloud-art {
   display: block;
   width: 100%;
   height: auto;
-  opacity: var(--cloud-opacity, 0.85);
+  opacity: var(--cloud-opacity, 0.9);
   user-select: none;
   pointer-events: none;
-  animation: sky-cloud-bob var(--cloud-bob, 13s) ease-in-out
-    calc(var(--cloud-delay, 0s) * 0.2) infinite;
+  will-change: transform;
+  animation-name: sky-cloud-bob;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-duration: var(--cloud-bob, 10s);
+  animation-delay: var(--cloud-delay, 0s);
 }
 
 @keyframes sky-cloud-ltr {
   from {
-    transform: translate3d(-34vw, 0, 0);
+    transform: translate3d(-40vw, 0, 0);
   }
   to {
-    transform: translate3d(114vw, 0, 0);
+    transform: translate3d(120vw, 0, 0);
   }
 }
 
 @keyframes sky-cloud-rtl {
   from {
-    transform: translate3d(114vw, 0, 0);
+    transform: translate3d(120vw, 0, 0);
   }
   to {
-    transform: translate3d(-34vw, 0, 0);
-  }
-}
-
-@keyframes sky-cloud-ltr-up {
-  from {
-    transform: translate3d(-34vw, 5vh, 0);
-  }
-  to {
-    transform: translate3d(114vw, -4vh, 0);
-  }
-}
-
-@keyframes sky-cloud-ltr-down {
-  from {
-    transform: translate3d(-34vw, -4vh, 0);
-  }
-  to {
-    transform: translate3d(114vw, 5vh, 0);
-  }
-}
-
-@keyframes sky-cloud-rtl-up {
-  from {
-    transform: translate3d(114vw, 5vh, 0);
-  }
-  to {
-    transform: translate3d(-34vw, -4vh, 0);
-  }
-}
-
-@keyframes sky-cloud-rtl-down {
-  from {
-    transform: translate3d(114vw, -4vh, 0);
-  }
-  to {
-    transform: translate3d(-34vw, 5vh, 0);
+    transform: translate3d(-40vw, 0, 0);
   }
 }
 
@@ -152,14 +107,15 @@
     transform: translate3d(0, 0, 0);
   }
   50% {
-    transform: translate3d(0, -0.85rem, 0);
+    transform: translate3d(0, -0.7rem, 0);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .sky-cloud-drift,
   .sky-cloud-art {
-    animation: none;
+    animation: none !important;
+    will-change: auto;
   }
 
   .sky-cloud-drift {
@@ -370,9 +326,10 @@
   max-width: 100% !important;
 }
 
-.experiment-root p.max-w-xl {
+.experiment-root p.max-w-xl,
+.experiment-root .intro-body-copy {
   font-size: clamp(1.02rem, 2.2vw, 1.4rem) !important;
-  font-weight: 400 !important;
+  font-weight: 600 !important;
   line-height: 1.5 !important;
 }
 
@@ -409,7 +366,7 @@
     width: min(38rem, 82vw) !important;
     max-width: min(38rem, 82vw) !important;
     font-size: clamp(1.02rem, 2.2vw, 1.4rem) !important;
-    font-weight: 400 !important;
+    font-weight: 600 !important;
     line-height: 1.32 !important;
   }
 }
@@ -427,7 +384,7 @@
     width: min(17.25rem, 72vw) !important;
     max-width: min(17.25rem, 72vw) !important;
     font-size: 1.18rem !important;
-    font-weight: 400 !important;
+    font-weight: 600 !important;
     line-height: 1.5 !important;
     text-wrap: pretty;
     text-align: center;

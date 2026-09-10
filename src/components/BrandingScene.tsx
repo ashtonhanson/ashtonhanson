@@ -84,7 +84,7 @@ const SUBTITLE_CLASS =
   "font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-[1.85] tracking-[0.18em] text-foreground md:leading-tight xl:text-[clamp(1.35rem,1.55vw,1.7rem)]";
 
 const BODY_CLASS =
-  "intro-body-copy mx-auto w-full max-w-xl text-center font-display text-[clamp(1.125rem,2.15vw,1.275rem)] font-normal leading-[1.7] tracking-[0.01em] text-foreground [text-wrap:pretty] xl:text-[clamp(1.2rem,1.35vw,1.4rem)]";
+  "intro-body-copy mx-auto w-full max-w-xl text-center font-display text-[clamp(1.125rem,2.15vw,1.275rem)] font-semibold leading-[1.7] tracking-[0.01em] text-foreground [text-wrap:pretty] xl:text-[clamp(1.2rem,1.35vw,1.4rem)]";
 
 /** Stronger idle float for branding titles / subtitles only. */
 const LOCKUP_IDLE = 1.75;
