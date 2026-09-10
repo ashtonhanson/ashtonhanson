@@ -20,8 +20,8 @@ function readRadius(el: HTMLElement) {
 }
 
 /**
- * Logo plate: scroll travel plus a cursor glow. The photo stays put so
- * the frame never shoves on hover.
+ * Logo plate: scroll travel plus a cursor glow. Glow only ticks while the
+ * pointer is near — no perpetual rAF per plate (that locked /logos).
  */
 export function LogoPlate({ src, alt }: LogoPlateProps) {
   const ref = useRef<HTMLElement>(null);
@@ -43,46 +43,41 @@ export function LogoPlate({ src, alt }: LogoPlateProps) {
     if (reduced) return;
     const coarse = window.matchMedia("(pointer: coarse)").matches;
     if (coarse) return;
+
     const glow = createLogoGlowState();
-    let frameId = 0;
+    let glowRaf = 0;
+    let scrollRaf = 0;
     let visible = false;
+    let hovering = false;
     let lastNow = performance.now();
 
-    const loop = (now: number) => {
-      if (!visible) {
-        frameId = 0;
-        return;
-      }
-      frameId = window.requestAnimationFrame(loop);
-      const dt = Math.min(48, now - lastNow);
-      lastNow = now;
-      if (document.hidden) return;
-
+    const paintTravel = () => {
       const el = poseRef.current;
       const art = artRef.current;
       const bezel = bezelRef.current;
       const anchor = ref.current;
-      if (!el) return;
+      if (!el || !anchor) return;
 
-      let travel = 0;
-      if (anchor) {
-        const viewH = window.innerHeight || 1;
-        const box = anchor.getBoundingClientRect();
-        const naturalCenter = box.top + box.height / 2;
-        const start = viewH * 0.92;
-        const end = viewH * 0.28;
-        const progress = clamp((start - naturalCenter) / (start - end), 0, 1);
-        const eased = progress * progress * (3 - 2 * progress);
-        travel = -eased * Math.min(220, viewH * 0.32);
-      }
-
-      const base = travel
+      const viewH = window.innerHeight || 1;
+      const box = anchor.getBoundingClientRect();
+      const naturalCenter = box.top + box.height / 2;
+      const start = viewH * 0.92;
+      const end = viewH * 0.28;
+      const progress = clamp((start - naturalCenter) / (start - end), 0, 1);
+      const eased = progress * progress * (3 - 2 * progress);
+      const travel = -eased * Math.min(220, viewH * 0.32);
+      el.style.transform = travel
         ? `translate3d(0, ${travel.toFixed(2)}px, 0)`
         : "none";
-      el.style.transform = base;
       if (art) art.style.transform = "none";
       if (bezel) bezel.style.transform = "none";
+    };
 
+    const paintGlow = (now: number) => {
+      const el = poseRef.current;
+      if (!el) return;
+      const dt = Math.min(48, now - lastNow);
+      lastNow = now;
       const pointer = getPointer(now);
       const rect = el.getBoundingClientRect();
       const px = pointer.has
@@ -92,12 +87,10 @@ export function LogoPlate({ src, alt }: LogoPlateProps) {
         ? (pointer.y - rect.top) / Math.max(rect.height, 1)
         : 0.5;
       const dist = Math.hypot(px - 0.5, py - 0.5);
-      const hovering = pointer.has && dist <= 0.72;
-
+      hovering = pointer.has && dist <= 0.72;
       const plateW = el.clientWidth;
       const plateH = el.clientHeight;
       if (plateW < 8 || plateH < 8) return;
-
       const stepped = stepLogoGlow(glow, now, dt, {
         plateW,
         plateH,
@@ -109,30 +102,66 @@ export function LogoPlate({ src, alt }: LogoPlateProps) {
       el.style.boxShadow = stepped.boxShadow;
     };
 
-    const start = () => {
-      if (visible && !frameId) {
-        lastNow = performance.now();
-        frameId = window.requestAnimationFrame(loop);
+    const glowLoop = (now: number) => {
+      if (!visible || document.hidden) {
+        glowRaf = 0;
+        return;
       }
+      const stepped = (() => {
+        paintGlow(now);
+        return glow.hover;
+      })();
+      if (hovering || stepped > 0.02) {
+        glowRaf = window.requestAnimationFrame(glowLoop);
+      } else {
+        glowRaf = 0;
+      }
+    };
+
+    const kickGlow = () => {
+      if (!visible || glowRaf) return;
+      lastNow = performance.now();
+      glowRaf = window.requestAnimationFrame(glowLoop);
+    };
+
+    const onScroll = () => {
+      if (!visible || scrollRaf) return;
+      scrollRaf = window.requestAnimationFrame(() => {
+        scrollRaf = 0;
+        paintTravel();
+      });
+    };
+
+    const onPointerMove = () => {
+      if (!visible) return;
+      kickGlow();
     };
 
     const io = new IntersectionObserver(
       ([entry]) => {
         visible = !!entry?.isIntersecting;
-        if (visible) start();
-        else if (frameId) {
-          window.cancelAnimationFrame(frameId);
-          frameId = 0;
+        if (visible) {
+          paintTravel();
+          kickGlow();
+        } else if (glowRaf) {
+          window.cancelAnimationFrame(glowRaf);
+          glowRaf = 0;
         }
       },
-      { rootMargin: "40% 0px" },
+      { rootMargin: "20% 0px" },
     );
     const node = ref.current;
     if (node) io.observe(node);
 
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+
     return () => {
       io.disconnect();
-      window.cancelAnimationFrame(frameId);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.cancelAnimationFrame(glowRaf);
+      window.cancelAnimationFrame(scrollRaf);
     };
   }, [reduced]);
 

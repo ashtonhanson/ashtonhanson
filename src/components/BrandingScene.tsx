@@ -708,12 +708,13 @@ export function BrandingScene({
       if (!pin) return;
       const progress = pinProgress(pin);
       const introBusy = progress < 0.995;
-      if (!coarsePointer || introBusy) {
+      if (introBusy) {
         applyPinStage(pin, stageRef.current);
         updateIntro(progress, now, dt);
+        return;
       }
       if (coarsePointer) {
-        if (!introBusy) restCoarseCases();
+        restCoarseCases();
         return;
       }
       updateArrivals(progress, packedExitGate, now, dt);
@@ -730,14 +731,16 @@ export function BrandingScene({
     };
 
     const loop = (now: number) => {
-      if (coarsePointer) {
-        const pin = pinRef.current;
-        const introBusy = pin ? pinProgress(pin) < 0.995 : true;
-        if (!introBusy) {
-          restCoarseCases();
-          frame = 0;
-          return;
+      const pin = pinRef.current;
+      const introBusy = pin ? pinProgress(pin) < 0.995 : true;
+      if (!introBusy) {
+        if (coarsePointer) restCoarseCases();
+        else {
+          // One settle pass, then scroll owns arrivals.
+          tick(now);
         }
+        frame = 0;
+        return;
       }
       frame = window.requestAnimationFrame(loop);
       if (document.hidden) return;

@@ -55,7 +55,7 @@
 .sky-cloud-drift {
   display: block;
   width: 100%;
-  will-change: transform;
+  will-change: transform, opacity;
   animation-name: sky-cloud-ltr;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
@@ -75,7 +75,6 @@
   opacity: var(--cloud-opacity, 0.9);
   user-select: none;
   pointer-events: none;
-  will-change: transform;
   animation-name: sky-cloud-bob;
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
@@ -84,20 +83,36 @@
 }
 
 @keyframes sky-cloud-ltr {
-  from {
-    transform: translate3d(-40vw, 0, 0);
+  0% {
+    transform: translate3d(-42vw, 0, 0);
+    opacity: 0;
   }
-  to {
-    transform: translate3d(120vw, 0, 0);
+  10% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(122vw, 0, 0);
+    opacity: 0;
   }
 }
 
 @keyframes sky-cloud-rtl {
-  from {
-    transform: translate3d(120vw, 0, 0);
+  0% {
+    transform: translate3d(122vw, 0, 0);
+    opacity: 0;
   }
-  to {
-    transform: translate3d(-40vw, 0, 0);
+  10% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(-42vw, 0, 0);
+    opacity: 0;
   }
 }
 
@@ -107,7 +122,7 @@
     transform: translate3d(0, 0, 0);
   }
   50% {
-    transform: translate3d(0, -0.7rem, 0);
+    transform: translate3d(0, -0.65rem, 0);
   }
 }
 
@@ -120,6 +135,7 @@
 
   .sky-cloud-drift {
     transform: translate3d(18vw, 0, 0);
+    opacity: 0.85;
   }
 }
 
@@ -129,6 +145,18 @@
     visibility: visible !important;
     filter: none !important;
     transform: none !important;
+    will-change: auto !important;
+  }
+
+  .experiment-root [data-arrive] > * {
+    transform: none !important;
+    filter: none !important;
+    will-change: auto !important;
+  }
+
+  .experiment-root .logo-plate-pose,
+  .experiment-root .title-shine,
+  .experiment-root .will-change-transform {
     will-change: auto !important;
   }
 }
