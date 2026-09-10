@@ -526,20 +526,41 @@ export function BrandingScene({
       settledCount++;
     };
 
+    /** Phones: freeze every lockup once and stop scroll painting (iOS jank). */
+    const restAllArrivals = () => {
+      if (arrivalsDone) return;
+      const root = sceneRef.current;
+      if (!root) return;
+      root.querySelectorAll<HTMLElement>("[data-arrive]").forEach((el) => {
+        const poseEl = (el.firstElementChild as HTMLElement) ?? el;
+        el.style.opacity = "1";
+        el.style.visibility = "visible";
+        el.style.transform = "none";
+        el.style.filter = "none";
+        el.style.willChange = "auto";
+        poseEl.style.transform = "none";
+        poseEl.style.filter = "none";
+        poseEl.style.opacity = "1";
+        poseEl.style.willChange = "auto";
+        markSettled(el);
+      });
+      arrivalsDone = true;
+    };
+
     const updateArrivals = (
       introProgress: number,
       packedExitGate: number,
       now: number,
       dt: number,
     ) => {
+      if (coarsePointer) {
+        restAllArrivals();
+        return;
+      }
       const root = sceneRef.current;
       if (!root) return;
       const viewH = viewHeight();
       const nodes = root.querySelectorAll<HTMLElement>("[data-arrive]");
-      if (coarsePointer && settledCount >= nodes.length && nodes.length > 0) {
-        arrivalsDone = true;
-        return;
-      }
       const finalePin = root.querySelector<HTMLElement>("[data-finale]");
       const finaleStage = root.querySelector<HTMLElement>("[data-finale-stage]");
       let finaleProgress = 0;
@@ -565,27 +586,12 @@ export function BrandingScene({
       const lean = brandingMotion ? BRANDING_LEAN : TEXT_DIRECTIONAL_LEAN;
       let lastTitleAngle = arriveAngle(0);
       nodes.forEach((el) => {
-        if (coarsePointer && settledArrivals.has(el)) return;
         const kind = (el.dataset.kind || "copy") as ArriveKind;
         const rectTop = visualRectTop(el);
         if (
           rectTop > viewH * 1.5 ||
           rectTop + Math.max(el.offsetHeight, 1) < -viewH * 0.45
         ) {
-          return;
-        }
-        if (coarsePointer && kind === "media") {
-          const poseEl = (el.firstElementChild as HTMLElement) ?? el;
-          el.style.opacity = "1";
-          el.style.visibility = "visible";
-          el.style.transform = "none";
-          el.style.filter = "none";
-          el.style.willChange = "auto";
-          poseEl.style.transform = "none";
-          poseEl.style.filter = "none";
-          poseEl.style.opacity = "1";
-          poseEl.style.willChange = "auto";
-          markSettled(el);
           return;
         }
         const lag = Number(el.dataset.lag || 0);
@@ -662,45 +668,25 @@ export function BrandingScene({
           );
           return;
         }
-        // Phones: one Z arrive, then freeze — perpetual scroll painting locks logos.
-        if (coarsePointer && t >= 0.985) {
-          poseEl.style.transformOrigin = "50% 50%";
-          poseEl.style.transform = "none";
-          poseEl.style.filter = "none";
-          poseEl.style.opacity = "1";
-          poseEl.style.willChange = "auto";
-          el.style.willChange = "auto";
-          markSettled(el);
-          return;
-        }
         const pose = el.hasAttribute("data-grow")
           ? arriveGrowTransform(t, angle, kind, lean)
-          : arriveTransform(
-              t,
-              angle,
-              kind,
-              lean,
-              kind === "media",
-            );
+          : arriveTransform(t, angle, kind, lean, kind === "media");
         poseEl.style.transformOrigin = pose.origin;
         paintIdle(
           poseEl,
           pose.opacity,
-          coarsePointer ? 0 : pose.blur,
+          pose.blur,
           pose.transform,
           index + 11,
           now,
           dt,
           t >= 0.985,
           1 - t,
-          coarsePointer ? 0 : idleAmount,
+          idleAmount,
           pullKind,
           kind !== "media",
         );
       });
-      if (coarsePointer && settledCount >= nodes.length && nodes.length > 0) {
-        arrivalsDone = true;
-      }
     };
 
     const tick = (now: number) => {
@@ -714,9 +700,19 @@ export function BrandingScene({
       if (introBusy) {
         applyPinStage(pin, stageRef.current);
         updateIntro(progress, now, dt);
+        // First-study hub handoff needs arrivals while the intro is still pinned.
+        if (!coarsePointer) {
+          updateArrivals(progress, packedExitGate, now, dt);
+        }
         return;
       }
-      if (coarsePointer && arrivalsDone) return;
+      // Park the sticky intro stage, then stop all post-intro work on phones.
+      applyPinStage(pin, stageRef.current);
+      updateIntro(progress, now, dt);
+      if (coarsePointer) {
+        restAllArrivals();
+        return;
+      }
       updateArrivals(progress, packedExitGate, now, dt);
     };
 
