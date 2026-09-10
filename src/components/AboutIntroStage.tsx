@@ -346,11 +346,7 @@ export function AboutIntroStage({
                 {/* Cream readable type; zoom path starts small → much larger */}
                 <IntroBlur>
                 <p
-                  className={`intro-body-copy text-balance text-center font-display text-[clamp(1.12rem,3.4vw,2.4rem)] font-medium tracking-[0.02em] text-[rgb(232_223_196)] xl:text-[clamp(1.65rem,2.8vw,2.6rem)]${
-                    bodyLines.length === 1
-                      ? " mx-auto leading-[1.32]"
-                      : " leading-[1.22]"
-                  }`}
+                  className="intro-body-copy mx-auto text-pretty text-center font-display text-[clamp(1.02rem,2.2vw,1.4rem)] font-normal leading-[1.45] tracking-[0.01em] text-foreground"
                 >
                   <MobileBreakText
                     text={line}

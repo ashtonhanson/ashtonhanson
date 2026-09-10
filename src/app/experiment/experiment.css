@@ -477,6 +477,16 @@
   }
 }
 
+@media (max-width: 1023px) {
+  .experiment-root .about-intro-stage .intro-layer p.intro-body-copy {
+    width: min(15.25rem, 58vw) !important;
+    max-width: min(15.25rem, 58vw) !important;
+    font-size: 1.05rem !important;
+    font-weight: 400 !important;
+    line-height: 1.48 !important;
+  }
+}
+
 .experiment-root p.uppercase {
   color: var(--logo-blue) !important;
   font-weight: 700 !important;

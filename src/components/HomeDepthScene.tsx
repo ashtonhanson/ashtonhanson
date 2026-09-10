@@ -60,7 +60,7 @@ export function HomeDepthScene({
       <AboutIntroStage
         aboutWord={aboutWord}
         meWord={meWord}
-        bodyLines={desktopIntro ? [home.aboutParagraph] : aboutLines}
+        bodyLines={[home.aboutParagraph]}
         bodyRotateLeft={desktopIntro}
         Cue={Cue}
       />
