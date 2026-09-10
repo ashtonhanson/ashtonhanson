@@ -148,13 +148,19 @@ export function CinematicChapter({
         stage.style.perspectiveOrigin = use3d ? "50% 42%" : "";
         stage.style.transformStyle = use3d ? "preserve-3d" : "flat";
       }
-      let lastTitleAngle = arriveAngle(angleOffset);
+      let prevAngle: ReturnType<typeof arriveAngle> | null = null;
 
       nodes.forEach((el, i) => {
         const kind = (el.dataset.kind || "copy") as ArriveKind;
         let angle = arriveAngle(i + angleOffset);
-        if (kind === "title") lastTitleAngle = angle;
-        else if (kind === "copy") angle = oppositeArriveAngle(lastTitleAngle);
+        if (prevAngle) {
+          const sameSide =
+            Math.sign(angle.x) === Math.sign(prevAngle.x) || angle.x === 0;
+          if (kind !== "title" || sameSide) {
+            angle = oppositeArriveAngle(prevAngle);
+          }
+        }
+        prevAngle = angle;
         const inn = ins[i];
         const out = outs[i];
         if (layout !== "flow" && (!inn || !out)) return;

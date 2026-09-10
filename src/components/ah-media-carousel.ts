@@ -1125,7 +1125,13 @@ export class AhMediaCarousel extends ElementBase {
 
   #restartAutoplay() {
     this.#stopAutoplay();
-    if (this.#items.length < 2) return;
+    // Coarse pointers: never run the perpetual autoplay rAF (locks /logos on iOS).
+    if (
+      this.#items.length < 2 ||
+      window.matchMedia("(pointer: coarse)").matches
+    ) {
+      return;
+    }
     this.#autoVel = 0;
     this.#lastAutoNow = performance.now();
     const tick = (now: number) => {

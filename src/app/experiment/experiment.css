@@ -123,8 +123,17 @@
 
 @media (pointer: coarse) {
   .experiment-root .logo-plate-pose,
+  .experiment-root .logo-plate-art,
+  .experiment-root .logo-plate-bezel,
   .experiment-root .title-shine {
     will-change: auto;
+  }
+
+  /* Sticky backdrop-filter + scrolling content freezes iOS. */
+  .experiment-root .experiment-chrome {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgb(41 171 226 / 0.94);
   }
 }
 
@@ -353,6 +362,12 @@
   .experiment-root p.max-w-xl.logos-intro-copy {
     width: min(38rem, 68vw) !important;
     max-width: min(38rem, 68vw) !important;
+  }
+
+  /* Case-study bodies after the intro — wider than the vertical intro measure. */
+  .experiment-root article p.intro-body-copy {
+    width: min(42rem, 68vw) !important;
+    max-width: min(42rem, 68vw) !important;
   }
 }
 

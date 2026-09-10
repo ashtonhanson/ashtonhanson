@@ -32,16 +32,16 @@ export type ArriveAngle = {
   rot: number;
 };
 
-/** Distinct entry directions so successive pieces don’t share a path. */
+/** Distinct entry directions — consecutive entries flip left/right. */
 export const ARRIVE_ANGLES: readonly ArriveAngle[] = [
   { x: -18, y: 14, rot: -3.8 },
   { x: 20, y: -11, rot: 4.2 },
   { x: -13, y: -16, rot: 2.6 },
   { x: 16, y: 17, rot: -3.1 },
-  { x: 9, y: 21, rot: 3.4 },
   { x: -22, y: 5, rot: -4.6 },
   { x: 24, y: -7, rot: 2.1 },
   { x: -9, y: 19, rot: 3.0 },
+  { x: 15, y: 12, rot: -2.8 },
 ];
 
 export function arriveAngle(index: number): ArriveAngle {

@@ -384,6 +384,16 @@ export function BrandingScene({
           : handoffIndex === 0
             ? lifeT
             : 1 - opacity;
+        const baseTransform =
+          opacity < 0.02 ? "none" : poseToTransform(pose);
+        if (coarsePointer) {
+          paint(el, opacity, 0, baseTransform);
+          el.style.filter = "none";
+          el.style.transformStyle = "flat";
+          el.style.pointerEvents =
+            el === emailRef.current && opacity > 0.65 ? "auto" : "none";
+          return;
+        }
         const pull = inBodyZoom
           ? undefined
           : stepMousePull(
@@ -398,27 +408,25 @@ export function BrandingScene({
                   : "body",
               1 - travelT,
             );
-        const baseTransform =
-          opacity < 0.02 ? "none" : poseToTransform(pose);
         paint(
           el,
           opacity,
           blur,
           composeIdleTransform(
-                idleFor(el),
-                baseTransform,
-                now,
-                dt,
-                handoffIndex + 3,
-                atRest,
-                travelT,
-                inBodyZoom || isIntroBody
-                  ? 0
-                  : handoffIndex === 0
-                    ? 0
-                    : 1,
-                coarsePointer ? undefined : pull,
-              ),
+            idleFor(el),
+            baseTransform,
+            now,
+            dt,
+            handoffIndex + 3,
+            atRest,
+            travelT,
+            inBodyZoom || isIntroBody
+              ? 0
+              : handoffIndex === 0
+                ? 0
+                : 1,
+            pull,
+          ),
         );
         el.style.pointerEvents =
           el === emailRef.current && opacity > 0.65 ? "auto" : "none";
@@ -584,22 +592,27 @@ export function BrandingScene({
         : [];
       const finaleOuts = finaleWindows(finaleNodes.length);
       const lean = brandingMotion ? BRANDING_LEAN : TEXT_DIRECTIONAL_LEAN;
-      let lastTitleAngle = arriveAngle(0);
+      /** Neighboring pieces must leave on opposite sides — never stack the same exit. */
+      let prevAngle: ReturnType<typeof arriveAngle> | null = null;
       nodes.forEach((el) => {
         const kind = (el.dataset.kind || "copy") as ArriveKind;
+        const lag = Number(el.dataset.lag || 0);
+        const index = Number(el.dataset.angle || 0);
+        let angle = arriveAngle(index);
+        if (prevAngle) {
+          const sameSide =
+            Math.sign(angle.x) === Math.sign(prevAngle.x) || angle.x === 0;
+          if (kind !== "title" || sameSide) {
+            angle = oppositeArriveAngle(prevAngle);
+          }
+        }
+        prevAngle = angle;
         const rectTop = visualRectTop(el);
         if (
           rectTop > viewH * 1.5 ||
           rectTop + Math.max(el.offsetHeight, 1) < -viewH * 0.45
         ) {
           return;
-        }
-        const lag = Number(el.dataset.lag || 0);
-        const index = Number(el.dataset.angle || 0);
-        let angle = arriveAngle(index);
-        if (kind === "title") lastTitleAngle = angle;
-        else if (kind === "copy" && !el.hasAttribute("data-still")) {
-          angle = oppositeArriveAngle(lastTitleAngle);
         }
         const poseEl = (el.firstElementChild as HTMLElement) ?? el;
         el.style.transform = "none";
@@ -744,7 +757,24 @@ export function BrandingScene({
       window.visualViewport?.addEventListener("resize", onScroll);
     }
 
-    frame = window.requestAnimationFrame(loop);
+    // Phones: scroll-linked ticks only after the load cue settles — perpetual
+    // rAF across the 520vh pin freezes iOS. Brief loop so the cue can arrive.
+    if (coarsePointer) {
+      const cueUntil = born + ABOUT_INTRO.cueArriveMs + 80;
+      const cueLoop = (now: number) => {
+        tick(now);
+        const pin = pinRef.current;
+        const stillIntro = pin ? pinProgress(pin) < 0.995 : false;
+        if (now < cueUntil && stillIntro) {
+          frame = window.requestAnimationFrame(cueLoop);
+        } else {
+          frame = 0;
+        }
+      };
+      frame = window.requestAnimationFrame(cueLoop);
+    } else {
+      frame = window.requestAnimationFrame(loop);
+    }
     return () => {
       window.cancelAnimationFrame(frame);
       window.cancelAnimationFrame(scrollRaf);
