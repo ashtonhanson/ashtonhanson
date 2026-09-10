@@ -369,6 +369,14 @@
   }
 }
 
+@media (max-width: 767px) {
+  .experiment-root .experiment-nav-mobile a {
+    font-size: 1.28rem;
+    letter-spacing: 0.16em;
+    padding: 0.55rem 0.15rem;
+  }
+}
+
 .experiment-root .experiment-nav-mobile {
   position: relative;
   z-index: 1;
@@ -491,11 +499,12 @@
   .experiment-root p.max-w-xl.branding-intro-copy,
   .experiment-root p.max-w-xl.ads-intro-copy,
   .experiment-root p.max-w-xl.logos-intro-copy {
-    width: min(12.5rem, 48vw) !important;
-    max-width: min(12.5rem, 48vw) !important;
+    width: min(22.5rem, calc(100vw - 2.5rem)) !important;
+    max-width: min(22.5rem, calc(100vw - 2.5rem)) !important;
     font-size: 1.2rem !important;
     font-weight: 400 !important;
     line-height: 1.48 !important;
+    text-wrap: pretty;
   }
 }
 
@@ -504,7 +513,7 @@
   font-weight: 700 !important;
 }
 
-.experiment-root ah-media-gallery-v33 {
+.experiment-root ah-media-gallery-v34 {
   --ah-gallery-stroke: var(--logo-blue);
   --ah-slide-stroke: transparent;
 }

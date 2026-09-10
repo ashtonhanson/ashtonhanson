@@ -17,6 +17,7 @@ import {
   poseToTransform,
   sampleHomeBodyExitPose,
   sampleIntroPose,
+  sampleMobileBodyFillPose,
 } from "@/lib/cinematicDepth";
 import {
   createIdleHoverState,
@@ -31,6 +32,7 @@ import {
   createLoadClearState,
   LOAD_CLEAR_BLUR_PX,
   applyPinStage,
+  mobileFrameCoverScale,
   pageHasScrolled,
   pinProgress,
   stepLoadClear,
@@ -164,10 +166,17 @@ export function AboutIntroStage({
         );
         const lifeT =
           handoffIndex === 0 ? cueLifeT(progress, win) : vis.zoomT;
-        const pose =
-          bodyRotateLeft && handoffIndex >= 3
+        const isBodyLine = handoffIndex >= 3;
+        let pose =
+          bodyRotateLeft && isBodyLine
             ? sampleHomeBodyExitPose(vis.zoomT)
             : sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
+        if (coarsePointer && isBodyLine) {
+          pose = sampleMobileBodyFillPose(
+            vis.zoomT,
+            mobileFrameCoverScale(el),
+          );
+        }
         if (handoffIndex === 0) {
           const arrived = now - born >= ABOUT_INTRO.cueArriveMs;
           const exiting = progress >= ABOUT_INTRO.cueExitStart;
@@ -205,7 +214,6 @@ export function AboutIntroStage({
           blur < 0.4 &&
           (handoffIndex !== 0 || progress < 0.002);
         const travelT = handoffIndex === 0 ? lifeT : 1 - opacity;
-        const isBodyLine = handoffIndex >= 3;
         const inBodyZoom = isBodyLine && vis.zoomT > 0.06 && vis.zoomT < 0.94;
         const pull = inBodyZoom
           ? undefined

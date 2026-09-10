@@ -9,11 +9,11 @@ export type CarouselMediaItem = {
 
 export type GalleryOpenDetail = CarouselMediaItem & { index: number };
 
-const SCALE_MIN = 0.96;
-const SCALE_MAX = 1.035;
-const OPACITY_MIN = 0.72;
+const SCALE_MIN = 1;
+const SCALE_MAX = 1;
+const OPACITY_MIN = 1;
 const OPACITY_MAX = 1;
-const BLUR_MAX = 1.6;
+const BLUR_MAX = 0;
 const AUTO_PX_PER_SEC = 46;
 const USER_PAUSE_MS = 4200;
 const AUTO_VEL_BLEND_MS = 1280;
@@ -1027,7 +1027,9 @@ export class AhMediaCarousel extends ElementBase {
       if (!this.#scrollRaf) {
         this.#stepHoverFocus(dt);
       }
-      this.#syncFocus(now, dt);
+      if (this.#isDesktop()) {
+        this.#syncFocus(now, dt);
+      }
       this.#mirrorCloneMedia();
     };
     this.#motionRaf = window.requestAnimationFrame(tick);
@@ -1495,8 +1497,7 @@ export class AhMediaCarousel extends ElementBase {
     const trackRect = this.#track.getBoundingClientRect();
     const falloff = Math.max(trackRect.width * FOCUS_FALLOFF, 1);
     const flattenAndroid = this.#isAndroid();
-    const skipScale =
-      this.#reduced || !this.#isDesktop() || flattenAndroid;
+    const skipScale = true;
 
     let best = 0;
     let bestAmount = -1;
@@ -1539,7 +1540,7 @@ export class AhMediaCarousel extends ElementBase {
       const blur = smoothed.blur;
       const pose = `translateZ(0) scale(${scale.toFixed(4)})`;
       visual.style.transformOrigin = "50% 50%";
-      if (flattenAndroid) {
+      if (flattenAndroid || skipScale) {
         visual.style.transform = "none";
         visual.style.transformStyle = "flat";
         visual.style.filter = "none";
@@ -1889,15 +1890,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v33": AhMediaCarousel;
+    "ah-media-gallery-v34": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v33")
+    !customElements.get("ah-media-gallery-v34")
   ) {
-    customElements.define("ah-media-gallery-v33", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v34", AhMediaCarousel);
   }
 }

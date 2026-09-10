@@ -50,6 +50,7 @@ import {
   applyPinStage,
   createLoadClearState,
   LOAD_CLEAR_BLUR_PX,
+  mobileFrameCoverScale,
   pageHasScrolled,
   pinProgress,
   stepLoadClear,
@@ -64,6 +65,7 @@ import {
   introHandoffs,
   poseToTransform,
   sampleIntroPose,
+  sampleMobileBodyFillPose,
 } from "@/lib/cinematicDepth";
 import { SeeMenuArrive } from "@/components/SeeMenuBlock";
 import { contact, type CaseStudy as CaseStudyType } from "@/lib/content";
@@ -180,6 +182,8 @@ export function BrandingScene({
     const idleMap = new WeakMap<HTMLElement, IdleHoverState>();
     const pullMap = new WeakMap<HTMLElement, MousePullState>();
     const loadClear = createLoadClearState();
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    const androidPointer = /Android/i.test(navigator.userAgent);
 
     const idleFor = (el: HTMLElement) => {
       let state = idleMap.get(el);
@@ -214,19 +218,21 @@ export function BrandingScene({
       hideWhenGone = true,
     ) => {
       if (!el) return;
-      if (
-        pullKind === "gallery" &&
-        (window.matchMedia("(pointer: coarse)").matches ||
-          /Android/i.test(navigator.userAgent))
-      ) {
-        const android = /Android/i.test(navigator.userAgent);
-        paint(
-          el,
-          android ? (opacity > 0.08 ? 1 : 0) : opacity,
-          0,
-          "none",
-          hideWhenGone,
-        );
+      if (coarsePointer) {
+        if (pullKind === "gallery") {
+          paint(
+            el,
+            androidPointer ? (opacity > 0.08 ? 1 : 0) : opacity,
+            0,
+            "none",
+            hideWhenGone,
+          );
+          el.style.transformStyle = "flat";
+          el.style.filter = "none";
+          el.style.pointerEvents = opacity > 0.05 ? "auto" : "none";
+          return;
+        }
+        paint(el, opacity, 0, transform, hideWhenGone);
         el.style.transformStyle = "flat";
         el.style.filter = "none";
         return;
@@ -276,7 +282,6 @@ export function BrandingScene({
       );
     };
 
-    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
     const tagSlots = adsMotion && introTags.length ? 1 : introTags.length;
     const extraCount =
       (introSubtitle ? 1 : 0) +
@@ -333,7 +338,7 @@ export function BrandingScene({
           introBodyHandoff >= 0 &&
           handoffIndex >= introBodyHandoff &&
           handoffIndex < introBodyHandoff + introLines.length;
-        const pose =
+        let pose =
           adsMotion
             ? sampleAdsIntroPose(handoffIndex, vis.zoomT, lifeT)
             : introBodyCenteredExit && isIntroBody
@@ -343,6 +348,12 @@ export function BrandingScene({
               : brandingMotion
                 ? sampleBrandingIntroPose(handoffIndex, vis.zoomT, lifeT)
                 : sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
+        if (coarsePointer && isIntroBody) {
+          pose = sampleMobileBodyFillPose(
+            vis.zoomT,
+            mobileFrameCoverScale(el),
+          );
+        }
         if (handoffIndex === 0) {
           const arrived = now - born >= ABOUT_INTRO.cueArriveMs;
           const exiting = progress >= ABOUT_INTRO.cueExitStart;
@@ -560,6 +571,13 @@ export function BrandingScene({
       let lastTitleAngle = arriveAngle(0);
       nodes.forEach((el) => {
         const kind = (el.dataset.kind || "copy") as ArriveKind;
+        const rectTop = visualRectTop(el);
+        if (
+          rectTop > viewH * 1.5 ||
+          rectTop + Math.max(el.offsetHeight, 1) < -viewH * 0.45
+        ) {
+          return;
+        }
         const lag = Number(el.dataset.lag || 0);
         const index = Number(el.dataset.angle || 0);
         let angle = arriveAngle(index);
@@ -574,7 +592,7 @@ export function BrandingScene({
           poseEl.style.transform = "none";
           poseEl.style.filter = "none";
         }
-        let t = arriveT(visualRectTop(el), viewH, kind, lag);
+        let t = arriveT(rectTop, viewH, kind, lag);
         if (el.hasAttribute("data-hub-handoff")) {
           const lockup = el.closest("[data-first-study]");
           const siblings = lockup
@@ -636,7 +654,7 @@ export function BrandingScene({
         }
         const pose = el.hasAttribute("data-grow")
           ? arriveGrowTransform(t, angle, kind, lean)
-          : arriveTransform(t, angle, kind, lean);
+          : arriveTransform(t, angle, kind, lean, coarsePointer || kind === "media");
         poseEl.style.transformOrigin = pose.origin;
         paintIdle(
           poseEl,
@@ -669,6 +687,19 @@ export function BrandingScene({
 
     const loop = (now: number) => {
       frame = window.requestAnimationFrame(loop);
+      if (document.hidden) return;
+      if (coarsePointer) {
+        const pin = pinRef.current;
+        const introBusy = pin ? pinProgress(pin) < 0.995 : false;
+        const finalePin = sceneRef.current?.querySelector<HTMLElement>("[data-finale]");
+        const finaleBusy = finalePin
+          ? (() => {
+              const p = pinProgress(finalePin);
+              return p > 0.002 && p < 0.995;
+            })()
+          : false;
+        if (!introBusy && !finaleBusy) return;
+      }
       tick(now);
     };
 
@@ -904,7 +935,7 @@ export function BrandingScene({
 
       {cases.length ? (
       <div
-        className="relative z-[12] overflow-x-clip"
+        className="relative z-[12] overflow-x-visible md:overflow-x-clip"
         style={{ marginTop: intro.overlapCases }}
       >
         {cases.map((study, studyIndex) => {
@@ -929,7 +960,7 @@ export function BrandingScene({
                   ? "relative overflow-visible"
                   : study.form
                     ? "relative overflow-x-clip px-5 pb-[clamp(4.5rem,12vh,8rem)] pt-[clamp(7rem,24vh,12rem)] md:px-8 xl:px-12 xl:pb-[clamp(5.5rem,13vh,11rem)] xl:pt-[clamp(8rem,20vh,14rem)] 2xl:px-16"
-                    : "relative overflow-x-clip px-5 py-[clamp(4.5rem,12vh,8rem)] md:px-8 xl:px-12 xl:py-[clamp(5.5rem,13vh,11rem)] 2xl:px-16"
+                    : "relative overflow-x-visible py-[clamp(4.5rem,12vh,8rem)] px-5 md:overflow-x-clip md:px-8 xl:px-12 xl:py-[clamp(5.5rem,13vh,11rem)] 2xl:px-16"
               }
               style={isFinale ? { height: PAGE_FINALE.pinHeightVh } : undefined}
             >

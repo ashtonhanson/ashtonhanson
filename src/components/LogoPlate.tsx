@@ -40,8 +40,10 @@ export function LogoPlate({ src, alt }: LogoPlateProps) {
   }, []);
 
   useEffect(() => {
-    const glow = createLogoGlowState();
+    if (reduced) return;
     const coarse = window.matchMedia("(pointer: coarse)").matches;
+    if (coarse) return;
+    const glow = createLogoGlowState();
     let frameId = 0;
     let visible = false;
     let lastNow = performance.now();
@@ -63,7 +65,7 @@ export function LogoPlate({ src, alt }: LogoPlateProps) {
       if (!el) return;
 
       let travel = 0;
-      if (anchor && !reduced) {
+      if (anchor) {
         const viewH = window.innerHeight || 1;
         const box = anchor.getBoundingClientRect();
         const naturalCenter = box.top + box.height / 2;
@@ -80,10 +82,6 @@ export function LogoPlate({ src, alt }: LogoPlateProps) {
       el.style.transform = base;
       if (art) art.style.transform = "none";
       if (bezel) bezel.style.transform = "none";
-      if (reduced || coarse) {
-        el.style.boxShadow = "none";
-        return;
-      }
 
       const pointer = getPointer(now);
       const rect = el.getBoundingClientRect();

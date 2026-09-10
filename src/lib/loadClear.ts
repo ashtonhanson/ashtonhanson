@@ -108,6 +108,17 @@ export function pinProgress(pin: HTMLElement) {
 
 const STICKY_TOP_REM = 3.6;
 
+/** Scale that makes `el` cover the portrait stage on mobile intro exit. */
+export function mobileFrameCoverScale(el: HTMLElement) {
+  const node =
+    el.querySelector<HTMLElement>("p, h1, h2, h3") ?? el;
+  const w = Math.max(node.offsetWidth, 1);
+  const h = Math.max(node.offsetHeight, 1);
+  const vw = viewWidth();
+  const vh = Math.max(viewHeight() - headerOffsetPx(), 120);
+  return Math.max(vw / w, vh / h) * 1.05;
+}
+
 export function headerOffsetPx() {
   const header = document.querySelector("header");
   if (header) return header.getBoundingClientRect().height;

@@ -36,7 +36,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{if("scrollRestoration"in history)history.scrollRestoration="manual"}catch(e){}`,
+            __html: `try{if("scrollRestoration"in history)history.scrollRestoration="manual";window.scrollTo(0,0)}catch(e){}`,
           }}
         />
       </head>
