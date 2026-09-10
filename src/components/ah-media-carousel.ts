@@ -9,20 +9,20 @@ export type CarouselMediaItem = {
 
 export type GalleryOpenDetail = CarouselMediaItem & { index: number };
 
-const SCALE_MIN = 0.9;
-const SCALE_MAX = 1.08;
-const OPACITY_MIN = 0.5;
+const SCALE_MIN = 0.96;
+const SCALE_MAX = 1.035;
+const OPACITY_MIN = 0.72;
 const OPACITY_MAX = 1;
-const BLUR_MAX = 4;
+const BLUR_MAX = 1.6;
 const AUTO_PX_PER_SEC = 46;
 const USER_PAUSE_MS = 4200;
-const AUTO_VEL_BLEND_MS = 920;
-const AUTO_VEL_MAX = 1400;
-const FOCUS_GLIDE_MS = 2400;
+const AUTO_VEL_BLEND_MS = 1280;
+const AUTO_VEL_MAX = 980;
+const FOCUS_GLIDE_MS = 2800;
 /** Time constant for hover scroll pursuit — higher = softer glide. */
-const HOVER_SCROLL_TAU_MS = 680;
-const FOCUS_LERP_MS = 320;
-const FOCUS_FALLOFF = 0.58;
+const HOVER_SCROLL_TAU_MS = 920;
+const FOCUS_LERP_MS = 520;
+const FOCUS_FALLOFF = 0.62;
 
 const STYLES = /* css */ `
 :host {
@@ -116,6 +116,8 @@ const STYLES = /* css */ `
 .slide-visual {
   transform-origin: 50% 50%;
   pointer-events: none;
+  will-change: transform, opacity, filter;
+  backface-visibility: hidden;
 }
 
 .frame {
@@ -359,8 +361,8 @@ function isVideo(item: CarouselMediaItem) {
   return item.type === "video" || /\.(mp4|webm|mov)$/i.test(item.src);
 }
 
-function easeInOutCubic(t: number) {
-  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+function easeInOutQuint(t: number) {
+  return t < 0.5 ? 16 * t * t * t * t * t : 1 - (-2 * t + 2) ** 5 / 2;
 }
 
 function smoothstep(t: number) {
@@ -439,6 +441,8 @@ export class AhMediaCarousel extends ElementBase {
   #lastCloneSync = 0;
   #mediaRatio = new Map<number, number>();
   #layoutRaf = 0;
+  #laidWidth = 0;
+  #laidRatio = 0;
 
   constructor() {
     super();
@@ -682,7 +686,7 @@ export class AhMediaCarousel extends ElementBase {
     }
     next = Math.max(0, Math.min(this.#maxScroll(), next));
     this.#scrollPx = next;
-    if (Math.abs(this.#track.scrollLeft - next) >= 0.35) {
+    if (Math.abs(this.#track.scrollLeft - next) >= 0.05) {
       this.#track.scrollLeft = next;
     }
     this.#loopAdjusting = false;
@@ -769,7 +773,6 @@ export class AhMediaCarousel extends ElementBase {
     const ratio = width / height;
     if (this.#mediaRatio.get(index) === ratio) return;
     this.#mediaRatio.set(index, ratio);
-    this.#scheduleLayout();
   }
 
   #scheduleLayout() {
@@ -785,15 +788,38 @@ export class AhMediaCarousel extends ElementBase {
     const ratio = this.#defaultRatio();
     const width = this.#fitSlideWidth(ratio);
     if (width < 1) return;
+    if (
+      Math.abs(width - this.#laidWidth) < 0.5 &&
+      Math.abs(ratio - this.#laidRatio) < 0.001
+    ) {
+      return;
+    }
+
+    const prevPeriod = this.#loopPeriod();
+    const prevStart = this.#loopBandStart();
+    const prevLeft = this.#track.scrollLeft;
+    const progress =
+      prevPeriod >= 1 ? (prevLeft - prevStart) / prevPeriod : 0;
+
     this.#track.querySelectorAll<HTMLElement>(".slide").forEach((slide) => {
       slide.style.flex = `0 0 ${width}px`;
       slide.style.width = `${width}px`;
       const frame = slide.querySelector<HTMLElement>(".frame");
       if (frame) {
         frame.style.aspectRatio = String(ratio);
-        frame.style.height = "";
       }
     });
+
+    this.#laidWidth = width;
+    this.#laidRatio = ratio;
+
+    if (prevPeriod >= 1) {
+      const nextPeriod = this.#loopPeriod();
+      const nextStart = this.#loopBandStart();
+      if (nextPeriod >= 1) {
+        this.#setScrollLeft(nextStart + progress * nextPeriod);
+      }
+    }
   }
 
   #resetToStart() {
@@ -1034,13 +1060,7 @@ export class AhMediaCarousel extends ElementBase {
 
     const tau = this.#reduced ? HOVER_SCROLL_TAU_MS * 0.45 : HOVER_SCROLL_TAU_MS;
     const k = 1 - Math.exp(-dt / tau);
-    this.#hoverScrollCarry += delta * k;
-
-    if (Math.abs(this.#hoverScrollCarry) >= 0.5) {
-      const step = Math.round(this.#hoverScrollCarry);
-      this.#hoverScrollCarry -= step;
-      this.#setScrollLeft(current + step);
-    }
+    this.#setScrollLeft(current + delta * k);
   }
 
   #restartAutoplay() {
@@ -1085,6 +1105,8 @@ export class AhMediaCarousel extends ElementBase {
     this.#stopAutoplay();
     this.#cancelScrollAnimation();
     this.#mediaRatio.clear();
+    this.#laidWidth = 0;
+    this.#laidRatio = 0;
     this.classList.toggle(
       "is-stills",
       this.#items.length > 0 && this.#items.every((item) => !isVideo(item)),
@@ -1504,8 +1526,8 @@ export class AhMediaCarousel extends ElementBase {
         this.#focusMap.set(slide, smoothed);
       } else if (isCentered) {
         smoothed.scale += (SCALE_MAX - smoothed.scale) * focusK;
-        smoothed.opacity = OPACITY_MAX;
-        smoothed.blur = 0;
+        smoothed.opacity += (OPACITY_MAX - smoothed.opacity) * focusK;
+        smoothed.blur += (0 - smoothed.blur) * focusK;
       } else {
         smoothed.scale += (targetScale - smoothed.scale) * focusK;
         smoothed.opacity += (targetOpacity - smoothed.opacity) * focusK;
@@ -1515,7 +1537,7 @@ export class AhMediaCarousel extends ElementBase {
       const scale = smoothed.scale;
       const opacity = smoothed.opacity;
       const blur = smoothed.blur;
-      const pose = `scale(${scale.toFixed(4)})`;
+      const pose = `translateZ(0) scale(${scale.toFixed(4)})`;
       visual.style.transformOrigin = "50% 50%";
       if (flattenAndroid) {
         visual.style.transform = "none";
@@ -1771,7 +1793,7 @@ export class AhMediaCarousel extends ElementBase {
     targetLeft: number,
     duration: number,
     targetIndex = this.#targetIndex,
-    ease: (t: number) => number = easeInOutCubic,
+    ease: (t: number) => number = easeInOutQuint,
   ) {
     if (this.#scrollRaf) window.cancelAnimationFrame(this.#scrollRaf);
 
@@ -1867,15 +1889,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v32": AhMediaCarousel;
+    "ah-media-gallery-v33": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v32")
+    !customElements.get("ah-media-gallery-v33")
   ) {
-    customElements.define("ah-media-gallery-v32", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v33", AhMediaCarousel);
   }
 }

@@ -309,7 +309,7 @@
   font-weight: 600;
   letter-spacing: 0.18em;
   text-decoration: none;
-  color: var(--logo-blue);
+  color: #fff;
   display: inline-block;
   padding: 0.35rem 0.15rem;
   transform: none;
@@ -318,12 +318,12 @@
 
 .experiment-root .experiment-nav a:hover,
 .experiment-root .experiment-nav-mobile a:hover {
-  color: var(--logo-blue);
+  color: var(--logo-yellow);
 }
 
 .experiment-root .experiment-nav a.is-active,
 .experiment-root .experiment-nav-mobile a.is-active {
-  color: var(--logo-blue);
+  color: var(--logo-yellow);
 }
 
 .experiment-root .experiment-burger {
@@ -347,7 +347,7 @@
   display: block;
   height: 2px;
   width: 100%;
-  background: var(--logo-blue);
+  background: #fff;
   transition: transform 180ms ease, opacity 180ms ease;
 }
 
@@ -429,8 +429,12 @@
   color: var(--logo-blue) !important;
   margin-inline: auto;
   text-wrap: pretty;
-  width: min(13.75rem, 52vw) !important;
-  max-width: min(13.75rem, 52vw) !important;
+}
+
+.experiment-root p.max-w-xl,
+.experiment-root .intro-body-copy {
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 .experiment-root p.max-w-xl {
@@ -483,7 +487,10 @@
     font-size: 1.16rem !important;
   }
 
-  .experiment-root .about-intro-stage .intro-layer p.intro-body-copy {
+  .experiment-root .about-intro-stage .intro-layer p.intro-body-copy,
+  .experiment-root p.max-w-xl.branding-intro-copy,
+  .experiment-root p.max-w-xl.ads-intro-copy,
+  .experiment-root p.max-w-xl.logos-intro-copy {
     width: min(12.5rem, 48vw) !important;
     max-width: min(12.5rem, 48vw) !important;
     font-size: 1.2rem !important;
@@ -497,7 +504,7 @@
   font-weight: 700 !important;
 }
 
-.experiment-root ah-media-gallery-v32 {
+.experiment-root ah-media-gallery-v33 {
   --ah-gallery-stroke: var(--logo-blue);
   --ah-slide-stroke: transparent;
 }
