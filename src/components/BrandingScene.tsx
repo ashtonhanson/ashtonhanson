@@ -517,6 +517,15 @@ export function BrandingScene({
       }
     };
 
+    const settledArrivals = new WeakSet<HTMLElement>();
+    let settledCount = 0;
+    let arrivalsDone = false;
+    const markSettled = (el: HTMLElement) => {
+      if (settledArrivals.has(el)) return;
+      settledArrivals.add(el);
+      settledCount++;
+    };
+
     const updateArrivals = (
       introProgress: number,
       packedExitGate: number,
@@ -527,6 +536,10 @@ export function BrandingScene({
       if (!root) return;
       const viewH = viewHeight();
       const nodes = root.querySelectorAll<HTMLElement>("[data-arrive]");
+      if (coarsePointer && settledCount >= nodes.length && nodes.length > 0) {
+        arrivalsDone = true;
+        return;
+      }
       const finalePin = root.querySelector<HTMLElement>("[data-finale]");
       const finaleStage = root.querySelector<HTMLElement>("[data-finale-stage]");
       let finaleProgress = 0;
@@ -552,6 +565,7 @@ export function BrandingScene({
       const lean = brandingMotion ? BRANDING_LEAN : TEXT_DIRECTIONAL_LEAN;
       let lastTitleAngle = arriveAngle(0);
       nodes.forEach((el) => {
+        if (coarsePointer && settledArrivals.has(el)) return;
         const kind = (el.dataset.kind || "copy") as ArriveKind;
         const rectTop = visualRectTop(el);
         if (
@@ -566,9 +580,12 @@ export function BrandingScene({
           el.style.visibility = "visible";
           el.style.transform = "none";
           el.style.filter = "none";
+          el.style.willChange = "auto";
           poseEl.style.transform = "none";
           poseEl.style.filter = "none";
           poseEl.style.opacity = "1";
+          poseEl.style.willChange = "auto";
+          markSettled(el);
           return;
         }
         const lag = Number(el.dataset.lag || 0);
@@ -645,47 +662,45 @@ export function BrandingScene({
           );
           return;
         }
+        // Phones: one Z arrive, then freeze — perpetual scroll painting locks logos.
+        if (coarsePointer && t >= 0.985) {
+          poseEl.style.transformOrigin = "50% 50%";
+          poseEl.style.transform = "none";
+          poseEl.style.filter = "none";
+          poseEl.style.opacity = "1";
+          poseEl.style.willChange = "auto";
+          el.style.willChange = "auto";
+          markSettled(el);
+          return;
+        }
         const pose = el.hasAttribute("data-grow")
           ? arriveGrowTransform(t, angle, kind, lean)
-          : arriveTransform(t, angle, kind, lean, kind === "media");
+          : arriveTransform(
+              t,
+              angle,
+              kind,
+              lean,
+              kind === "media",
+            );
         poseEl.style.transformOrigin = pose.origin;
         paintIdle(
           poseEl,
           pose.opacity,
-          pose.blur,
+          coarsePointer ? 0 : pose.blur,
           pose.transform,
           index + 11,
           now,
           dt,
           t >= 0.985,
           1 - t,
-          idleAmount,
+          coarsePointer ? 0 : idleAmount,
           pullKind,
           kind !== "media",
         );
       });
-    };
-
-    let casesRested = false;
-    const restCoarseMedia = () => {
-      if (casesRested) return;
-      const root = sceneRef.current;
-      if (!root) return;
-      casesRested = true;
-      root
-        .querySelectorAll<HTMLElement>('[data-arrive][data-kind="media"]')
-        .forEach((el) => {
-          const poseEl = (el.firstElementChild as HTMLElement) ?? el;
-          el.style.opacity = "1";
-          el.style.visibility = "visible";
-          el.style.transform = "none";
-          el.style.filter = "none";
-          el.style.willChange = "auto";
-          poseEl.style.transform = "none";
-          poseEl.style.filter = "none";
-          poseEl.style.opacity = "1";
-          poseEl.style.willChange = "auto";
-        });
+      if (coarsePointer && settledCount >= nodes.length && nodes.length > 0) {
+        arrivalsDone = true;
+      }
     };
 
     const tick = (now: number) => {
@@ -701,12 +716,13 @@ export function BrandingScene({
         updateIntro(progress, now, dt);
         return;
       }
-      if (coarsePointer) restCoarseMedia();
+      if (coarsePointer && arrivalsDone) return;
       updateArrivals(progress, packedExitGate, now, dt);
     };
 
     let scrollRaf = 0;
     const onScroll = () => {
+      if (coarsePointer && arrivalsDone) return;
       if (scrollRaf) return;
       scrollRaf = window.requestAnimationFrame((now) => {
         scrollRaf = 0;
