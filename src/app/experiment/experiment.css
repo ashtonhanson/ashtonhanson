@@ -24,6 +24,8 @@
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  contain: layout paint;
+  transform: translateZ(0);
   background:
     radial-gradient(ellipse 54% 48% at 50% 46%, #f4fbff 0%, #dff3fb 46%, #c5e6f4 100%);
 }
@@ -36,219 +38,87 @@
     radial-gradient(ellipse 64% 60% at 50% 48%, transparent 46%, rgb(154 206 230 / 0.22) 82%, rgb(132 194 224 / 0.38) 100%);
 }
 
-.experiment-cloud {
+.sky-clouds {
   position: absolute;
+  inset: 0;
   z-index: 1;
-  display: block;
-  filter: blur(18px);
-  will-change: transform;
+  overflow: hidden;
+  pointer-events: none;
 }
 
-.experiment-cloud span {
+.sky-cloud {
   position: absolute;
+  left: 0;
   display: block;
-  border-radius: 50%;
-  background: rgb(255 255 255 / 0.94);
-  box-shadow: 0 10px 28px rgb(110 176 208 / 0.18);
+  height: auto;
 }
 
-.experiment-cloud span:nth-child(2) {
-  animation: experiment-puff-bob 9s ease-in-out infinite;
+.sky-cloud-drift {
+  display: block;
+  width: 100%;
+  animation: sky-cloud-ltr var(--cloud-dur, 80s) linear var(--cloud-delay, 0s)
+    infinite;
 }
 
-.experiment-cloud span:nth-child(3) {
-  animation: experiment-puff-bob 12s ease-in-out infinite reverse;
+.sky-cloud.is-rtl .sky-cloud-drift {
+  animation-name: sky-cloud-rtl;
 }
 
-.experiment-cloud-a {
-  width: 28rem;
-  height: 12rem;
-  left: -4vw;
-  top: 10vh;
-  animation: experiment-cloud-ltr 52s linear infinite;
-  animation-delay: -8s;
+.sky-cloud-art {
+  display: block;
+  width: 100%;
+  height: auto;
+  opacity: var(--cloud-opacity, 0.85);
+  animation: sky-cloud-bob var(--cloud-bob, 7s) ease-in-out
+    calc(var(--cloud-delay, 0s) * 0.2) infinite;
 }
 
-.experiment-cloud-a span:nth-child(1) {
-  width: 11.5rem;
-  height: 8.5rem;
-  left: 1.5rem;
-  top: 2.2rem;
-}
-
-.experiment-cloud-a span:nth-child(2) {
-  width: 14.5rem;
-  height: 10.5rem;
-  left: 7.5rem;
-  top: 0.4rem;
-}
-
-.experiment-cloud-a span:nth-child(3) {
-  width: 10rem;
-  height: 7.5rem;
-  left: 16.5rem;
-  top: 2.8rem;
-}
-
-.experiment-cloud-b {
-  width: 26rem;
-  height: 11rem;
-  right: -3vw;
-  top: 20vh;
-  animation: experiment-cloud-ltr 68s linear infinite;
-  animation-delay: -22s;
-}
-
-.experiment-cloud-b span:nth-child(1) {
-  width: 10rem;
-  height: 7.5rem;
-  right: 1rem;
-  top: 2.4rem;
-}
-
-.experiment-cloud-b span:nth-child(2) {
-  width: 13.5rem;
-  height: 10rem;
-  right: 6.5rem;
-  top: 0.2rem;
-}
-
-.experiment-cloud-b span:nth-child(3) {
-  width: 9rem;
-  height: 6.8rem;
-  right: 15rem;
-  top: 3rem;
-}
-
-.experiment-cloud-c {
-  width: 32rem;
-  height: 13rem;
-  left: -6vw;
-  bottom: 6vh;
-  animation: experiment-cloud-ltr 58s linear infinite;
-  animation-delay: -14s;
-}
-
-.experiment-cloud-c span:nth-child(1) {
-  width: 13rem;
-  height: 9rem;
-  left: 0.5rem;
-  bottom: 1.2rem;
-}
-
-.experiment-cloud-c span:nth-child(2) {
-  width: 16rem;
-  height: 11.5rem;
-  left: 8rem;
-  bottom: 0;
-}
-
-.experiment-cloud-c span:nth-child(3) {
-  width: 11rem;
-  height: 8rem;
-  left: 19rem;
-  bottom: 1.6rem;
-}
-
-.experiment-cloud-d {
-  width: 30rem;
-  height: 12rem;
-  right: -5vw;
-  bottom: 10vh;
-  animation: experiment-cloud-ltr 74s linear infinite;
-  animation-delay: -36s;
-}
-
-.experiment-cloud-d span:nth-child(1) {
-  width: 12rem;
-  height: 8.5rem;
-  right: 0.8rem;
-  bottom: 1.4rem;
-}
-
-.experiment-cloud-d span:nth-child(2) {
-  width: 15rem;
-  height: 11rem;
-  right: 7.5rem;
-  bottom: 0.2rem;
-}
-
-.experiment-cloud-d span:nth-child(3) {
-  width: 9.5rem;
-  height: 7.2rem;
-  right: 18rem;
-  bottom: 2rem;
-}
-
-.experiment-cloud-e {
-  width: 20rem;
-  height: 9rem;
-  left: 22vw;
-  top: -2vh;
-  animation: experiment-cloud-ltr 44s linear infinite;
-  animation-delay: -18s;
-}
-
-.experiment-cloud-e span:nth-child(1) {
-  width: 9.5rem;
-  height: 7rem;
-  left: 0.4rem;
-  top: 1.4rem;
-}
-
-.experiment-cloud-e span:nth-child(2) {
-  width: 12rem;
-  height: 8.5rem;
-  left: 6.5rem;
-  top: 0.2rem;
-}
-
-.experiment-cloud-f {
-  width: 18rem;
-  height: 8.5rem;
-  right: 24vw;
-  bottom: -1vh;
-  animation: experiment-cloud-ltr 80s linear infinite;
-  animation-delay: -48s;
-}
-
-.experiment-cloud-f span:nth-child(1) {
-  width: 8.5rem;
-  height: 6.4rem;
-  right: 0.6rem;
-  bottom: 1rem;
-}
-
-.experiment-cloud-f span:nth-child(2) {
-  width: 11rem;
-  height: 8rem;
-  right: 5.5rem;
-  bottom: 0;
-}
-
-@keyframes experiment-cloud-ltr {
+@keyframes sky-cloud-ltr {
   from {
     transform: translate3d(-32vw, 0, 0);
   }
   to {
-    transform: translate3d(92vw, 0, 0);
+    transform: translate3d(112vw, 0, 0);
   }
 }
 
-@keyframes experiment-puff-bob {
+@keyframes sky-cloud-rtl {
+  from {
+    transform: translate3d(112vw, 0, 0);
+  }
+  to {
+    transform: translate3d(-32vw, 0, 0);
+  }
+}
+
+@keyframes sky-cloud-bob {
   0%,
   100% {
     transform: translate3d(0, 0, 0);
   }
   50% {
-    transform: translate3d(0, -0.7rem, 0);
+    transform: translate3d(0, -0.85rem, 0);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .experiment-cloud,
-  .experiment-cloud span {
+  .sky-cloud-drift,
+  .sky-cloud-art {
     animation: none;
+  }
+
+  .sky-cloud-drift {
+    transform: translate3d(18vw, 0, 0);
+  }
+}
+
+@media (pointer: coarse) {
+  .experiment-root [data-arrive] {
+    opacity: 1 !important;
+    visibility: visible !important;
+    filter: none !important;
+    transform: none !important;
+    will-change: auto !important;
   }
 }
 
@@ -514,7 +384,7 @@
   font-weight: 700 !important;
 }
 
-.experiment-root ah-media-gallery-v35 {
+.experiment-root ah-media-gallery-v37 {
   --ah-gallery-stroke: var(--logo-blue);
   --ah-slide-stroke: transparent;
 }

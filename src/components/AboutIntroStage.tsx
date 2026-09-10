@@ -181,7 +181,7 @@ export function AboutIntroStage({
           const arrived = now - born >= ABOUT_INTRO.cueArriveMs;
           const exiting = progress >= ABOUT_INTRO.cueExitStart;
           if (arrived) {
-            freezeScrollCueMotion(el, true, !coarsePointer || exiting);
+            freezeScrollCueMotion(el, true, exiting);
           } else if (exiting) {
             freezeScrollCueMotion(el);
           }
@@ -242,11 +242,7 @@ export function AboutIntroStage({
                 isBodyLine
                   ? 0
                   : handoffIndex === 0
-                    ? arriving
-                      ? 0
-                      : coarsePointer
-                        ? 3.6
-                        : 2.2
+                    ? 0
                     : 1,
                 coarsePointer ? undefined : pull,
               ),

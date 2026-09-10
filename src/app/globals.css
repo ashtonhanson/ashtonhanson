@@ -1008,8 +1008,7 @@ body {
   }
 
   .scroll-cue-hover {
-    animation: scroll-cue-hover 3.4s ease-in-out var(--cue-arrive-ms, 880ms)
-      infinite;
+    animation: scroll-cue-hover 3.4s ease-in-out 0s infinite;
   }
 }
 

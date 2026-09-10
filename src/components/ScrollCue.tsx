@@ -70,8 +70,8 @@ export const ScrollCue = forwardRef<HTMLDivElement>(function ScrollCue(
         } as CSSProperties
       }
     >
-      <div className="scroll-cue-arrive" onAnimationEnd={onArriveEnd}>
-        <span className="scroll-cue-hover">
+      <span className="scroll-cue-hover">
+        <div className="scroll-cue-arrive" onAnimationEnd={onArriveEnd}>
           <div
             ref={ref}
             className="scroll-cue-pose will-change-transform"
@@ -89,8 +89,8 @@ export const ScrollCue = forwardRef<HTMLDivElement>(function ScrollCue(
               <path d={ARROW_PATH} fill="#E8DFC4" />
             </svg>
           </div>
-        </span>
-      </div>
+        </div>
+      </span>
     </div>
   );
 });

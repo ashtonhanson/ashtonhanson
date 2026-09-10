@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { SkyClouds } from "@/components/SkyClouds";
 
 const experimentNav = [
   { href: "/", label: "HOME" },
@@ -34,34 +35,7 @@ export function ExperimentShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="experiment-root">
       <div className="experiment-sky" aria-hidden="true">
-        <span className="experiment-cloud experiment-cloud-a">
-          <span />
-          <span />
-          <span />
-        </span>
-        <span className="experiment-cloud experiment-cloud-b">
-          <span />
-          <span />
-          <span />
-        </span>
-        <span className="experiment-cloud experiment-cloud-c">
-          <span />
-          <span />
-          <span />
-        </span>
-        <span className="experiment-cloud experiment-cloud-d">
-          <span />
-          <span />
-          <span />
-        </span>
-        <span className="experiment-cloud experiment-cloud-e">
-          <span />
-          <span />
-        </span>
-        <span className="experiment-cloud experiment-cloud-f">
-          <span />
-          <span />
-        </span>
+        <SkyClouds />
         <span className="experiment-sky-vignette" />
       </div>
       <div className="experiment-chrome">

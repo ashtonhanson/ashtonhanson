@@ -47,8 +47,8 @@ export const LogoArrowCue = forwardRef<HTMLDivElement>(function LogoArrowCue(
         } as CSSProperties
       }
     >
-      <div className="scroll-cue-arrive" onAnimationEnd={onArriveEnd}>
-        <span className="scroll-cue-hover">
+      <span className="scroll-cue-hover">
+        <div className="scroll-cue-arrive" onAnimationEnd={onArriveEnd}>
           <div
             ref={ref}
             className="scroll-cue-pose will-change-transform"
@@ -68,8 +68,8 @@ export const LogoArrowCue = forwardRef<HTMLDivElement>(function LogoArrowCue(
               </g>
             </svg>
           </div>
-        </span>
-      </div>
+        </div>
+      </span>
     </div>
   );
 });

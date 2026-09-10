@@ -358,7 +358,7 @@ export function BrandingScene({
           const arrived = now - born >= ABOUT_INTRO.cueArriveMs;
           const exiting = progress >= ABOUT_INTRO.cueExitStart;
           if (arrived) {
-            freezeScrollCueMotion(el, true, !coarsePointer || exiting);
+            freezeScrollCueMotion(el, true, exiting);
           } else if (exiting) {
             freezeScrollCueMotion(el);
           }
@@ -429,11 +429,7 @@ export function BrandingScene({
                 inBodyZoom || isIntroBody
                   ? 0
                   : handoffIndex === 0
-                    ? arriving
-                      ? 0
-                      : coarsePointer
-                        ? 3.6
-                        : 2.2
+                    ? 0
                     : 1,
                 coarsePointer ? undefined : pull,
               ),
@@ -684,6 +680,26 @@ export function BrandingScene({
       });
     };
 
+    let casesRested = false;
+    const restCoarseCases = () => {
+      if (casesRested) return;
+      const root = sceneRef.current;
+      if (!root) return;
+      casesRested = true;
+      root.querySelectorAll<HTMLElement>("[data-arrive]").forEach((el) => {
+        const poseEl = (el.firstElementChild as HTMLElement) ?? el;
+        el.style.opacity = "1";
+        el.style.visibility = "visible";
+        el.style.transform = "none";
+        el.style.filter = "none";
+        el.style.willChange = "auto";
+        poseEl.style.transform = "none";
+        poseEl.style.filter = "none";
+        poseEl.style.opacity = "1";
+        poseEl.style.willChange = "auto";
+      });
+    };
+
     const tick = (now: number) => {
       const dt = Math.min(48, now - lastNow);
       lastNow = now;
@@ -696,11 +712,16 @@ export function BrandingScene({
         applyPinStage(pin, stageRef.current);
         updateIntro(progress, now, dt);
       }
+      if (coarsePointer) {
+        if (!introBusy) restCoarseCases();
+        return;
+      }
       updateArrivals(progress, packedExitGate, now, dt);
     };
 
     let scrollRaf = 0;
     const onScroll = () => {
+      if (coarsePointer && casesRested) return;
       if (scrollRaf) return;
       scrollRaf = window.requestAnimationFrame((now) => {
         scrollRaf = 0;
@@ -709,13 +730,17 @@ export function BrandingScene({
     };
 
     const loop = (now: number) => {
-      frame = window.requestAnimationFrame(loop);
-      if (document.hidden) return;
       if (coarsePointer) {
         const pin = pinRef.current;
-        const introBusy = pin ? pinProgress(pin) < 0.995 : false;
-        if (!introBusy) return;
+        const introBusy = pin ? pinProgress(pin) < 0.995 : true;
+        if (!introBusy) {
+          restCoarseCases();
+          frame = 0;
+          return;
+        }
       }
+      frame = window.requestAnimationFrame(loop);
+      if (document.hidden) return;
       tick(now);
     };
 

@@ -52,6 +52,7 @@ const STYLES = /* css */ `
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
+  contain: layout paint;
   cursor: pointer;
   border: 1px solid var(--ah-gallery-stroke, rgb(214 208 186 / 0.42));
   border-radius: 1.35rem;
@@ -74,8 +75,15 @@ const STYLES = /* css */ `
   -webkit-overflow-scrolling: touch;
 }
 
-.track::-webkit-scrollbar {
-  display: none;
+.track.is-shift {
+  overflow: visible;
+  will-change: transform;
+  touch-action: pan-y;
+  backface-visibility: hidden;
+}
+
+.track.is-shift .slide-visual {
+  will-change: auto;
 }
 
 @media (min-width: 768px) {
@@ -443,6 +451,11 @@ export class AhMediaCarousel extends ElementBase {
   #layoutRaf = 0;
   #laidWidth = 0;
   #laidRatio = 0;
+  #loopLen = 0;
+  #loopStart = 0;
+  #loopMax = 0;
+  #dragRaf: number | null = null;
+  #pendingPx: number | null = null;
 
   constructor() {
     super();
@@ -598,6 +611,7 @@ export class AhMediaCarousel extends ElementBase {
     if (this.#scrollRaf) window.cancelAnimationFrame(this.#scrollRaf);
     if (this.#scrollFrame) window.cancelAnimationFrame(this.#scrollFrame);
     if (this.#layoutRaf) window.cancelAnimationFrame(this.#layoutRaf);
+    if (this.#dragRaf) window.cancelAnimationFrame(this.#dragRaf);
   }
 
   attributeChangedCallback(name: string, _old: string | null, value: string | null) {
@@ -623,6 +637,7 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   #onScroll = () => {
+    if (this.#shiftScroll()) return;
     if (this.#loopAdjusting || this.#scrollFrame) return;
     this.#scrollFrame = window.requestAnimationFrame(() => {
       this.#scrollFrame = null;
@@ -677,20 +692,28 @@ export class AhMediaCarousel extends ElementBase {
   #setScrollLeft(target: number) {
     if (!this.#track) return;
     this.#loopAdjusting = true;
-    const period = this.#loopPeriod();
-    let next = target;
+    this.#coastScroll(target);
+    this.#loopAdjusting = false;
+  }
+
+  #refreshLoopMetrics() {
+    this.#loopLen = this.#loopPeriod();
+    this.#loopStart = this.#loopBandStart();
+    this.#loopMax = this.#maxScroll();
+  }
+
+  #coastScroll(px: number) {
+    let next = px;
+    const period = this.#loopLen;
     if (period >= 1) {
-      const start = this.#loopBandStart();
-      if (target < start - 2 || target >= start + period + 2) {
-        next = this.#wrapScrollLeft(target);
+      const start = this.#loopStart;
+      if (next < start - 2 || next >= start + period + 2) {
+        next = start + ((((next - start) % period) + period) % period);
       }
     }
-    next = Math.max(0, Math.min(this.#maxScroll(), next));
-    this.#scrollPx = next;
-    if (Math.abs(this.#track.scrollLeft - next) >= 0.05) {
-      this.#track.scrollLeft = next;
-    }
-    this.#loopAdjusting = false;
+    const maxLeft = this.#loopMax || this.#maxScroll();
+    next = Math.max(0, Math.min(maxLeft, next));
+    this.#writeScroll(next);
   }
 
   #normalizeLoop() {
@@ -698,7 +721,7 @@ export class AhMediaCarousel extends ElementBase {
     const period = this.#loopPeriod();
     if (period < 1) return;
     const start = this.#loopBandStart();
-    const left = this.#track.scrollLeft;
+    const left = this.#readScroll();
     if (left < start || left >= start + period) {
       this.#setScrollLeft(left);
     }
@@ -724,6 +747,35 @@ export class AhMediaCarousel extends ElementBase {
     return window.matchMedia("(min-width: 768px)").matches;
   }
 
+  #shiftScroll() {
+    return !this.#isDesktop();
+  }
+
+  #viewW() {
+    const view = this.#track?.parentElement;
+    return view?.clientWidth || this.#track?.clientWidth || 0;
+  }
+
+  #readScroll() {
+    if (!this.#track) return 0;
+    return this.#shiftScroll() ? this.#scrollPx : this.#track.scrollLeft;
+  }
+
+  #writeScroll(px: number) {
+    if (!this.#track) return;
+    this.#scrollPx = px;
+    if (this.#shiftScroll()) {
+      this.#track.classList.add("is-shift");
+      this.#track.style.transform = `translate3d(${(-px).toFixed(2)}px, 0, 0)`;
+      return;
+    }
+    this.#track.classList.remove("is-shift");
+    this.#track.style.transform = "";
+    if (Math.abs(this.#track.scrollLeft - px) >= 0.05) {
+      this.#track.scrollLeft = px;
+    }
+  }
+
   #isAndroid() {
     if (this.#android === null) {
       this.#android = /Android/i.test(navigator.userAgent);
@@ -737,7 +789,10 @@ export class AhMediaCarousel extends ElementBase {
 
   #maxScroll() {
     if (!this.#track) return 0;
-    return Math.max(0, this.#track.scrollWidth - this.#track.clientWidth);
+    const viewW = this.#shiftScroll()
+      ? this.#viewW()
+      : this.#track.clientWidth;
+    return Math.max(0, this.#track.scrollWidth - viewW);
   }
 
   #slideBasisPx() {
@@ -745,7 +800,10 @@ export class AhMediaCarousel extends ElementBase {
     const style = getComputedStyle(this.#track);
     const pad =
       parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
-    const inner = Math.max(0, this.#track.clientWidth - pad);
+    const hostW = this.#shiftScroll()
+      ? this.#viewW()
+      : this.#track.clientWidth;
+    const inner = Math.max(0, hostW - pad);
     if (inner < 768) return inner * 0.76;
     if (inner < 1280) return inner * 0.68;
     if (inner < 1536) return inner * 0.62;
@@ -786,6 +844,11 @@ export class AhMediaCarousel extends ElementBase {
 
   #layoutSlides() {
     if (!this.#track) return;
+    const shifting = this.#shiftScroll();
+    if (shifting && !this.#track.classList.contains("is-shift")) {
+      this.#scrollPx = this.#track.scrollLeft || this.#scrollPx;
+    }
+    this.#track.classList.toggle("is-shift", shifting);
     const ratio = this.#defaultRatio();
     const width = this.#fitSlideWidth(ratio);
     if (width < 1) return;
@@ -793,12 +856,13 @@ export class AhMediaCarousel extends ElementBase {
       Math.abs(width - this.#laidWidth) < 0.5 &&
       Math.abs(ratio - this.#laidRatio) < 0.001
     ) {
+      this.#refreshLoopMetrics();
       return;
     }
 
     const prevPeriod = this.#loopPeriod();
     const prevStart = this.#loopBandStart();
-    const prevLeft = this.#track.scrollLeft;
+    const prevLeft = this.#readScroll();
     const progress =
       prevPeriod >= 1 ? (prevLeft - prevStart) / prevPeriod : 0;
 
@@ -813,10 +877,11 @@ export class AhMediaCarousel extends ElementBase {
 
     this.#laidWidth = width;
     this.#laidRatio = ratio;
+    this.#refreshLoopMetrics();
 
     if (prevPeriod >= 1) {
-      const nextPeriod = this.#loopPeriod();
-      const nextStart = this.#loopBandStart();
+      const nextPeriod = this.#loopLen;
+      const nextStart = this.#loopStart;
       if (nextPeriod >= 1) {
         this.#setScrollLeft(nextStart + progress * nextPeriod);
       }
@@ -875,8 +940,9 @@ export class AhMediaCarousel extends ElementBase {
     this.#pointerId = event.pointerId;
     this.#dragStartX = event.clientX;
     this.#dragStartY = event.clientY;
-    this.#dragStartScroll = this.#track.scrollLeft;
-    this.#scrollPx = this.#track.scrollLeft;
+    this.#dragStartScroll = this.#readScroll();
+    this.#scrollPx = this.#dragStartScroll;
+    this.#refreshLoopMetrics();
     this.#dragTimes = [performance.now()];
     this.#dragScrolls = [this.#scrollPx];
     this.#syncAutoPause();
@@ -915,20 +981,36 @@ export class AhMediaCarousel extends ElementBase {
     if (this.#dragAxis !== "x") return;
     if (event.cancelable) event.preventDefault();
 
-    const maxLeft = Math.max(
-      0,
-      this.#track.scrollWidth - this.#track.clientWidth,
-    );
+    const maxLeft = this.#loopMax || this.#maxScroll();
     this.#scrollPx = Math.max(
       0,
       Math.min(maxLeft, this.#dragStartScroll - dx),
     );
-    this.#track.scrollLeft = this.#scrollPx;
     this.#sampleDrag(this.#scrollPx);
+    if (this.#shiftScroll()) {
+      this.#pendingPx = this.#scrollPx;
+      if (!this.#dragRaf) {
+        this.#dragRaf = window.requestAnimationFrame(this.#flushDrag);
+      }
+      return;
+    }
+    this.#writeScroll(this.#scrollPx);
+  };
+
+  #flushDrag = () => {
+    this.#dragRaf = null;
+    if (this.#pendingPx == null) return;
+    this.#writeScroll(this.#pendingPx);
+    this.#pendingPx = null;
   };
 
   #onPointerUp = (event: PointerEvent) => {
     if (!this.#dragging || event.pointerId !== this.#pointerId) return;
+
+    if (this.#dragRaf) {
+      window.cancelAnimationFrame(this.#dragRaf);
+      this.#flushDrag();
+    }
 
     const wasDrag = this.#dragMoved;
     const axis = this.#dragAxis;
@@ -993,8 +1075,8 @@ export class AhMediaCarousel extends ElementBase {
     if (!this.#track) return;
     const raw = this.#releaseVelocity() * 1000;
     const sampled = Math.max(-AUTO_VEL_MAX, Math.min(AUTO_VEL_MAX, raw));
-    this.#autoVel = Math.abs(sampled) < 48 ? 0 : sampled;
-    this.#scrollPx = this.#track.scrollLeft;
+    this.#autoVel = sampled;
+    this.#scrollPx = this.#readScroll();
     if (this.#userPauseTimer) {
       window.clearTimeout(this.#userPauseTimer);
       this.#userPauseTimer = null;
@@ -1375,7 +1457,10 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   #slideScrollLeft(slide: HTMLElement) {
-    return slide.offsetLeft - (this.#track.clientWidth - slide.offsetWidth) / 2;
+    const viewW = this.#shiftScroll()
+      ? this.#viewW()
+      : this.#track.clientWidth;
+    return slide.offsetLeft - (viewW - slide.offsetWidth) / 2;
   }
 
   /** Pick the physical slide under the cursor — original or loop clone. */
@@ -1440,7 +1525,7 @@ export class AhMediaCarousel extends ElementBase {
     physical.forEach((slide) => {
       const mid =
         trackRect.left +
-        (slide.offsetLeft - this.#track.scrollLeft) +
+        (slide.offsetLeft - this.#readScroll()) +
         slide.offsetWidth / 2;
       const dist = Math.abs(
         mid - (trackRect.left + trackRect.width / 2),
@@ -1772,7 +1857,7 @@ export class AhMediaCarousel extends ElementBase {
   ) {
     if (this.#scrollRaf) window.cancelAnimationFrame(this.#scrollRaf);
 
-    const start = this.#track.scrollLeft;
+    const start = this.#readScroll();
     const delta = this.#shortestDelta(start, targetLeft);
     if (Math.abs(delta) < 0.5) {
       this.#active = targetIndex;
@@ -1818,7 +1903,7 @@ export class AhMediaCarousel extends ElementBase {
     const targetLeft = this.#wrapScrollLeft(this.#slideScrollLeft(slide));
     if (
       clamped === this.#targetIndex &&
-      Math.abs(this.#shortestDelta(this.#track.scrollLeft, targetLeft)) < 8
+      Math.abs(this.#shortestDelta(this.#readScroll(), targetLeft)) < 8
     ) {
       return;
     }
@@ -1846,15 +1931,15 @@ function escapeAttr(value: string) {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "ah-media-gallery-v35": AhMediaCarousel;
+    "ah-media-gallery-v37": AhMediaCarousel;
   }
 }
 
 export function defineAhMediaCarousel() {
   if (
     typeof window !== "undefined" &&
-    !customElements.get("ah-media-gallery-v35")
+    !customElements.get("ah-media-gallery-v37")
   ) {
-    customElements.define("ah-media-gallery-v35", AhMediaCarousel);
+    customElements.define("ah-media-gallery-v37", AhMediaCarousel);
   }
 }

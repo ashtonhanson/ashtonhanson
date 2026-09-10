@@ -17,7 +17,7 @@ type MediaCarouselProps = {
 declare module "react" {
   namespace JSX {
     interface IntrinsicElements {
-      "ah-media-gallery-v35": React.DetailedHTMLProps<
+      "ah-media-gallery-v37": React.DetailedHTMLProps<
         React.HTMLAttributes<AhMediaCarousel> & { label?: string },
         AhMediaCarousel
       >;
@@ -45,6 +45,6 @@ export function MediaCarousel({ items, label = "Gallery" }: MediaCarouselProps) 
   if (!items.length) return null;
 
   return (
-    <ah-media-gallery-v35 ref={bindGallery} label={label} className="block w-full" />
+    <ah-media-gallery-v37 ref={bindGallery} label={label} className="block w-full" />
   );
 }
