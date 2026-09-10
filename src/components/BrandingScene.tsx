@@ -50,7 +50,6 @@ import {
   applyPinStage,
   createLoadClearState,
   LOAD_CLEAR_BLUR_PX,
-  mobileFrameCoverScale,
   pageHasScrolled,
   pinProgress,
   stepLoadClear,
@@ -65,7 +64,6 @@ import {
   introHandoffs,
   poseToTransform,
   sampleIntroPose,
-  sampleMobileBodyFillPose,
 } from "@/lib/cinematicDepth";
 import { SeeMenuArrive } from "@/components/SeeMenuBlock";
 import { contact, type CaseStudy as CaseStudyType } from "@/lib/content";
@@ -348,12 +346,6 @@ export function BrandingScene({
               : brandingMotion
                 ? sampleBrandingIntroPose(handoffIndex, vis.zoomT, lifeT)
                 : sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
-        if (coarsePointer && isIntroBody) {
-          pose = sampleMobileBodyFillPose(
-            vis.zoomT,
-            mobileFrameCoverScale(el),
-          );
-        }
         if (handoffIndex === 0) {
           const arrived = now - born >= ABOUT_INTRO.cueArriveMs;
           const exiting = progress >= ABOUT_INTRO.cueExitStart;
@@ -406,19 +398,13 @@ export function BrandingScene({
                   : "body",
               1 - travelT,
             );
-        const poseForPaint =
-          coarsePointer && handoffIndex !== 0
-            ? { ...pose, rotX: 0, rotY: 0 }
-            : pose;
         const baseTransform =
-          opacity < 0.02 ? "none" : poseToTransform(poseForPaint);
+          opacity < 0.02 ? "none" : poseToTransform(pose);
         paint(
           el,
           opacity,
           blur,
-          coarsePointer && handoffIndex !== 0
-            ? baseTransform
-            : composeIdleTransform(
+          composeIdleTransform(
                 idleFor(el),
                 baseTransform,
                 now,
@@ -661,7 +647,7 @@ export function BrandingScene({
         }
         const pose = el.hasAttribute("data-grow")
           ? arriveGrowTransform(t, angle, kind, lean)
-          : arriveTransform(t, angle, kind, lean, coarsePointer || kind === "media");
+          : arriveTransform(t, angle, kind, lean, kind === "media");
         poseEl.style.transformOrigin = pose.origin;
         paintIdle(
           poseEl,
@@ -681,23 +667,25 @@ export function BrandingScene({
     };
 
     let casesRested = false;
-    const restCoarseCases = () => {
+    const restCoarseMedia = () => {
       if (casesRested) return;
       const root = sceneRef.current;
       if (!root) return;
       casesRested = true;
-      root.querySelectorAll<HTMLElement>("[data-arrive]").forEach((el) => {
-        const poseEl = (el.firstElementChild as HTMLElement) ?? el;
-        el.style.opacity = "1";
-        el.style.visibility = "visible";
-        el.style.transform = "none";
-        el.style.filter = "none";
-        el.style.willChange = "auto";
-        poseEl.style.transform = "none";
-        poseEl.style.filter = "none";
-        poseEl.style.opacity = "1";
-        poseEl.style.willChange = "auto";
-      });
+      root
+        .querySelectorAll<HTMLElement>('[data-arrive][data-kind="media"]')
+        .forEach((el) => {
+          const poseEl = (el.firstElementChild as HTMLElement) ?? el;
+          el.style.opacity = "1";
+          el.style.visibility = "visible";
+          el.style.transform = "none";
+          el.style.filter = "none";
+          el.style.willChange = "auto";
+          poseEl.style.transform = "none";
+          poseEl.style.filter = "none";
+          poseEl.style.opacity = "1";
+          poseEl.style.willChange = "auto";
+        });
     };
 
     const tick = (now: number) => {
@@ -713,16 +701,12 @@ export function BrandingScene({
         updateIntro(progress, now, dt);
         return;
       }
-      if (coarsePointer) {
-        restCoarseCases();
-        return;
-      }
+      if (coarsePointer) restCoarseMedia();
       updateArrivals(progress, packedExitGate, now, dt);
     };
 
     let scrollRaf = 0;
     const onScroll = () => {
-      if (coarsePointer && casesRested) return;
       if (scrollRaf) return;
       scrollRaf = window.requestAnimationFrame((now) => {
         scrollRaf = 0;
@@ -734,11 +718,7 @@ export function BrandingScene({
       const pin = pinRef.current;
       const introBusy = pin ? pinProgress(pin) < 0.995 : true;
       if (!introBusy) {
-        if (coarsePointer) restCoarseCases();
-        else {
-          // One settle pass, then scroll owns arrivals.
-          tick(now);
-        }
+        tick(now);
         frame = 0;
         return;
       }

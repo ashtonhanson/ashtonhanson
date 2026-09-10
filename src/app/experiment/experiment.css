@@ -122,24 +122,9 @@
 }
 
 @media (pointer: coarse) {
-  .experiment-root [data-arrive] {
-    opacity: 1 !important;
-    visibility: visible !important;
-    filter: none !important;
-    transform: none !important;
-    will-change: auto !important;
-  }
-
-  .experiment-root [data-arrive] > * {
-    transform: none !important;
-    filter: none !important;
-    will-change: auto !important;
-  }
-
   .experiment-root .logo-plate-pose,
-  .experiment-root .title-shine,
-  .experiment-root .will-change-transform {
-    will-change: auto !important;
+  .experiment-root .title-shine {
+    will-change: auto;
   }
 }
 
