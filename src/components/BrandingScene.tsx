@@ -82,7 +82,7 @@ const SUBTITLE_CLASS =
   "font-display text-[clamp(1.25rem,2.45vw,1.45rem)] font-medium uppercase leading-[1.85] tracking-[0.18em] text-foreground md:leading-tight xl:text-[clamp(1.35rem,1.55vw,1.7rem)]";
 
 const BODY_CLASS =
-  "w-full text-center font-display text-[clamp(1.125rem,2.15vw,1.275rem)] font-normal leading-[1.7] tracking-[0.01em] text-foreground [text-wrap:pretty] xl:text-[clamp(1.2rem,1.35vw,1.4rem)]";
+  "intro-body-copy mx-auto w-full max-w-xl text-center font-display text-[clamp(1.125rem,2.15vw,1.275rem)] font-normal leading-[1.7] tracking-[0.01em] text-foreground [text-wrap:pretty] xl:text-[clamp(1.2rem,1.35vw,1.4rem)]";
 
 /** Stronger idle float for branding titles / subtitles only. */
 const LOCKUP_IDLE = 1.75;
@@ -702,7 +702,7 @@ export function BrandingScene({
       >
         <div
           ref={stageRef}
-          className="pointer-events-none absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] items-center justify-center overflow-clip px-5 md:px-8 xl:px-12"
+          className="pointer-events-none absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] items-center justify-center overflow-visible px-5 md:px-8 xl:px-12"
           style={{
             perspective: "1180px",
             perspectiveOrigin: "50% 50%",

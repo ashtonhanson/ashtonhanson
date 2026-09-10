@@ -418,73 +418,62 @@
 }
 
 .experiment-root .about-intro-stage .intro-layer [data-intro-blur]:has(p),
-.experiment-root p.max-w-xl {
+.experiment-root p.max-w-xl,
+.experiment-root .intro-body-copy {
   display: block;
 }
 
 .experiment-root .about-intro-stage .intro-layer p,
-.experiment-root p.max-w-xl {
+.experiment-root p.max-w-xl,
+.experiment-root .intro-body-copy {
   color: var(--logo-blue) !important;
   margin-inline: auto;
   text-wrap: pretty;
+  width: min(17.25rem, 68vw) !important;
+  max-width: min(17.25rem, 68vw) !important;
 }
 
 .experiment-root p.max-w-xl {
-  width: min(20.5rem, 82vw);
-  max-width: min(20.5rem, 82vw) !important;
   font-size: clamp(1.02rem, 2.2vw, 1.4rem) !important;
   font-weight: 400 !important;
   line-height: 1.5 !important;
 }
 
-@media (min-width: 1024px) and (pointer: fine) {
-  .experiment-root .about-intro-stage .intro-layer p {
-    width: min(38rem, 82vw);
-    max-width: min(38rem, 82vw) !important;
-    font-size: clamp(1.02rem, 2.2vw, 1.4rem) !important;
-    font-weight: 400 !important;
-    line-height: 1.32 !important;
+.experiment-root p.max-w-xl.branding-intro-copy,
+.experiment-root p.max-w-xl.ads-intro-copy,
+.experiment-root p.max-w-xl.logos-intro-copy {
+  line-height: 1.45 !important;
+}
+
+@media (min-width: 1024px) {
+  .experiment-root p.max-w-xl {
+    width: min(20.5rem, 82vw) !important;
+    max-width: min(20.5rem, 82vw) !important;
   }
-}
 
-.experiment-root p.font-normal:not(.max-w-xl) {
-  color: var(--logo-blue) !important;
-  font-weight: 400 !important;
-}
+  .experiment-root p.max-w-xl.branding-intro-copy {
+    width: min(26.5rem, 86vw) !important;
+    max-width: min(26.5rem, 86vw) !important;
+  }
 
-.experiment-root p.max-w-xl.branding-intro-copy {
-  width: min(26.5rem, 86vw);
-  max-width: min(26.5rem, 86vw) !important;
-  line-height: 1.45 !important;
-}
-
-.experiment-root p.max-w-xl.ads-intro-copy {
-  width: min(32rem, 88vw);
-  max-width: min(32rem, 88vw) !important;
-  line-height: 1.45 !important;
-}
-
-@media (min-width: 768px) {
   .experiment-root p.max-w-xl.ads-intro-copy {
-    width: min(38rem, 72vw);
-    max-width: min(38rem, 72vw) !important;
+    width: min(32rem, 72vw) !important;
+    max-width: min(32rem, 72vw) !important;
   }
 
   .experiment-root p.max-w-xl.logos-intro-copy {
-    width: min(38rem, 68vw);
+    width: min(38rem, 68vw) !important;
     max-width: min(38rem, 68vw) !important;
   }
 }
 
-@media (max-width: 767px) {
-  .experiment-root .about-intro-stage .intro-layer p,
-  .experiment-root p.max-w-xl,
-  .experiment-root p.max-w-xl.ads-intro-copy,
-  .experiment-root p.max-w-xl.logos-intro-copy,
-  .experiment-root p.max-w-xl.branding-intro-copy,
-  .experiment-root p.font-normal:not(.uppercase) {
-    width: min(17.5rem, 70vw) !important;
-    max-width: min(17.5rem, 70vw) !important;
+@media (min-width: 1024px) and (pointer: fine) {
+  .experiment-root .about-intro-stage .intro-layer p {
+    width: min(38rem, 82vw) !important;
+    max-width: min(38rem, 82vw) !important;
+    font-size: clamp(1.02rem, 2.2vw, 1.4rem) !important;
+    font-weight: 400 !important;
+    line-height: 1.32 !important;
   }
 }
 

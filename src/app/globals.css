@@ -974,6 +974,7 @@ body {
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  overflow: visible;
   perspective: 1180px;
   perspective-origin: 50% 50%;
   transform-style: preserve-3d;

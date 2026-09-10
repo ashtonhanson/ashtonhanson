@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import { ScrollRestore } from "@/components/ScrollRestore";
 import { ExperimentShell } from "@/app/experiment/ExperimentShell";
@@ -19,6 +19,11 @@ export const metadata: Metadata = {
   },
   description:
     "Branding, logos, and advertising by Ashton Hanson: illustration, Adobe Creative Suite, and AI-assisted visual storytelling.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

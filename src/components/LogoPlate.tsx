@@ -41,10 +41,16 @@ export function LogoPlate({ src, alt }: LogoPlateProps) {
 
   useEffect(() => {
     const glow = createLogoGlowState();
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
     let frameId = 0;
+    let visible = false;
     let lastNow = performance.now();
 
     const loop = (now: number) => {
+      if (!visible) {
+        frameId = 0;
+        return;
+      }
       frameId = window.requestAnimationFrame(loop);
       const dt = Math.min(48, now - lastNow);
       lastNow = now;
@@ -74,7 +80,10 @@ export function LogoPlate({ src, alt }: LogoPlateProps) {
       el.style.transform = base;
       if (art) art.style.transform = "none";
       if (bezel) bezel.style.transform = "none";
-      if (reduced) return;
+      if (reduced || coarse) {
+        el.style.boxShadow = "none";
+        return;
+      }
 
       const pointer = getPointer(now);
       const rect = el.getBoundingClientRect();
@@ -102,8 +111,31 @@ export function LogoPlate({ src, alt }: LogoPlateProps) {
       el.style.boxShadow = stepped.boxShadow;
     };
 
-    frameId = window.requestAnimationFrame(loop);
-    return () => window.cancelAnimationFrame(frameId);
+    const start = () => {
+      if (visible && !frameId) {
+        lastNow = performance.now();
+        frameId = window.requestAnimationFrame(loop);
+      }
+    };
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        visible = !!entry?.isIntersecting;
+        if (visible) start();
+        else if (frameId) {
+          window.cancelAnimationFrame(frameId);
+          frameId = 0;
+        }
+      },
+      { rootMargin: "40% 0px" },
+    );
+    const node = ref.current;
+    if (node) io.observe(node);
+
+    return () => {
+      io.disconnect();
+      window.cancelAnimationFrame(frameId);
+    };
   }, [reduced]);
 
   return (
@@ -125,6 +157,8 @@ export function LogoPlate({ src, alt }: LogoPlateProps) {
               src={src}
               alt={alt}
               className="logo-plate-image block h-auto w-full select-none"
+              loading="lazy"
+              decoding="async"
               draggable={false}
             />
           </div>

@@ -268,7 +268,7 @@ export function AboutIntroStage({
     >
       <div
         ref={stageRef}
-          className="about-intro-stage pointer-events-none absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] items-center justify-center overflow-clip px-5 md:px-8 xl:px-12"
+          className="about-intro-stage pointer-events-none absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] items-center justify-center overflow-visible px-5 md:px-8 xl:px-12"
         style={{
           perspective: "1180px",
           perspectiveOrigin: "50% 54%",
@@ -346,9 +346,9 @@ export function AboutIntroStage({
                 {/* Cream readable type; zoom path starts small → much larger */}
                 <IntroBlur>
                 <p
-                  className={`text-balance text-center font-display text-[clamp(1.12rem,3.4vw,2.4rem)] font-medium tracking-[0.02em] text-[rgb(232_223_196)] xl:text-[clamp(1.65rem,2.8vw,2.6rem)]${
+                  className={`intro-body-copy text-balance text-center font-display text-[clamp(1.12rem,3.4vw,2.4rem)] font-medium tracking-[0.02em] text-[rgb(232_223_196)] xl:text-[clamp(1.65rem,2.8vw,2.6rem)]${
                     bodyLines.length === 1
-                      ? " mx-auto w-[min(38rem,82vw)] max-w-[min(38rem,82vw)] leading-[1.32]"
+                      ? " mx-auto leading-[1.32]"
                       : " leading-[1.22]"
                   }`}
                 >
