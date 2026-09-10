@@ -309,7 +309,7 @@
   font-weight: 600;
   letter-spacing: 0.18em;
   text-decoration: none;
-  color: #fff;
+  color: var(--logo-blue);
   display: inline-block;
   padding: 0.35rem 0.15rem;
   transform: none;
@@ -318,12 +318,12 @@
 
 .experiment-root .experiment-nav a:hover,
 .experiment-root .experiment-nav-mobile a:hover {
-  color: var(--logo-yellow);
+  color: var(--logo-blue);
 }
 
 .experiment-root .experiment-nav a.is-active,
 .experiment-root .experiment-nav-mobile a.is-active {
-  color: var(--logo-yellow);
+  color: var(--logo-blue);
 }
 
 .experiment-root .experiment-burger {
@@ -347,7 +347,7 @@
   display: block;
   height: 2px;
   width: 100%;
-  background: #fff;
+  background: var(--logo-blue);
   transition: transform 180ms ease, opacity 180ms ease;
 }
 
@@ -429,8 +429,8 @@
   color: var(--logo-blue) !important;
   margin-inline: auto;
   text-wrap: pretty;
-  width: min(17.25rem, 68vw) !important;
-  max-width: min(17.25rem, 68vw) !important;
+  width: min(13.75rem, 52vw) !important;
+  max-width: min(13.75rem, 52vw) !important;
 }
 
 .experiment-root p.max-w-xl {
@@ -478,10 +478,15 @@
 }
 
 @media (max-width: 1023px) {
+  .experiment-root p.max-w-xl,
+  .experiment-root .intro-body-copy {
+    font-size: 1.16rem !important;
+  }
+
   .experiment-root .about-intro-stage .intro-layer p.intro-body-copy {
-    width: min(15.25rem, 58vw) !important;
-    max-width: min(15.25rem, 58vw) !important;
-    font-size: 1.05rem !important;
+    width: min(12.5rem, 48vw) !important;
+    max-width: min(12.5rem, 48vw) !important;
+    font-size: 1.2rem !important;
     font-weight: 400 !important;
     line-height: 1.48 !important;
   }

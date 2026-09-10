@@ -782,16 +782,17 @@ export class AhMediaCarousel extends ElementBase {
 
   #layoutSlides() {
     if (!this.#track) return;
-    const fallback = this.#defaultRatio();
+    const ratio = this.#defaultRatio();
+    const width = this.#fitSlideWidth(ratio);
+    if (width < 1) return;
     this.#track.querySelectorAll<HTMLElement>(".slide").forEach((slide) => {
-      const index = Number(slide.dataset.slide);
-      const ratio = this.#mediaRatio.get(index) ?? fallback;
-      const width = this.#fitSlideWidth(ratio);
-      if (width < 1) return;
       slide.style.flex = `0 0 ${width}px`;
       slide.style.width = `${width}px`;
       const frame = slide.querySelector<HTMLElement>(".frame");
-      if (frame) frame.style.aspectRatio = String(ratio);
+      if (frame) {
+        frame.style.aspectRatio = String(ratio);
+        frame.style.height = "";
+      }
     });
   }
 
