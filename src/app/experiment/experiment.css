@@ -51,6 +51,7 @@
   left: 0;
   display: block;
   height: auto;
+  max-width: 78vw;
 }
 
 .sky-cloud-drift {
@@ -64,30 +65,84 @@
   animation-name: sky-cloud-rtl;
 }
 
+.sky-cloud.is-ltr-up .sky-cloud-drift {
+  animation-name: sky-cloud-ltr-up;
+}
+
+.sky-cloud.is-ltr-down .sky-cloud-drift {
+  animation-name: sky-cloud-ltr-down;
+}
+
+.sky-cloud.is-rtl-up .sky-cloud-drift {
+  animation-name: sky-cloud-rtl-up;
+}
+
+.sky-cloud.is-rtl-down .sky-cloud-drift {
+  animation-name: sky-cloud-rtl-down;
+}
+
 .sky-cloud-art {
   display: block;
   width: 100%;
   height: auto;
   opacity: var(--cloud-opacity, 0.85);
+  user-select: none;
+  pointer-events: none;
   animation: sky-cloud-bob var(--cloud-bob, 7s) ease-in-out
     calc(var(--cloud-delay, 0s) * 0.2) infinite;
 }
 
 @keyframes sky-cloud-ltr {
   from {
-    transform: translate3d(-32vw, 0, 0);
+    transform: translate3d(-34vw, 0, 0);
   }
   to {
-    transform: translate3d(112vw, 0, 0);
+    transform: translate3d(114vw, 0, 0);
   }
 }
 
 @keyframes sky-cloud-rtl {
   from {
-    transform: translate3d(112vw, 0, 0);
+    transform: translate3d(114vw, 0, 0);
   }
   to {
-    transform: translate3d(-32vw, 0, 0);
+    transform: translate3d(-34vw, 0, 0);
+  }
+}
+
+@keyframes sky-cloud-ltr-up {
+  from {
+    transform: translate3d(-34vw, 5vh, 0);
+  }
+  to {
+    transform: translate3d(114vw, -4vh, 0);
+  }
+}
+
+@keyframes sky-cloud-ltr-down {
+  from {
+    transform: translate3d(-34vw, -4vh, 0);
+  }
+  to {
+    transform: translate3d(114vw, 5vh, 0);
+  }
+}
+
+@keyframes sky-cloud-rtl-up {
+  from {
+    transform: translate3d(114vw, 5vh, 0);
+  }
+  to {
+    transform: translate3d(-34vw, -4vh, 0);
+  }
+}
+
+@keyframes sky-cloud-rtl-down {
+  from {
+    transform: translate3d(114vw, -4vh, 0);
+  }
+  to {
+    transform: translate3d(-34vw, 5vh, 0);
   }
 }
 
