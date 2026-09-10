@@ -499,12 +499,13 @@
   .experiment-root p.max-w-xl.branding-intro-copy,
   .experiment-root p.max-w-xl.ads-intro-copy,
   .experiment-root p.max-w-xl.logos-intro-copy {
-    width: min(22.5rem, calc(100vw - 2.5rem)) !important;
-    max-width: min(22.5rem, calc(100vw - 2.5rem)) !important;
-    font-size: 1.2rem !important;
+    width: min(17.25rem, 72vw) !important;
+    max-width: min(17.25rem, 72vw) !important;
+    font-size: 1.18rem !important;
     font-weight: 400 !important;
-    line-height: 1.48 !important;
+    line-height: 1.5 !important;
     text-wrap: pretty;
+    text-align: center;
   }
 }
 
@@ -513,7 +514,7 @@
   font-weight: 700 !important;
 }
 
-.experiment-root ah-media-gallery-v34 {
+.experiment-root ah-media-gallery-v35 {
   --ah-gallery-stroke: var(--logo-blue);
   --ah-slide-stroke: transparent;
 }

@@ -473,20 +473,21 @@ export function sampleHomeBodyExitPose(zoomT: number): PathPose {
   };
 }
 
-/** Mobile intro body — stay centered and grow until the portrait frame is full. */
+/** Mobile intro body — readable at rest, then grow to fill the portrait frame. */
 export function sampleMobileBodyFillPose(
   zoomT: number,
   coverScale: number,
 ): PathPose {
-  const start = ABOUT_INTRO.bodyStartScale;
-  const t = smootherstep(zoomT);
+  const rest = 1;
+  const peak = Math.max(coverScale, 2.6);
+  const exitT = smootherstep(clamp((zoomT - 0.48) / 0.52, 0, 1));
   const z0 = ABOUT_INTRO.bodyStartZ;
   const z3 = ABOUT_INTRO.bodyPeakZ;
   return {
     x: 0,
     y: 0,
-    z: z0 + (z3 - z0) * t,
-    scale: start + (Math.max(coverScale, start) - start) * t,
+    z: z0 + (z3 - z0) * exitT,
+    scale: rest + (peak - rest) * exitT,
     rot: 0,
   };
 }

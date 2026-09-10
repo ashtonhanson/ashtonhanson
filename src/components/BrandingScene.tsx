@@ -578,6 +578,17 @@ export function BrandingScene({
         ) {
           return;
         }
+        if (coarsePointer && kind === "media") {
+          const poseEl = (el.firstElementChild as HTMLElement) ?? el;
+          el.style.opacity = "1";
+          el.style.visibility = "visible";
+          el.style.transform = "none";
+          el.style.filter = "none";
+          poseEl.style.transform = "none";
+          poseEl.style.filter = "none";
+          poseEl.style.opacity = "1";
+          return;
+        }
         const lag = Number(el.dataset.lag || 0);
         const index = Number(el.dataset.angle || 0);
         let angle = arriveAngle(index);
@@ -679,10 +690,22 @@ export function BrandingScene({
       if (document.hidden) return;
       const pin = pinRef.current;
       if (!pin) return;
-      applyPinStage(pin, stageRef.current);
       const progress = pinProgress(pin);
-      updateIntro(progress, now, dt);
+      const introBusy = progress < 0.995;
+      if (!coarsePointer || introBusy) {
+        applyPinStage(pin, stageRef.current);
+        updateIntro(progress, now, dt);
+      }
       updateArrivals(progress, packedExitGate, now, dt);
+    };
+
+    let scrollRaf = 0;
+    const onScroll = () => {
+      if (scrollRaf) return;
+      scrollRaf = window.requestAnimationFrame((now) => {
+        scrollRaf = 0;
+        tick(now);
+      });
     };
 
     const loop = (now: number) => {
@@ -691,28 +714,21 @@ export function BrandingScene({
       if (coarsePointer) {
         const pin = pinRef.current;
         const introBusy = pin ? pinProgress(pin) < 0.995 : false;
-        const finalePin = sceneRef.current?.querySelector<HTMLElement>("[data-finale]");
-        const finaleBusy = finalePin
-          ? (() => {
-              const p = pinProgress(finalePin);
-              return p > 0.002 && p < 0.995;
-            })()
-          : false;
-        if (!introBusy && !finaleBusy) return;
+        if (!introBusy) return;
       }
       tick(now);
     };
 
-    const onScroll = () => tick(performance.now());
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.visualViewport?.addEventListener("scroll", onScroll);
-    window.visualViewport?.addEventListener("resize", onScroll);
+    if (!coarsePointer) {
+      window.visualViewport?.addEventListener("resize", onScroll);
+    }
 
     frame = window.requestAnimationFrame(loop);
     return () => {
       window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(scrollRaf);
       window.removeEventListener("scroll", onScroll);
-      window.visualViewport?.removeEventListener("scroll", onScroll);
       window.visualViewport?.removeEventListener("resize", onScroll);
     };
   }, [introLines.length, introTags.length, introSubtitle, introEmail, introForm, finale, cases.length, brandingMotion, adsMotion, introBodyLowerExit, introBodyCenteredExit, intro.pinHeightVh, intro.linesStart, intro.lineSpan, intro.holdAfter, intro.exitSpan, handoff.lead, handoff.span, handoff.finish]);
