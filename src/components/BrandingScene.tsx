@@ -554,12 +554,25 @@ export function BrandingScene({
         el.style.transform = "none";
         el.style.filter = "none";
         el.style.willChange = "auto";
+        el.style.transformStyle = "flat";
         poseEl.style.transform = "none";
         poseEl.style.filter = "none";
         poseEl.style.opacity = "1";
         poseEl.style.willChange = "auto";
+        poseEl.style.transformStyle = "flat";
         markSettled(el);
       });
+      // Drop compositor hints on intro layers too.
+      root.querySelectorAll<HTMLElement>(".will-change-transform").forEach((el) => {
+        el.style.willChange = "auto";
+        el.style.transformStyle = "flat";
+      });
+      const stage = stageRef.current;
+      if (stage) {
+        stage.style.perspective = "none";
+        stage.style.pointerEvents = "none";
+        stage.style.opacity = "0";
+      }
       arrivalsDone = true;
     };
 
@@ -714,22 +727,30 @@ export function BrandingScene({
       const dt = Math.min(48, now - lastNow);
       lastNow = now;
       if (document.hidden) return;
+      if (coarsePointer && arrivalsDone) return;
       const pin = pinRef.current;
       if (!pin) return;
       const progress = pinProgress(pin);
-      const introBusy = progress < 0.995;
+      // End phone paint work as soon as the intro has handed off — don't wait
+      // until 0.995 while applyPinStage thrash-locks the logos scroll.
+      const introHandoffDone =
+        coarsePointer && progress >= Math.min(0.88, packedExitGate + 0.04);
+      const introBusy = progress < 0.995 && !introHandoffDone;
       if (introBusy) {
-        applyPinStage(pin, stageRef.current);
+        // CSS sticky pins the stage on coarse — skip getBoundingClientRect thrash.
+        if (!coarsePointer) {
+          applyPinStage(pin, stageRef.current);
+        }
         updateIntro(progress, now, dt);
-        // First-study hub handoff needs arrivals while the intro is still pinned.
         if (!coarsePointer) {
           updateArrivals(progress, packedExitGate, now, dt);
         }
         return;
       }
-      // Park the sticky intro stage, then stop all post-intro work on phones.
-      applyPinStage(pin, stageRef.current);
-      updateIntro(progress, now, dt);
+      if (!coarsePointer) {
+        applyPinStage(pin, stageRef.current);
+      }
+      updateIntro(Math.max(progress, 0.999), now, dt);
       if (coarsePointer) {
         restAllArrivals();
         return;
@@ -739,7 +760,10 @@ export function BrandingScene({
 
     let scrollRaf = 0;
     const onScroll = () => {
-      if (coarsePointer && arrivalsDone) return;
+      if (coarsePointer && arrivalsDone) {
+        window.removeEventListener("scroll", onScroll);
+        return;
+      }
       if (scrollRaf) return;
       scrollRaf = window.requestAnimationFrame((now) => {
         scrollRaf = 0;
@@ -750,7 +774,7 @@ export function BrandingScene({
     const loop = (now: number) => {
       const pin = pinRef.current;
       const introBusy = pin ? pinProgress(pin) < 0.995 : true;
-      if (!introBusy) {
+      if (!introBusy || (coarsePointer && arrivalsDone)) {
         tick(now);
         frame = 0;
         return;
@@ -771,6 +795,10 @@ export function BrandingScene({
       const cueUntil = born + ABOUT_INTRO.cueArriveMs + 80;
       const cueLoop = (now: number) => {
         tick(now);
+        if (arrivalsDone) {
+          frame = 0;
+          return;
+        }
         const pin = pinRef.current;
         const stillIntro = pin ? pinProgress(pin) < 0.995 : false;
         if (now < cueUntil && stillIntro) {
@@ -807,7 +835,7 @@ export function BrandingScene({
       >
         <div
           ref={stageRef}
-          className="pointer-events-none absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] items-center justify-center overflow-visible px-5 md:px-8 xl:px-12"
+          className="branding-intro-stage pointer-events-none absolute inset-x-0 top-0 z-20 flex h-[calc(100dvh-3.6rem)] items-center justify-center overflow-visible px-5 md:px-8 xl:px-12"
           style={{
             perspective: "1180px",
             perspectiveOrigin: "50% 50%",
