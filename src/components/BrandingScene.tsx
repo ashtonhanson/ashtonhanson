@@ -534,17 +534,18 @@ export function BrandingScene({
     };
 
     const settledArrivals = new WeakSet<HTMLElement>();
-    let settledCount = 0;
-    let arrivalsDone = false;
+    let casesSettled = false;
     const markSettled = (el: HTMLElement) => {
       if (settledArrivals.has(el)) return;
       settledArrivals.add(el);
-      settledCount++;
     };
 
-    /** Phones: freeze every lockup once and stop scroll painting (iOS jank). */
-    const restAllArrivals = () => {
-      if (arrivalsDone) return;
+    /**
+     * Phones: settle case-study lockups once (no continuous arrive painting).
+     * Never touch the intro stage — updateIntro owns opacity so scroll-up reverses.
+     */
+    const settleCases = () => {
+      if (casesSettled) return;
       const root = sceneRef.current;
       if (!root) return;
       root.querySelectorAll<HTMLElement>("[data-arrive]").forEach((el) => {
@@ -562,18 +563,7 @@ export function BrandingScene({
         poseEl.style.transformStyle = "flat";
         markSettled(el);
       });
-      // Drop compositor hints on intro layers too.
-      root.querySelectorAll<HTMLElement>(".will-change-transform").forEach((el) => {
-        el.style.willChange = "auto";
-        el.style.transformStyle = "flat";
-      });
-      const stage = stageRef.current;
-      if (stage) {
-        stage.style.perspective = "none";
-        stage.style.pointerEvents = "none";
-        stage.style.opacity = "0";
-      }
-      arrivalsDone = true;
+      casesSettled = true;
     };
 
     const updateArrivals = (
@@ -582,10 +572,8 @@ export function BrandingScene({
       now: number,
       dt: number,
     ) => {
-      if (coarsePointer) {
-        restAllArrivals();
-        return;
-      }
+      // Coarse: cases settle once after intro — never paint arrives every scroll.
+      if (coarsePointer) return;
       const root = sceneRef.current;
       if (!root) return;
       const viewH = viewHeight();
@@ -727,43 +715,29 @@ export function BrandingScene({
       const dt = Math.min(48, now - lastNow);
       lastNow = now;
       if (document.hidden) return;
-      if (coarsePointer && arrivalsDone) return;
       const pin = pinRef.current;
       if (!pin) return;
       const progress = pinProgress(pin);
-      // End phone paint work as soon as the intro has handed off — don't wait
-      // until 0.995 while applyPinStage thrash-locks the logos scroll.
-      const introHandoffDone =
-        coarsePointer && progress >= Math.min(0.88, packedExitGate + 0.04);
-      const introBusy = progress < 0.995 && !introHandoffDone;
-      if (introBusy) {
-        // CSS sticky pins the stage on coarse — skip getBoundingClientRect thrash.
-        if (!coarsePointer) {
-          applyPinStage(pin, stageRef.current);
-        }
-        updateIntro(progress, now, dt);
-        if (!coarsePointer) {
-          updateArrivals(progress, packedExitGate, now, dt);
-        }
-        return;
-      }
+
+      // Desktop: JS pin. Phones: CSS sticky — skip getBoundingClientRect thrash.
       if (!coarsePointer) {
         applyPinStage(pin, stageRef.current);
       }
-      updateIntro(Math.max(progress, 0.999), now, dt);
+
+      // Always scrub intro from real progress so scroll-up reverses motion.
+      updateIntro(progress, now, dt);
+
       if (coarsePointer) {
-        restAllArrivals();
+        // Settle case studies once the intro has mostly left — never latch intro.
+        if (progress >= 0.92) settleCases();
         return;
       }
+
       updateArrivals(progress, packedExitGate, now, dt);
     };
 
     let scrollRaf = 0;
     const onScroll = () => {
-      if (coarsePointer && arrivalsDone) {
-        window.removeEventListener("scroll", onScroll);
-        return;
-      }
       if (scrollRaf) return;
       scrollRaf = window.requestAnimationFrame((now) => {
         scrollRaf = 0;
@@ -774,7 +748,7 @@ export function BrandingScene({
     const loop = (now: number) => {
       const pin = pinRef.current;
       const introBusy = pin ? pinProgress(pin) < 0.995 : true;
-      if (!introBusy || (coarsePointer && arrivalsDone)) {
+      if (!introBusy) {
         tick(now);
         frame = 0;
         return;
@@ -789,16 +763,11 @@ export function BrandingScene({
       window.visualViewport?.addEventListener("resize", onScroll);
     }
 
-    // Phones: scroll-linked ticks only after the load cue settles — perpetual
-    // rAF across the 520vh pin freezes iOS. Brief loop so the cue can arrive.
+    // Phones: brief cue arrive loop, then scroll-linked ticks only.
     if (coarsePointer) {
       const cueUntil = born + ABOUT_INTRO.cueArriveMs + 80;
       const cueLoop = (now: number) => {
         tick(now);
-        if (arrivalsDone) {
-          frame = 0;
-          return;
-        }
         const pin = pinRef.current;
         const stillIntro = pin ? pinProgress(pin) < 0.995 : false;
         if (now < cueUntil && stillIntro) {
