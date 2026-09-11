@@ -160,11 +160,13 @@
   display: flex;
   align-items: center;
   text-decoration: none;
+  color: var(--logo-blue);
 }
 
-.experiment-root .experiment-logo img {
+.experiment-root .experiment-logo-mark {
+  display: block;
   width: 2.35rem;
-  height: 2.35rem;
+  height: auto;
 }
 
 .experiment-root .experiment-nav {

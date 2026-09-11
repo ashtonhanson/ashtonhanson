@@ -78,7 +78,19 @@ export function ExperimentShell({ children }: { children: React.ReactNode }) {
             aria-label="Ashton Hanson Design home"
             onClick={() => setOpen(false)}
           >
-            <img src="/experiment/ah-logo.svg" alt="" width={38} height={40} />
+            {/* Mark arrow, upright — reads as an A */}
+            <svg
+              className="experiment-logo-mark"
+              viewBox="48 44 176 182"
+              width={38}
+              height={40}
+              aria-hidden="true"
+            >
+              <path
+                d="M130.3,48.8L48.9,217.3c-3.9,6.2,5.5,12.9,12.3,7.8l70.9-52.2c2.2-1.5,5.2-1.5,7.4,0l70.9,52.2c6.8,5.2,16-2.3,13.2-7.4l-82.3-169C139.3,44.3,132.5,44.3,130.3,48.8z"
+                fill="currentColor"
+              />
+            </svg>
           </Link>
           <nav className="experiment-nav" aria-label="Primary">
             {experimentNav.map((link) => (
