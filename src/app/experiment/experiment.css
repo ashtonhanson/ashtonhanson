@@ -1,4 +1,4 @@
-/* Logo-mark site theme: sky, blue type, yellow nav. */
+/* Logo-mark site theme: sky, blue type, transparent chrome. */
 
 .experiment-root {
   --logo-pink: #efb7c0;
@@ -128,13 +128,6 @@
   .experiment-root .title-shine {
     will-change: auto;
   }
-
-  /* Sticky backdrop-filter + scrolling content freezes iOS. */
-  .experiment-root .experiment-chrome {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    background: rgb(41 171 226 / 0.94);
-  }
 }
 
 .experiment-root > :not(.experiment-sky):not(.experiment-chrome) {
@@ -147,10 +140,10 @@
   top: 0;
   z-index: 200;
   pointer-events: auto;
-  overflow: hidden;
-  background: rgb(41 171 226 / 0.28);
-  -webkit-backdrop-filter: blur(24px) saturate(1.85);
-  backdrop-filter: blur(24px) saturate(1.85);
+  overflow: visible;
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 .experiment-root .experiment-header {
@@ -194,58 +187,82 @@
   font-weight: 600;
   letter-spacing: 0.18em;
   text-decoration: none;
-  color: #fff;
+  color: var(--logo-blue);
   display: inline-block;
   padding: 0.35rem 0.15rem;
   transform: none;
-  transition: color 160ms ease;
+  transition: color 160ms ease, opacity 160ms ease;
 }
 
 .experiment-root .experiment-nav a:hover,
 .experiment-root .experiment-nav-mobile a:hover {
-  color: var(--logo-yellow);
+  color: var(--logo-blue);
+  opacity: 0.72;
 }
 
 .experiment-root .experiment-nav a.is-active,
 .experiment-root .experiment-nav-mobile a.is-active {
-  color: var(--logo-yellow);
+  color: var(--logo-blue);
+  opacity: 1;
+  font-weight: 800;
 }
 
 .experiment-root .experiment-burger {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 5px;
   margin-left: auto;
   flex-shrink: 0;
   width: 2.75rem;
   height: 2.75rem;
-  padding: 0.45rem;
+  padding: 0;
   border: 0;
   background: transparent;
   cursor: pointer;
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
+  perspective: 520px;
+  color: var(--logo-blue);
 }
 
-.experiment-root .experiment-burger span {
-  display: block;
-  height: 2px;
-  width: 100%;
-  background: #fff;
-  transition: transform 180ms ease, opacity 180ms ease;
+.experiment-root .experiment-burger-glyph {
+  display: inline-block;
+  font-family: var(--font-display), Montserrat, sans-serif;
+  font-size: 1.7rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--logo-blue);
+  transform-origin: 50% 50%;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform;
+  user-select: none;
 }
 
-.experiment-root .experiment-burger.is-open span:nth-child(1) {
-  transform: translateY(7px) rotate(45deg);
+.experiment-root .experiment-burger.is-flipping .experiment-burger-glyph {
+  animation: experiment-burger-flip 720ms cubic-bezier(0.18, 0.9, 0.22, 1.18) both;
 }
 
-.experiment-root .experiment-burger.is-open span:nth-child(2) {
-  opacity: 0;
+@keyframes experiment-burger-flip {
+  0% {
+    transform: rotateY(0deg);
+  }
+  72% {
+    transform: rotateY(748deg);
+  }
+  88% {
+    transform: rotateY(702deg);
+  }
+  100% {
+    transform: rotateY(720deg);
+  }
 }
 
-.experiment-root .experiment-burger.is-open span:nth-child(3) {
-  transform: translateY(-7px) rotate(-45deg);
+@media (prefers-reduced-motion: reduce) {
+  .experiment-root .experiment-burger.is-flipping .experiment-burger-glyph {
+    animation: none;
+  }
 }
 
 @media (min-width: 768px) {
