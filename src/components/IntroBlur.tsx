@@ -9,7 +9,7 @@ export function IntroBlur({
   style?: CSSProperties;
 }) {
   return (
-    <div data-intro-blur className="inline-block max-w-full" style={style}>
+    <div data-intro-blur className="block w-full max-w-full" style={style}>
       {children}
     </div>
   );

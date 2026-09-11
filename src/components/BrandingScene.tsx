@@ -964,7 +964,7 @@ export function BrandingScene({
             ) : null}
 
             {introForm ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center overflow-y-auto px-3 py-6 md:py-8">
+              <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden px-3 py-6 md:py-8">
                 <div className="flex w-full max-w-lg flex-col items-center">
                   <div
                     ref={formTitleRef}

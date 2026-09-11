@@ -435,6 +435,7 @@
 .experiment-root .intro-body-copy {
   color: var(--logo-blue) !important;
   margin-inline: auto;
+  text-align: center !important;
   text-wrap: pretty;
 }
 
@@ -505,13 +506,13 @@
   .experiment-root p.max-w-xl.branding-intro-copy,
   .experiment-root p.max-w-xl.ads-intro-copy,
   .experiment-root p.max-w-xl.logos-intro-copy {
-    width: min(17.25rem, 72vw) !important;
-    max-width: min(17.25rem, 72vw) !important;
+    width: min(20.5rem, 84vw) !important;
+    max-width: min(20.5rem, 84vw) !important;
     font-size: 1.18rem !important;
     font-weight: 600 !important;
     line-height: 1.5 !important;
-    text-wrap: pretty;
-    text-align: center;
+    text-wrap: balance;
+    text-align: center !important;
   }
 }
 
