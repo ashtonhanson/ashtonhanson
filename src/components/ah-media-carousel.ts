@@ -503,6 +503,7 @@ export class AhMediaCarousel extends ElementBase {
   resumeAutoplay() {
     this.#lightboxOpen = false;
     this.#syncAutoPause();
+    if (!this.#autoPaused) this.#restartAutoplay();
   }
 
   connectedCallback() {
@@ -542,6 +543,7 @@ export class AhMediaCarousel extends ElementBase {
     } else if (!shouldBeInView && this.#inView) {
       this.#inView = false;
       this.#syncPlayback();
+      this.#stopAutoplay();
     } else if (shouldBeInView) {
       this.#syncMediaSources();
       this.#primeVisibleVideos();
@@ -564,6 +566,7 @@ export class AhMediaCarousel extends ElementBase {
             this.#syncMediaSources();
             this.#primeVisibleVideos();
             this.#mirrorCloneMedia(true);
+            this.#restartAutoplay();
           } else {
             this.#syncMediaSources();
             this.#primeVisibleVideos();
@@ -571,6 +574,7 @@ export class AhMediaCarousel extends ElementBase {
         } else if (!entry.isIntersecting || ratio < 0.02) {
           this.#inView = false;
           this.#syncPlayback();
+          this.#stopAutoplay();
         }
         this.#syncAutoPause();
       },
@@ -1031,6 +1035,7 @@ export class AhMediaCarousel extends ElementBase {
 
     this.#dragMoved = false;
     this.#syncAutoPause();
+    if (!this.#autoPaused) this.#restartAutoplay();
   };
 
   #bindWindowDrag(on: boolean) {
@@ -1125,23 +1130,31 @@ export class AhMediaCarousel extends ElementBase {
 
   #restartAutoplay() {
     this.#stopAutoplay();
-    // Coarse pointers: never run the perpetual autoplay rAF (locks /logos on iOS).
-    if (
-      this.#items.length < 2 ||
-      window.matchMedia("(pointer: coarse)").matches
-    ) {
-      return;
-    }
+    if (this.#items.length < 2) return;
+    this.#syncAutoPause();
+    // Phones: only run while visible — stop the rAF when paused so logos
+    // don't stack perpetual loops across every gallery on the page.
+    if (this.#autoPaused) return;
     this.#autoVel = 0;
     this.#lastAutoNow = performance.now();
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
     const tick = (now: number) => {
-      this.#autoRaf = window.requestAnimationFrame(tick);
-      const dt = Math.min(0.048, (now - this.#lastAutoNow) / 1000);
-      this.#lastAutoNow = now;
       this.#syncAutoPause();
-      if (this.#autoPaused || !this.#track || this.#scrollRaf) return;
+      if (this.#autoPaused || !this.#track) {
+        if (coarse) {
+          this.#autoRaf = 0;
+          return;
+        }
+        this.#autoRaf = window.requestAnimationFrame(tick);
+        return;
+      }
+      this.#autoRaf = window.requestAnimationFrame(tick);
+      if (this.#scrollRaf) return;
 
       if (this.#maxScroll() < 1) return;
+
+      const dt = Math.min(0.048, (now - this.#lastAutoNow) / 1000);
+      this.#lastAutoNow = now;
 
       const cruise = this.#cruiseSpeed();
       const tau =
@@ -1164,6 +1177,7 @@ export class AhMediaCarousel extends ElementBase {
       this.#userPauseTimer = null;
       this.#userPaused = false;
       this.#syncAutoPause();
+      if (!this.#autoPaused) this.#restartAutoplay();
     }, USER_PAUSE_MS);
   }
 

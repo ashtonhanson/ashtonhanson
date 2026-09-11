@@ -219,12 +219,14 @@ export function BrandingScene({
     ) => {
       if (!el) return;
       if (coarsePointer) {
+        // Galleries: Z-arrive until rest, then flatten so swipe/autoplay work.
         if (pullKind === "gallery") {
+          const rest = atRest || opacity > 0.98;
           paint(
             el,
             androidPointer ? (opacity > 0.08 ? 1 : 0) : opacity,
             0,
-            "none",
+            rest ? "none" : transform,
             hideWhenGone,
           );
           el.style.transformStyle = "flat";
@@ -533,47 +535,12 @@ export function BrandingScene({
       }
     };
 
-    const settledArrivals = new WeakSet<HTMLElement>();
-    let casesSettled = false;
-    const markSettled = (el: HTMLElement) => {
-      if (settledArrivals.has(el)) return;
-      settledArrivals.add(el);
-    };
-
-    /**
-     * Phones: settle case-study lockups once (no continuous arrive painting).
-     * Never touch the intro stage — updateIntro owns opacity so scroll-up reverses.
-     */
-    const settleCases = () => {
-      if (casesSettled) return;
-      const root = sceneRef.current;
-      if (!root) return;
-      root.querySelectorAll<HTMLElement>("[data-arrive]").forEach((el) => {
-        const poseEl = (el.firstElementChild as HTMLElement) ?? el;
-        el.style.opacity = "1";
-        el.style.visibility = "visible";
-        el.style.transform = "none";
-        el.style.filter = "none";
-        el.style.willChange = "auto";
-        el.style.transformStyle = "flat";
-        poseEl.style.transform = "none";
-        poseEl.style.filter = "none";
-        poseEl.style.opacity = "1";
-        poseEl.style.willChange = "auto";
-        poseEl.style.transformStyle = "flat";
-        markSettled(el);
-      });
-      casesSettled = true;
-    };
-
     const updateArrivals = (
       introProgress: number,
       packedExitGate: number,
       now: number,
       dt: number,
     ) => {
-      // Coarse: cases settle once after intro — never paint arrives every scroll.
-      if (coarsePointer) return;
       const root = sceneRef.current;
       if (!root) return;
       const viewH = viewHeight();
@@ -726,13 +693,7 @@ export function BrandingScene({
 
       // Always scrub intro from real progress so scroll-up reverses motion.
       updateIntro(progress, now, dt);
-
-      if (coarsePointer) {
-        // Settle case studies once the intro has mostly left — never latch intro.
-        if (progress >= 0.92) settleCases();
-        return;
-      }
-
+      // Scroll-linked arrives on phones too (no perpetual rAF) — reverse works.
       updateArrivals(progress, packedExitGate, now, dt);
     };
 
