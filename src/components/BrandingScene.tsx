@@ -428,6 +428,8 @@ export function BrandingScene({
             pull,
           ),
         );
+        // Flat keeps the frosted arrow able to blur sky clouds behind it.
+        if (handoffIndex === 0) el.style.transformStyle = "flat";
         el.style.pointerEvents =
           el === emailRef.current && opacity > 0.65 ? "auto" : "none";
       };

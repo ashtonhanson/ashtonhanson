@@ -233,6 +233,8 @@ export function AboutIntroStage({
                 coarsePointer ? undefined : pull,
               ),
         );
+        // Flat keeps the frosted arrow able to blur sky clouds behind it.
+        if (handoffIndex === 0) el.style.transformStyle = "flat";
       };
 
       applyElement(cueRef.current, 0);
