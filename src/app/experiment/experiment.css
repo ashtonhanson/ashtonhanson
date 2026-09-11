@@ -314,6 +314,17 @@
   filter: none;
 }
 
+.experiment-root .scroll-cue-hover {
+  animation: scroll-cue-hover 2.6s ease-in-out var(--cue-arrive-ms, 880ms)
+    infinite;
+}
+
+@media (pointer: coarse) {
+  .experiment-root .scroll-cue-hover {
+    animation-name: scroll-cue-hover-coarse;
+  }
+}
+
 .experiment-root .title-shine-fill {
   background: none;
   background-image: none;

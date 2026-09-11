@@ -29,9 +29,9 @@ function freezeHover(el: HTMLElement) {
 }
 
 /**
- * Freeze the CSS drop/bob so a pin-stage position change cannot restart them.
+ * Freeze the CSS drop so a pin-stage position change cannot restart it.
  * Pass snapArriveToRest after the load-in so Safari cannot keep the off-screen start.
- * On coarse pointers the bob stays live until scale-out (`freezeBob`).
+ * Keep the hover bob live until scale-out (`freezeBob`).
  */
 export function freezeScrollCueMotion(
   poseEl: HTMLElement | null,
@@ -42,7 +42,13 @@ export function freezeScrollCueMotion(
   const arrive = poseEl.closest(".scroll-cue-arrive");
   const hover = poseEl.closest(".scroll-cue-hover");
   if (arrive instanceof HTMLElement) freezeArrive(arrive, snapArriveToRest);
-  if (freezeBob && hover instanceof HTMLElement) freezeHover(hover);
+  if (freezeBob && hover instanceof HTMLElement) {
+    freezeHover(hover);
+  } else if (hover instanceof HTMLElement && hover.dataset.locked !== "1") {
+    // Keep / restore the hover bob while the cue is still on stage.
+    hover.style.animation = "";
+    hover.style.transform = "";
+  }
 }
 
 /** Branded down-arrow shown on load before the first intro title. */
