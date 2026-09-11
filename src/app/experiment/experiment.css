@@ -429,7 +429,7 @@
 }
 
 .experiment-root .logo-plate-bezel {
-  border-color: var(--logo-yellow);
+  border: 0;
   box-shadow: none;
 }
 
