@@ -55,18 +55,21 @@ export const LogoArrowCue = forwardRef<HTMLDivElement>(function LogoArrowCue(
             style={{
               transform: `translate3d(0, 0, 0) scale(${startScale})`,
               transformOrigin: "50% 38%",
-              transformStyle: "preserve-3d",
+              transformStyle: "flat",
             }}
           >
-            <svg
-              className="scroll-cue-icon experiment-logo-arrow"
-              viewBox="48 44 176 182"
-              aria-hidden="true"
-            >
-              <g transform="rotate(180 136 135)">
-                <path d={LOGO_ARROW_PATH} fill="#29ABE2" />
-              </g>
-            </svg>
+            <div className="scroll-cue-mark">
+              <span className="scroll-cue-frost" aria-hidden="true" />
+              <svg
+                className="scroll-cue-icon experiment-logo-arrow"
+                viewBox="48 44 176 182"
+                aria-hidden="true"
+              >
+                <g transform="rotate(180 136 135)">
+                  <path d={LOGO_ARROW_PATH} />
+                </g>
+              </svg>
+            </div>
           </div>
         </div>
       </span>
