@@ -488,6 +488,19 @@ export function sampleCenteredBodyZoomPose(zoomT: number): PathPose {
   };
 }
 
+/** Keep a pose’s lateral angle, but drive scale/Z with the continuous body zoom. */
+export function withContinuousBodyZoom(
+  pose: PathPose,
+  zoomT: number,
+): PathPose {
+  const zoom = sampleBezierPath(zoomT, bodyZoomPath());
+  return {
+    ...pose,
+    z: zoom.z,
+    scale: zoom.scale,
+  };
+}
+
 /** Mobile intro body — readable at rest, then grow to fill the portrait frame. */
 export function sampleMobileBodyFillPose(
   zoomT: number,

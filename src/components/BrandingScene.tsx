@@ -64,6 +64,7 @@ import {
   introHandoffs,
   poseToTransform,
   sampleIntroPose,
+  withContinuousBodyZoom,
 } from "@/lib/cinematicDepth";
 import { SeeMenuArrive } from "@/components/SeeMenuBlock";
 import { contact, type CaseStudy as CaseStudyType } from "@/lib/content";
@@ -347,6 +348,10 @@ export function BrandingScene({
               : brandingMotion
                 ? sampleBrandingIntroPose(handoffIndex, vis.zoomT, lifeT)
                 : sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
+        // Phones: same continuous body Z-scale as home, keep lateral enter/exit angle.
+        if (coarsePointer && isIntroBody) {
+          pose = withContinuousBodyZoom(pose, vis.zoomT);
+        }
         if (handoffIndex === 0) {
           const arrived = now - born >= ABOUT_INTRO.cueArriveMs;
           const exiting = progress >= ABOUT_INTRO.cueExitStart;
