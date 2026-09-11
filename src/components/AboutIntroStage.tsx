@@ -17,7 +17,7 @@ import {
   poseToTransform,
   sampleHomeBodyExitPose,
   sampleIntroPose,
-  sampleMobileBodyFillPose,
+  sampleCenteredBodyZoomPose,
 } from "@/lib/cinematicDepth";
 import {
   createIdleHoverState,
@@ -169,15 +169,8 @@ export function AboutIntroStage({
         const isBodyLine = handoffIndex >= 3;
         let pose =
           isBodyLine && !bodyRotateLeft
-            ? // Phones: stay centered + slightly high while readable (no right/down drift).
-              (() => {
-                const fill = sampleMobileBodyFillPose(vis.zoomT, 3.15);
-                const settle = 1 - vis.zoomT;
-                return {
-                  ...fill,
-                  y: fill.y - 7 * settle,
-                };
-              })()
+            ? // Phones: one continuous Z-scale, centered (no right/down drift).
+              sampleCenteredBodyZoomPose(vis.zoomT)
             : bodyRotateLeft && isBodyLine
               ? sampleHomeBodyExitPose(vis.zoomT)
               : sampleIntroPose(handoffIndex, vis.zoomT, lifeT);

@@ -473,6 +473,21 @@ export function sampleHomeBodyExitPose(zoomT: number): PathPose {
   };
 }
 
+/** Mobile intro body — continuous Z-scale (small→huge), locked to center. */
+export function sampleCenteredBodyZoomPose(zoomT: number): PathPose {
+  const zoom = sampleBezierPath(zoomT, bodyZoomPath());
+  // Light lift early so the readable beat sits above true center, then
+  // follow the usual anchor as it surges past the camera.
+  const settle = 1 - smootherstep(zoomT);
+  return {
+    x: 0,
+    y: ABOUT_INTRO.zoomAnchorY * zoomT * 0.35 - 6.5 * settle,
+    z: zoom.z,
+    scale: zoom.scale,
+    rot: 0,
+  };
+}
+
 /** Mobile intro body — readable at rest, then grow to fill the portrait frame. */
 export function sampleMobileBodyFillPose(
   zoomT: number,
