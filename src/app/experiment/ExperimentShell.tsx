@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SkyClouds } from "@/components/SkyClouds";
@@ -86,11 +86,12 @@ export function ExperimentShell({ children }: { children: React.ReactNode }) {
             className="experiment-nav-mobile"
             aria-label="Primary"
           >
-            {experimentNav.map((link) => (
+            {experimentNav.map((link, index) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={isActive(link.href, pathname) ? "is-active" : undefined}
+                style={{ "--nav-i": index } as CSSProperties}
                 onClick={() => setOpen(false)}
               >
                 {link.label}
