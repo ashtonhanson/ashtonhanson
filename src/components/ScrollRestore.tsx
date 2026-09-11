@@ -1,12 +1,15 @@
 "use client";
 
 import { useLayoutEffect } from "react";
+import { usePathname } from "next/navigation";
 
 /**
- * Cinematic pins make native restoration land mid-page after a refresh.
- * Always start at the top on load / reload.
+ * Cinematic pins make native restoration land mid-page after a refresh
+ * or client navigation. Always start at the top so the arrow can drop in.
  */
 export function ScrollRestore() {
+  const pathname = usePathname();
+
   useLayoutEffect(() => {
     try {
       history.scrollRestoration = "manual";
@@ -23,7 +26,7 @@ export function ScrollRestore() {
       window.clearTimeout(timeout);
       window.cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [pathname]);
 
   return null;
 }

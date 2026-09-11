@@ -1001,11 +1001,11 @@ body {
   overflow: visible;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .scroll-cue-arrive {
-    animation: scroll-cue-arrive var(--cue-arrive-ms, 880ms)
-      cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
+/* Drop always runs — Chrome device mode inherits macOS Reduce Motion
+   and would otherwise skip the slide-in after nav / refresh. */
+.scroll-cue-arrive {
+  animation: scroll-cue-arrive var(--cue-arrive-ms, 880ms)
+    cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* Hover bob always runs after the drop — Chrome device mode inherits
@@ -1013,13 +1013,6 @@ body {
 .scroll-cue-hover {
   animation: scroll-cue-hover 2.6s ease-in-out var(--cue-arrive-ms, 880ms)
     infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .scroll-cue-arrive {
-    animation: none;
-    transform: translate3d(0, -22vh, 0);
-  }
 }
 
 @keyframes scroll-cue-arrive {

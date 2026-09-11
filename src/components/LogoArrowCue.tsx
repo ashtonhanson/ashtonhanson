@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef, type AnimationEvent, type CSSProperties } from "react";
+import { usePathname } from "next/navigation";
 import { ABOUT_INTRO } from "@/lib/cinematicDepth";
 
 /** Yellow arrow from the mark, flipped to point down as a scroll cue. */
@@ -27,6 +28,7 @@ export const LogoArrowCue = forwardRef<HTMLDivElement>(function LogoArrowCue(
   _,
   ref,
 ) {
+  const pathname = usePathname();
   const startScale = 1 / ABOUT_INTRO.cueLayoutScale;
 
   const onArriveEnd = (event: AnimationEvent<HTMLDivElement>) => {
@@ -47,8 +49,13 @@ export const LogoArrowCue = forwardRef<HTMLDivElement>(function LogoArrowCue(
         } as CSSProperties
       }
     >
-      <span className="scroll-cue-hover">
-        <div className="scroll-cue-arrive" onAnimationEnd={onArriveEnd}>
+      {/* Remount on route change so the drop + hover always restart. */}
+      <span className="scroll-cue-hover" key={`hover-${pathname}`}>
+        <div
+          key={`arrive-${pathname}`}
+          className="scroll-cue-arrive"
+          onAnimationEnd={onArriveEnd}
+        >
           <div
             ref={ref}
             className="scroll-cue-pose will-change-transform"

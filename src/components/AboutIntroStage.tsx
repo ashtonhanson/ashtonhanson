@@ -86,7 +86,8 @@ export function AboutIntroStage({
   useEffect(() => {
     let frame = 0;
     let lastNow = performance.now();
-    if (!cueBornRef.current) cueBornRef.current = lastNow;
+    // Fresh drop clock on every mount / route entry.
+    cueBornRef.current = lastNow;
     const born = cueBornRef.current;
     const handoffs = introHandoffs(bodyLines.length);
     const idleMap = new WeakMap<HTMLElement, IdleHoverState>();
