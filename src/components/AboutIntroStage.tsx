@@ -17,6 +17,7 @@ import {
   poseToTransform,
   sampleHomeBodyExitPose,
   sampleIntroPose,
+  sampleMobileBodyFillPose,
 } from "@/lib/cinematicDepth";
 import {
   createIdleHoverState,
@@ -167,9 +168,19 @@ export function AboutIntroStage({
           handoffIndex === 0 ? cueLifeT(progress, win) : vis.zoomT;
         const isBodyLine = handoffIndex >= 3;
         let pose =
-          bodyRotateLeft && isBodyLine
-            ? sampleHomeBodyExitPose(vis.zoomT)
-            : sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
+          isBodyLine && !bodyRotateLeft
+            ? // Phones: stay centered + slightly high while readable (no right/down drift).
+              (() => {
+                const fill = sampleMobileBodyFillPose(vis.zoomT, 3.15);
+                const settle = 1 - vis.zoomT;
+                return {
+                  ...fill,
+                  y: fill.y - 7 * settle,
+                };
+              })()
+            : bodyRotateLeft && isBodyLine
+              ? sampleHomeBodyExitPose(vis.zoomT)
+              : sampleIntroPose(handoffIndex, vis.zoomT, lifeT);
         if (handoffIndex === 0) {
           const arrived = now - born >= ABOUT_INTRO.cueArriveMs;
           const exiting = progress >= ABOUT_INTRO.cueExitStart;

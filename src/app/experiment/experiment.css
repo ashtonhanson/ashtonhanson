@@ -473,7 +473,17 @@
     font-size: 1.16rem !important;
   }
 
-  .experiment-root .about-intro-stage .intro-layer p.intro-body-copy,
+  /* Home ABOUT body — narrow vertical column, centered. */
+  .experiment-root .about-intro-stage .intro-layer p.intro-body-copy {
+    width: min(15.25rem, 66vw) !important;
+    max-width: min(15.25rem, 66vw) !important;
+    font-size: 1.14rem !important;
+    font-weight: 600 !important;
+    line-height: 1.48 !important;
+    text-wrap: balance;
+    text-align: center !important;
+  }
+
   .experiment-root p.max-w-xl.branding-intro-copy,
   .experiment-root p.max-w-xl.ads-intro-copy,
   .experiment-root p.max-w-xl.logos-intro-copy {
