@@ -151,10 +151,16 @@
   z-index: 1;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 1.25rem;
   padding: 0.85rem 1.25rem;
   background: transparent;
+}
+
+@media (max-width: 767px) {
+  .experiment-root .experiment-header {
+    justify-content: flex-end;
+  }
 }
 
 .experiment-root .experiment-nav {
