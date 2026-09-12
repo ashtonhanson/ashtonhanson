@@ -164,7 +164,7 @@
   z-index: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 1.25rem;
   padding: 0.85rem 1.25rem;
   background: transparent;
@@ -202,10 +202,7 @@
   background: none;
   border-radius: 0;
   box-shadow: none;
-  text-shadow:
-    0 0 10px rgb(255 255 255 / 0.95),
-    0 0 22px rgb(255 255 255 / 0.8),
-    0 0 36px rgb(255 255 255 / 0.55);
+  text-shadow: none;
 }
 
 .experiment-root .experiment-nav a {

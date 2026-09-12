@@ -18,12 +18,6 @@ const AUTO_PX_PER_SEC = 38;
 const USER_PAUSE_MS = 4200;
 const AUTO_VEL_BLEND_MS = 1680;
 const AUTO_VEL_MAX = 980;
-/** Swipe coast decay (1/s) — higher = shorter glide. */
-const COAST_DECAY = 1.85;
-/** End coast when speed drops below this (px/s). */
-const COAST_STOP_PX = 12;
-/** Desktop mouse releases damp hard — boost residual glide. */
-const COAST_DESKTOP_BOOST = 1.85;
 const FOCUS_GLIDE_MS = 2800;
 /** Time constant for hover scroll pursuit — higher = softer glide. */
 const HOVER_SCROLL_TAU_MS = 920;
@@ -379,6 +373,10 @@ function easeInOutQuint(t: number) {
   return t < 0.5 ? 16 * t * t * t * t * t : 1 - (-2 * t + 2) ** 5 / 2;
 }
 
+function easeOutCubic(t: number) {
+  return 1 - (1 - t) ** 3;
+}
+
 function smoothstep(t: number) {
   const x = Math.max(0, Math.min(1, t));
   return x * x * (3 - 2 * x);
@@ -390,7 +388,12 @@ const ElementBase =
     : (class {} as unknown as typeof HTMLElement);
 
 const DRAG_THRESHOLD = 6;
-const SWIPE_SAMPLE_MS = 100;
+const SWIPE_SAMPLE_MS = 120;
+const SWIPE_TAU_MS = 420;
+const SWIPE_MAX_SLIDES = 2.6;
+const SWIPE_MIN_MS = 320;
+const SWIPE_MAX_MS = 780;
+const SWIPE_FLICK_VEL = 0.1;
 
 /**
  * Native gallery: hover focus, slow auto-scroll, click-to-lightbox event.
@@ -941,91 +944,97 @@ export class AhMediaCarousel extends ElementBase {
     this.#coasting = false;
   }
 
-  /** Prefer pointer travel — scrollLeft samples go dead on desktop mouse-up. */
-  #releaseCoastVelocity() {
+  /** Pointer velocity in px/ms — positive means scrollPx increasing. */
+  #releaseVelocity() {
     const times = this.#dragTimes;
-    const scrolls = this.#dragScrolls;
     const xs = this.#dragClientXs;
+    const scrolls = this.#dragScrolls;
     if (times.length < 2) return 0;
-
     const i1 = times.length - 1;
     const i0 = Math.max(0, times.length - 4);
     const dt = times[i1]! - times[i0]!;
     if (dt < 8) return 0;
-
-    let vel = 0;
     if (xs.length === times.length) {
       // Drag right → scroll decreases.
-      vel = (-(xs[i1]! - xs[i0]!) / dt) * 1000;
-    } else {
-      vel = ((scrolls[i1]! - scrolls[i0]!) / dt) * 1000;
+      return -(xs[i1]! - xs[i0]!) / dt;
     }
-
-    // If the pointer slowed before release, keep a residual from full gesture.
-    const fullDt = times[i1]! - times[0]!;
-    if (fullDt >= 16 && Math.abs(vel) < COAST_STOP_PX * 2) {
-      const fullTravel =
-        xs.length === times.length
-          ? -(xs[i1]! - xs[0]!)
-          : scrolls[i1]! - scrolls[0]!;
-      if (Math.abs(fullTravel) > 28) {
-        vel = Math.sign(fullTravel) * Math.min(640, 160 + Math.abs(fullTravel) * 2.4);
-      }
-    }
-
-    if (this.#isDesktop()) vel *= COAST_DESKTOP_BOOST;
-    return Math.max(-AUTO_VEL_MAX, Math.min(AUTO_VEL_MAX, vel));
+    return (scrolls[i1]! - scrolls[i0]!) / dt;
   }
 
+  #nearestIndexAtScroll(scrollLeft: number) {
+    if (!this.#track) return this.#active;
+    const viewW = this.#viewW() || this.#track.clientWidth;
+    const center = scrollLeft + viewW / 2;
+    let best = this.#active;
+    let bestDist = Infinity;
+    this.#track.querySelectorAll<HTMLElement>("[data-slide]").forEach((slide) => {
+      const mid = slide.offsetLeft + slide.offsetWidth / 2;
+      const dist = Math.abs(mid - center);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = Number(slide.dataset.slide);
+      }
+    });
+    return Number.isFinite(best) ? best : 0;
+  }
+
+  /** Ease-out glide to the projected slide after release. */
   #handoffSwipe() {
     if (!this.#track) return;
     this.#stopAutoplay();
     this.#stopCoast();
+    this.#cancelScrollAnimation();
     this.#refreshLoopMetrics();
-
-    let vel = this.#releaseCoastVelocity();
-    this.#scrollPx = this.#scrollPx || this.#readScroll();
-    this.#writeScroll(this.#scrollPx);
 
     if (this.#userPauseTimer) {
       window.clearTimeout(this.#userPauseTimer);
       this.#userPauseTimer = null;
     }
-    // Hold autoplay while coasting; resume after a short rest.
     this.#userPaused = true;
     this.#syncAutoPause();
 
-    if (this.#reduced || Math.abs(vel) < COAST_STOP_PX) {
-      this.#normalizeLoop();
+    const velocity = this.#releaseVelocity();
+    const sample = this.#slideEl(this.#active);
+    const slideW =
+      sample?.offsetWidth || Math.max(120, this.#viewW() * 0.62);
+    const travel = Math.max(
+      -slideW * SWIPE_MAX_SLIDES,
+      Math.min(slideW * SWIPE_MAX_SLIDES, velocity * SWIPE_TAU_MS),
+    );
+    const from = this.#readScroll();
+    const targetIndex = this.#nearestIndexAtScroll(from + travel);
+    const targetSlide = this.#slideEl(targetIndex);
+    if (!targetSlide) {
+      this.#pauseForUser();
+      return;
+    }
+    const targetLeft = this.#wrapScrollLeft(this.#slideScrollLeft(targetSlide));
+    const delta = this.#shortestDelta(from, targetLeft);
+
+    if (this.#reduced || Math.abs(delta) < 0.75) {
+      this.#setScrollLeft(targetLeft);
+      this.#active = targetIndex;
+      this.#targetIndex = targetIndex;
       this.#updateChrome();
       this.#syncPlayback();
+      this.#syncFocus();
       this.#pauseForUser();
       return;
     }
 
-    this.#coasting = true;
-    let last = performance.now();
-    const step = (now: number) => {
-      if (!this.#coasting) return;
-      const dt = Math.min(0.048, (now - last) / 1000);
-      last = now;
-      vel *= Math.exp(-COAST_DECAY * dt);
-      if (Math.abs(vel) < COAST_STOP_PX) {
-        this.#coastRaf = null;
-        this.#coasting = false;
-        this.#normalizeLoop();
-        this.#updateChrome();
-        this.#syncPlayback();
-        if (this.#isDesktop()) this.#syncFocus(now);
-        this.#pauseForUser();
-        return;
-      }
-      this.#scrollPx += vel * dt;
-      this.#setScrollLeft(this.#scrollPx);
-      if (this.#isDesktop()) this.#syncFocus(now, dt * 1000);
-      this.#coastRaf = window.requestAnimationFrame(step);
-    };
-    this.#coastRaf = window.requestAnimationFrame(step);
+    const duration =
+      Math.abs(velocity) > SWIPE_FLICK_VEL
+        ? Math.min(
+            SWIPE_MAX_MS,
+            Math.max(
+              SWIPE_MIN_MS,
+              (2.55 * Math.abs(delta)) / Math.max(Math.abs(velocity), 0.08),
+            ),
+          )
+        : Math.min(560, Math.max(300, 240 + Math.abs(delta) * 0.55));
+
+    this.#animateScrollTo(targetLeft, duration, targetIndex, easeOutCubic);
+    this.#pauseForUser();
   }
 
   #onPointerDown = (event: PointerEvent) => {
