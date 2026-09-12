@@ -19,11 +19,11 @@ const USER_PAUSE_MS = 4200;
 const AUTO_VEL_BLEND_MS = 1680;
 const AUTO_VEL_MAX = 980;
 /** Swipe coast decay (1/s) — higher = shorter glide. */
-const COAST_DECAY = 2.15;
+const COAST_DECAY = 1.85;
 /** End coast when speed drops below this (px/s). */
-const COAST_STOP_PX = 14;
-/** Desktop mouse releases often damp to ~0 — boost residual glide. */
-const COAST_DESKTOP_BOOST = 1.55;
+const COAST_STOP_PX = 12;
+/** Desktop mouse releases damp hard — boost residual glide. */
+const COAST_DESKTOP_BOOST = 1.85;
 const FOCUS_GLIDE_MS = 2800;
 /** Time constant for hover scroll pursuit — higher = softer glide. */
 const HOVER_SCROLL_TAU_MS = 920;
@@ -420,6 +420,7 @@ export class AhMediaCarousel extends ElementBase {
   #dragStartScroll = 0;
   #dragTimes: number[] = [];
   #dragScrolls: number[] = [];
+  #dragClientXs: number[] = [];
   #android: boolean | null = null;
   #autoVel = 0;
   #scrollPx = 0;
@@ -763,7 +764,9 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   #shiftScroll() {
-    return !this.#isDesktop();
+    // Always GPU-translate. Native scrollLeft drops desktop momentum frames,
+    // so drag-release coast never felt on desktop.
+    return true;
   }
 
   #viewW() {
@@ -773,22 +776,15 @@ export class AhMediaCarousel extends ElementBase {
 
   #readScroll() {
     if (!this.#track) return 0;
-    return this.#shiftScroll() ? this.#scrollPx : this.#track.scrollLeft;
+    return this.#scrollPx;
   }
 
   #writeScroll(px: number) {
     if (!this.#track) return;
     this.#scrollPx = px;
-    if (this.#shiftScroll()) {
-      this.#track.classList.add("is-shift");
-      this.#track.style.transform = `translate3d(${(-px).toFixed(2)}px, 0, 0)`;
-      return;
-    }
-    this.#track.classList.remove("is-shift");
-    this.#track.style.transform = "";
-    if (Math.abs(this.#track.scrollLeft - px) >= 0.05) {
-      this.#track.scrollLeft = px;
-    }
+    this.#track.classList.add("is-shift");
+    if (this.#track.scrollLeft !== 0) this.#track.scrollLeft = 0;
+    this.#track.style.transform = `translate3d(${(-px).toFixed(2)}px, 0, 0)`;
   }
 
   #isAndroid() {
@@ -945,31 +941,38 @@ export class AhMediaCarousel extends ElementBase {
     this.#coasting = false;
   }
 
-  #releaseVelocity() {
-    const times = this.#dragTimes;
-    const scrolls = this.#dragScrolls;
-    if (times.length < 2) return 0;
-    const dt = times[times.length - 1]! - times[0]!;
-    if (dt < 12) return 0;
-    return (scrolls[scrolls.length - 1]! - scrolls[0]!) / dt;
-  }
-
-  /** Prefer recent samples so a slowed mouse release still keeps momentum. */
+  /** Prefer pointer travel — scrollLeft samples go dead on desktop mouse-up. */
   #releaseCoastVelocity() {
     const times = this.#dragTimes;
     const scrolls = this.#dragScrolls;
+    const xs = this.#dragClientXs;
     if (times.length < 2) return 0;
 
-    const full = this.#releaseVelocity() * 1000;
     const i1 = times.length - 1;
-    const i0 = Math.max(0, times.length - 3);
-    const recentDt = times[i1]! - times[i0]!;
-    const recent =
-      recentDt >= 8
-        ? ((scrolls[i1]! - scrolls[i0]!) / recentDt) * 1000
-        : full;
+    const i0 = Math.max(0, times.length - 4);
+    const dt = times[i1]! - times[i0]!;
+    if (dt < 8) return 0;
 
-    let vel = Math.abs(recent) > Math.abs(full) * 0.55 ? recent : full;
+    let vel = 0;
+    if (xs.length === times.length) {
+      // Drag right → scroll decreases.
+      vel = (-(xs[i1]! - xs[i0]!) / dt) * 1000;
+    } else {
+      vel = ((scrolls[i1]! - scrolls[i0]!) / dt) * 1000;
+    }
+
+    // If the pointer slowed before release, keep a residual from full gesture.
+    const fullDt = times[i1]! - times[0]!;
+    if (fullDt >= 16 && Math.abs(vel) < COAST_STOP_PX * 2) {
+      const fullTravel =
+        xs.length === times.length
+          ? -(xs[i1]! - xs[0]!)
+          : scrolls[i1]! - scrolls[0]!;
+      if (Math.abs(fullTravel) > 28) {
+        vel = Math.sign(fullTravel) * Math.min(640, 160 + Math.abs(fullTravel) * 2.4);
+      }
+    }
+
     if (this.#isDesktop()) vel *= COAST_DESKTOP_BOOST;
     return Math.max(-AUTO_VEL_MAX, Math.min(AUTO_VEL_MAX, vel));
   }
@@ -981,7 +984,8 @@ export class AhMediaCarousel extends ElementBase {
     this.#refreshLoopMetrics();
 
     let vel = this.#releaseCoastVelocity();
-    this.#scrollPx = this.#readScroll();
+    this.#scrollPx = this.#scrollPx || this.#readScroll();
+    this.#writeScroll(this.#scrollPx);
 
     if (this.#userPauseTimer) {
       window.clearTimeout(this.#userPauseTimer);
@@ -1002,6 +1006,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#coasting = true;
     let last = performance.now();
     const step = (now: number) => {
+      if (!this.#coasting) return;
       const dt = Math.min(0.048, (now - last) / 1000);
       last = now;
       vel *= Math.exp(-COAST_DECAY * dt);
@@ -1047,6 +1052,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#refreshLoopMetrics();
     this.#dragTimes = [performance.now()];
     this.#dragScrolls = [this.#scrollPx];
+    this.#dragClientXs = [event.clientX];
     this.#syncAutoPause();
   };
 
@@ -1071,7 +1077,8 @@ export class AhMediaCarousel extends ElementBase {
       this.#dragMoved = true;
       this.#track.classList.add("is-dragging");
       this.#track.style.touchAction = "none";
-      if (event.pointerType === "touch") this.#bindWindowDrag(true);
+      // Window listeners so release/move still fire if the cursor leaves the track.
+      this.#bindWindowDrag(true);
       if (
         event.pointerType !== "touch" &&
         !this.#track.hasPointerCapture(event.pointerId)
@@ -1088,15 +1095,11 @@ export class AhMediaCarousel extends ElementBase {
       0,
       Math.min(maxLeft, this.#dragStartScroll - dx),
     );
-    this.#sampleDrag(this.#scrollPx);
-    if (this.#shiftScroll()) {
-      this.#pendingPx = this.#scrollPx;
-      if (!this.#dragRaf) {
-        this.#dragRaf = window.requestAnimationFrame(this.#flushDrag);
-      }
-      return;
+    this.#sampleDrag(this.#scrollPx, event.clientX);
+    this.#pendingPx = this.#scrollPx;
+    if (!this.#dragRaf) {
+      this.#dragRaf = window.requestAnimationFrame(this.#flushDrag);
     }
-    this.#writeScroll(this.#scrollPx);
   };
 
   #flushDrag = () => {
@@ -1153,16 +1156,18 @@ export class AhMediaCarousel extends ElementBase {
     }
   }
 
-  #sampleDrag(scrollLeft: number) {
+  #sampleDrag(scrollLeft: number, clientX: number) {
     const now = performance.now();
     this.#dragTimes.push(now);
     this.#dragScrolls.push(scrollLeft);
+    this.#dragClientXs.push(clientX);
     while (
       this.#dragTimes.length > 1 &&
       now - this.#dragTimes[0]! > SWIPE_SAMPLE_MS
     ) {
       this.#dragTimes.shift();
       this.#dragScrolls.shift();
+      this.#dragClientXs.shift();
     }
   }
 
