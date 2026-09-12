@@ -930,9 +930,11 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   #cancelScrollAnimation() {
-    if (!this.#scrollRaf) return;
-    window.cancelAnimationFrame(this.#scrollRaf);
-    this.#scrollRaf = null;
+    if (this.#scrollRaf) {
+      window.cancelAnimationFrame(this.#scrollRaf);
+      this.#scrollRaf = null;
+    }
+    this.#coasting = false;
     this.#syncAutoPause();
   }
 
@@ -978,12 +980,17 @@ export class AhMediaCarousel extends ElementBase {
     return Number.isFinite(best) ? best : 0;
   }
 
-  /** Ease-out glide to the projected slide after release. */
+  /**
+   * Ease-out glide shared by phone + desktop. Desktop mice usually decelerate
+   * to ~0 before mouseup, so we keep residual travel from the gesture itself.
+   */
   #handoffSwipe() {
     if (!this.#track) return;
     this.#stopAutoplay();
     this.#stopCoast();
     this.#cancelScrollAnimation();
+    // Desktop focus loop was fighting the glide every frame.
+    if (this.#isDesktop()) this.#stopMotion();
     this.#refreshLoopMetrics();
 
     if (this.#userPauseTimer) {
@@ -997,27 +1004,46 @@ export class AhMediaCarousel extends ElementBase {
     const sample = this.#slideEl(this.#active);
     const slideW =
       sample?.offsetWidth || Math.max(120, this.#viewW() * 0.62);
-    const travel = Math.max(
+    let travel = velocity * SWIPE_TAU_MS;
+
+    // Mice settle before release — harvest leftover displacement from the drag.
+    if (Math.abs(travel) < slideW * 0.08 && this.#dragClientXs.length >= 2) {
+      const gesture =
+        this.#dragClientXs[this.#dragClientXs.length - 1]! -
+        this.#dragClientXs[0]!;
+      travel = -gesture * (this.#isDesktop() ? 0.55 : 0.4);
+    }
+
+    travel = Math.max(
       -slideW * SWIPE_MAX_SLIDES,
-      Math.min(slideW * SWIPE_MAX_SLIDES, velocity * SWIPE_TAU_MS),
+      Math.min(slideW * SWIPE_MAX_SLIDES, travel),
     );
+
     const from = this.#readScroll();
     const targetIndex = this.#nearestIndexAtScroll(from + travel);
     const targetSlide = this.#slideEl(targetIndex);
     if (!targetSlide) {
+      if (this.#isDesktop()) this.#startMotion();
       this.#pauseForUser();
       return;
     }
     const targetLeft = this.#wrapScrollLeft(this.#slideScrollLeft(targetSlide));
     const delta = this.#shortestDelta(from, targetLeft);
 
-    if (this.#reduced || Math.abs(delta) < 0.75) {
-      this.#setScrollLeft(targetLeft);
+    // Still ease a pure momentum coast when already near the snap target.
+    if (Math.abs(delta) < 0.75) {
+      if (Math.abs(travel) > 10) {
+        this.#animateGlide(from + travel, Math.min(SWIPE_MAX_MS, 480), targetIndex);
+        this.#pauseForUser();
+        return;
+      }
+      this.#writeScroll(targetLeft);
       this.#active = targetIndex;
       this.#targetIndex = targetIndex;
       this.#updateChrome();
       this.#syncPlayback();
       this.#syncFocus();
+      if (this.#isDesktop()) this.#startMotion();
       this.#pauseForUser();
       return;
     }
@@ -1031,10 +1057,52 @@ export class AhMediaCarousel extends ElementBase {
               (2.55 * Math.abs(delta)) / Math.max(Math.abs(velocity), 0.08),
             ),
           )
-        : Math.min(560, Math.max(300, 240 + Math.abs(delta) * 0.55));
+        : Math.min(640, Math.max(360, 280 + Math.abs(delta) * 0.6));
 
-    this.#animateScrollTo(targetLeft, duration, targetIndex, easeOutCubic);
+    this.#animateGlide(targetLeft, duration, targetIndex);
     this.#pauseForUser();
+  }
+
+  /** Ease-out write to a scroll position, then resume desktop focus motion. */
+  #animateGlide(targetLeft: number, duration: number, targetIndex: number) {
+    if (this.#scrollRaf) window.cancelAnimationFrame(this.#scrollRaf);
+    const start = this.#readScroll();
+    const delta = this.#shortestDelta(start, targetLeft);
+    if (Math.abs(delta) < 0.5) {
+      this.#writeScroll(targetLeft);
+      this.#active = targetIndex;
+      this.#targetIndex = targetIndex;
+      this.#updateChrome();
+      this.#syncPlayback();
+      this.#syncFocus();
+      if (this.#isDesktop()) this.#startMotion();
+      return;
+    }
+
+    this.#targetIndex = targetIndex;
+    this.#coasting = true;
+    const startTime = performance.now();
+    const step = (now: number) => {
+      const t = Math.min(1, (now - startTime) / Math.max(duration, 1));
+      const eased = easeOutCubic(t);
+      this.#writeScroll(start + delta * eased);
+      if (this.#isDesktop()) this.#syncFocus(now, 16);
+      if (t < 1) {
+        this.#scrollRaf = window.requestAnimationFrame(step);
+        return;
+      }
+      this.#writeScroll(start + delta);
+      this.#normalizeLoop();
+      this.#scrollRaf = null;
+      this.#coasting = false;
+      this.#active = targetIndex;
+      this.#targetIndex = targetIndex;
+      this.#syncFocus(now);
+      this.#updateChrome();
+      this.#syncPlayback();
+      if (this.#isDesktop()) this.#startMotion();
+    };
+    this.#scrollRaf = window.requestAnimationFrame(step);
   }
 
   #onPointerDown = (event: PointerEvent) => {
@@ -1086,20 +1154,15 @@ export class AhMediaCarousel extends ElementBase {
       this.#dragMoved = true;
       this.#track.classList.add("is-dragging");
       this.#track.style.touchAction = "none";
-      // Window listeners so release/move still fire if the cursor leaves the track.
+      // Window listeners for mouse + touch — avoid setPointerCapture, which can
+      // synthesize cancel/up races on desktop and kill the release glide.
       this.#bindWindowDrag(true);
-      if (
-        event.pointerType !== "touch" &&
-        !this.#track.hasPointerCapture(event.pointerId)
-      ) {
-        this.#track.setPointerCapture(event.pointerId);
-      }
     }
 
     if (this.#dragAxis !== "x") return;
     if (event.cancelable) event.preventDefault();
 
-    const maxLeft = this.#loopMax || this.#maxScroll();
+    const maxLeft = Math.max(this.#loopMax || 0, this.#maxScroll());
     this.#scrollPx = Math.max(
       0,
       Math.min(maxLeft, this.#dragStartScroll - dx),
@@ -1134,9 +1197,6 @@ export class AhMediaCarousel extends ElementBase {
     this.#track?.classList.remove("is-dragging");
     if (this.#track) this.#track.style.touchAction = "";
     this.#bindWindowDrag(false);
-    if (this.#track?.hasPointerCapture(event.pointerId)) {
-      this.#track.releasePointerCapture(event.pointerId);
-    }
 
     if (wasDrag) this.#suppressClick = true;
     if (wasDrag && axis === "x") {
@@ -1223,20 +1283,15 @@ export class AhMediaCarousel extends ElementBase {
     this.#stopAutoplay();
     if (this.#items.length < 2) return;
     this.#syncAutoPause();
-    // Phones: only run while visible — stop the rAF when paused so logos
-    // don't stack perpetual loops across every gallery on the page.
+    // Stop the rAF while paused on every pointer — a spinning paused loop on
+    // desktop was overlapping release glides.
     if (this.#autoPaused) return;
     this.#autoVel = 0;
     this.#lastAutoNow = performance.now();
-    const coarse = window.matchMedia("(pointer: coarse)").matches;
     const tick = (now: number) => {
       this.#syncAutoPause();
-      if (this.#autoPaused || !this.#track) {
-        if (coarse) {
-          this.#autoRaf = 0;
-          return;
-        }
-        this.#autoRaf = window.requestAnimationFrame(tick);
+      if (this.#autoPaused || !this.#track || this.#coasting) {
+        this.#autoRaf = 0;
         return;
       }
       this.#autoRaf = window.requestAnimationFrame(tick);
@@ -1628,20 +1683,20 @@ export class AhMediaCarousel extends ElementBase {
     }
   }
 
-  #closestSlideMid(index: number, trackRect: DOMRect) {
+  #closestSlideMid(index: number, _trackRect: DOMRect) {
     const physical = this.#track.querySelectorAll<HTMLElement>(
       `[data-slide="${index}"]`,
     );
-    let bestMid = 0;
+    // Use the viewport center — track getBoundingClientRect is already
+    // shifted by the GPU translate, so offsetLeft - scrollPx double-counts.
+    const view = this.#track.parentElement?.getBoundingClientRect();
+    const centerX = view ? view.left + view.width / 2 : 0;
+    let bestMid = centerX;
     let bestDist = Infinity;
     physical.forEach((slide) => {
-      const mid =
-        trackRect.left +
-        (slide.offsetLeft - this.#readScroll()) +
-        slide.offsetWidth / 2;
-      const dist = Math.abs(
-        mid - (trackRect.left + trackRect.width / 2),
-      );
+      const rect = slide.getBoundingClientRect();
+      const mid = rect.left + rect.width / 2;
+      const dist = Math.abs(mid - centerX);
       if (dist < bestDist) {
         bestDist = dist;
         bestMid = mid;
