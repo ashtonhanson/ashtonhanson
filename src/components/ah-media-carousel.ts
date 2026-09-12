@@ -19,9 +19,11 @@ const USER_PAUSE_MS = 4200;
 const AUTO_VEL_BLEND_MS = 1680;
 const AUTO_VEL_MAX = 980;
 /** Swipe coast decay (1/s) — higher = shorter glide. */
-const COAST_DECAY = 3.05;
+const COAST_DECAY = 2.15;
 /** End coast when speed drops below this (px/s). */
-const COAST_STOP_PX = 22;
+const COAST_STOP_PX = 14;
+/** Desktop mouse releases often damp to ~0 — boost residual glide. */
+const COAST_DESKTOP_BOOST = 1.55;
 const FOCUS_GLIDE_MS = 2800;
 /** Time constant for hover scroll pursuit — higher = softer glide. */
 const HOVER_SCROLL_TAU_MS = 920;
@@ -422,6 +424,7 @@ export class AhMediaCarousel extends ElementBase {
   #autoVel = 0;
   #scrollPx = 0;
   #coastRaf: number | null = null;
+  #coasting = false;
   #windowDrag = false;
   #suppressClick = false;
   #pointerId = -1;
@@ -648,9 +651,11 @@ export class AhMediaCarousel extends ElementBase {
 
   #onScroll = () => {
     if (this.#shiftScroll()) return;
-    if (this.#loopAdjusting || this.#scrollFrame) return;
+    // Native scrollLeft fires async — ignore while we own the glide.
+    if (this.#loopAdjusting || this.#coasting || this.#scrollFrame) return;
     this.#scrollFrame = window.requestAnimationFrame(() => {
       this.#scrollFrame = null;
+      if (this.#coasting || this.#loopAdjusting) return;
       this.#normalizeLoop();
       this.#syncFocus();
     });
@@ -933,9 +938,89 @@ export class AhMediaCarousel extends ElementBase {
   }
 
   #stopCoast() {
-    if (!this.#coastRaf) return;
-    window.cancelAnimationFrame(this.#coastRaf);
-    this.#coastRaf = null;
+    if (this.#coastRaf) {
+      window.cancelAnimationFrame(this.#coastRaf);
+      this.#coastRaf = null;
+    }
+    this.#coasting = false;
+  }
+
+  #releaseVelocity() {
+    const times = this.#dragTimes;
+    const scrolls = this.#dragScrolls;
+    if (times.length < 2) return 0;
+    const dt = times[times.length - 1]! - times[0]!;
+    if (dt < 12) return 0;
+    return (scrolls[scrolls.length - 1]! - scrolls[0]!) / dt;
+  }
+
+  /** Prefer recent samples so a slowed mouse release still keeps momentum. */
+  #releaseCoastVelocity() {
+    const times = this.#dragTimes;
+    const scrolls = this.#dragScrolls;
+    if (times.length < 2) return 0;
+
+    const full = this.#releaseVelocity() * 1000;
+    const i1 = times.length - 1;
+    const i0 = Math.max(0, times.length - 3);
+    const recentDt = times[i1]! - times[i0]!;
+    const recent =
+      recentDt >= 8
+        ? ((scrolls[i1]! - scrolls[i0]!) / recentDt) * 1000
+        : full;
+
+    let vel = Math.abs(recent) > Math.abs(full) * 0.55 ? recent : full;
+    if (this.#isDesktop()) vel *= COAST_DESKTOP_BOOST;
+    return Math.max(-AUTO_VEL_MAX, Math.min(AUTO_VEL_MAX, vel));
+  }
+
+  #handoffSwipe() {
+    if (!this.#track) return;
+    this.#stopAutoplay();
+    this.#stopCoast();
+    this.#refreshLoopMetrics();
+
+    let vel = this.#releaseCoastVelocity();
+    this.#scrollPx = this.#readScroll();
+
+    if (this.#userPauseTimer) {
+      window.clearTimeout(this.#userPauseTimer);
+      this.#userPauseTimer = null;
+    }
+    // Hold autoplay while coasting; resume after a short rest.
+    this.#userPaused = true;
+    this.#syncAutoPause();
+
+    if (this.#reduced || Math.abs(vel) < COAST_STOP_PX) {
+      this.#normalizeLoop();
+      this.#updateChrome();
+      this.#syncPlayback();
+      this.#pauseForUser();
+      return;
+    }
+
+    this.#coasting = true;
+    let last = performance.now();
+    const step = (now: number) => {
+      const dt = Math.min(0.048, (now - last) / 1000);
+      last = now;
+      vel *= Math.exp(-COAST_DECAY * dt);
+      if (Math.abs(vel) < COAST_STOP_PX) {
+        this.#coastRaf = null;
+        this.#coasting = false;
+        this.#normalizeLoop();
+        this.#updateChrome();
+        this.#syncPlayback();
+        if (this.#isDesktop()) this.#syncFocus(now);
+        this.#pauseForUser();
+        return;
+      }
+      this.#scrollPx += vel * dt;
+      this.#setScrollLeft(this.#scrollPx);
+      if (this.#isDesktop()) this.#syncFocus(now, dt * 1000);
+      this.#coastRaf = window.requestAnimationFrame(step);
+    };
+    this.#coastRaf = window.requestAnimationFrame(step);
   }
 
   #onPointerDown = (event: PointerEvent) => {
@@ -1079,60 +1164,6 @@ export class AhMediaCarousel extends ElementBase {
       this.#dragTimes.shift();
       this.#dragScrolls.shift();
     }
-  }
-
-  #releaseVelocity() {
-    const times = this.#dragTimes;
-    const scrolls = this.#dragScrolls;
-    if (times.length < 2) return 0;
-    const dt = times[times.length - 1]! - times[0]!;
-    if (dt < 12) return 0;
-    return (scrolls[scrolls.length - 1]! - scrolls[0]!) / dt;
-  }
-
-  #handoffSwipe() {
-    if (!this.#track) return;
-    this.#stopAutoplay();
-    this.#stopCoast();
-
-    const raw = this.#releaseVelocity() * 1000;
-    let vel = Math.max(-AUTO_VEL_MAX, Math.min(AUTO_VEL_MAX, raw));
-    this.#scrollPx = this.#readScroll();
-
-    if (this.#userPauseTimer) {
-      window.clearTimeout(this.#userPauseTimer);
-      this.#userPauseTimer = null;
-    }
-    // Hold autoplay while coasting; resume after a short rest.
-    this.#userPaused = true;
-    this.#syncAutoPause();
-
-    if (this.#reduced || Math.abs(vel) < COAST_STOP_PX) {
-      this.#normalizeLoop();
-      this.#updateChrome();
-      this.#syncPlayback();
-      this.#pauseForUser();
-      return;
-    }
-
-    let last = performance.now();
-    const step = (now: number) => {
-      const dt = Math.min(0.048, (now - last) / 1000);
-      last = now;
-      vel *= Math.exp(-COAST_DECAY * dt);
-      if (Math.abs(vel) < COAST_STOP_PX) {
-        this.#coastRaf = null;
-        this.#normalizeLoop();
-        this.#updateChrome();
-        this.#syncPlayback();
-        this.#pauseForUser();
-        return;
-      }
-      this.#scrollPx += vel * dt;
-      this.#setScrollLeft(this.#scrollPx);
-      this.#coastRaf = window.requestAnimationFrame(step);
-    };
-    this.#coastRaf = window.requestAnimationFrame(step);
   }
 
   #stopAutoplay() {
