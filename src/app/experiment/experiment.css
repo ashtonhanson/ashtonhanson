@@ -199,15 +199,13 @@
   display: inline-block;
   padding: 0.35rem 0.45rem;
   transition: color 160ms ease, opacity 160ms ease;
-  border-radius: 0.4rem;
-  background: rgb(255 255 255 / 0.22);
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
   text-shadow:
     0 0 10px rgb(255 255 255 / 0.95),
     0 0 22px rgb(255 255 255 / 0.8),
     0 0 36px rgb(255 255 255 / 0.55);
-  box-shadow:
-    0 0 18px 6px rgb(255 255 255 / 0.42),
-    0 0 36px 12px rgb(255 255 255 / 0.2);
 }
 
 .experiment-root .experiment-nav a {

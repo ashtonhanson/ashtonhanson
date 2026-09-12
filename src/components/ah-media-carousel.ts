@@ -18,6 +18,10 @@ const AUTO_PX_PER_SEC = 38;
 const USER_PAUSE_MS = 4200;
 const AUTO_VEL_BLEND_MS = 1680;
 const AUTO_VEL_MAX = 980;
+/** Swipe coast decay (1/s) — higher = shorter glide. */
+const COAST_DECAY = 3.05;
+/** End coast when speed drops below this (px/s). */
+const COAST_STOP_PX = 22;
 const FOCUS_GLIDE_MS = 2800;
 /** Time constant for hover scroll pursuit — higher = softer glide. */
 const HOVER_SCROLL_TAU_MS = 920;
@@ -417,6 +421,7 @@ export class AhMediaCarousel extends ElementBase {
   #android: boolean | null = null;
   #autoVel = 0;
   #scrollPx = 0;
+  #coastRaf: number | null = null;
   #windowDrag = false;
   #suppressClick = false;
   #pointerId = -1;
@@ -609,6 +614,7 @@ export class AhMediaCarousel extends ElementBase {
     this.#ro?.disconnect();
     this.#ro = null;
     this.#stopAutoplay();
+    this.#stopCoast();
     this.#stopMotion();
     this.#bindWindowDrag(false);
     if (this.#userPauseTimer) window.clearTimeout(this.#userPauseTimer);
@@ -926,6 +932,12 @@ export class AhMediaCarousel extends ElementBase {
     this.#syncAutoPause();
   }
 
+  #stopCoast() {
+    if (!this.#coastRaf) return;
+    window.cancelAnimationFrame(this.#coastRaf);
+    this.#coastRaf = null;
+  }
+
   #onPointerDown = (event: PointerEvent) => {
     if (event.pointerType === "mouse" && event.button !== 0) return;
     if (!this.#track) return;
@@ -934,6 +946,7 @@ export class AhMediaCarousel extends ElementBase {
     if (this.#items.length < 2) return;
 
     this.#cancelScrollAnimation();
+    this.#stopCoast();
     this.#hoverTargetIndex = -1;
     this.#hoverTargetSlide = null;
     this.#hoverScrollCarry = 0;
@@ -1031,11 +1044,12 @@ export class AhMediaCarousel extends ElementBase {
     if (wasDrag) this.#suppressClick = true;
     if (wasDrag && axis === "x") {
       this.#handoffSwipe();
+    } else {
+      this.#syncAutoPause();
+      if (!this.#autoPaused) this.#restartAutoplay();
     }
 
     this.#dragMoved = false;
-    this.#syncAutoPause();
-    if (!this.#autoPaused) this.#restartAutoplay();
   };
 
   #bindWindowDrag(on: boolean) {
@@ -1078,15 +1092,47 @@ export class AhMediaCarousel extends ElementBase {
 
   #handoffSwipe() {
     if (!this.#track) return;
+    this.#stopAutoplay();
+    this.#stopCoast();
+
     const raw = this.#releaseVelocity() * 1000;
-    const sampled = Math.max(-AUTO_VEL_MAX, Math.min(AUTO_VEL_MAX, raw));
-    this.#autoVel = sampled;
+    let vel = Math.max(-AUTO_VEL_MAX, Math.min(AUTO_VEL_MAX, raw));
     this.#scrollPx = this.#readScroll();
+
     if (this.#userPauseTimer) {
       window.clearTimeout(this.#userPauseTimer);
       this.#userPauseTimer = null;
     }
-    this.#userPaused = false;
+    // Hold autoplay while coasting; resume after a short rest.
+    this.#userPaused = true;
+    this.#syncAutoPause();
+
+    if (this.#reduced || Math.abs(vel) < COAST_STOP_PX) {
+      this.#normalizeLoop();
+      this.#updateChrome();
+      this.#syncPlayback();
+      this.#pauseForUser();
+      return;
+    }
+
+    let last = performance.now();
+    const step = (now: number) => {
+      const dt = Math.min(0.048, (now - last) / 1000);
+      last = now;
+      vel *= Math.exp(-COAST_DECAY * dt);
+      if (Math.abs(vel) < COAST_STOP_PX) {
+        this.#coastRaf = null;
+        this.#normalizeLoop();
+        this.#updateChrome();
+        this.#syncPlayback();
+        this.#pauseForUser();
+        return;
+      }
+      this.#scrollPx += vel * dt;
+      this.#setScrollLeft(this.#scrollPx);
+      this.#coastRaf = window.requestAnimationFrame(step);
+    };
+    this.#coastRaf = window.requestAnimationFrame(step);
   }
 
   #stopAutoplay() {
@@ -1183,6 +1229,7 @@ export class AhMediaCarousel extends ElementBase {
 
   #render() {
     this.#stopAutoplay();
+    this.#stopCoast();
     this.#cancelScrollAnimation();
     this.#mediaRatio.clear();
     this.#laidWidth = 0;
