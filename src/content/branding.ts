@@ -14,7 +14,7 @@ export const brandingCases: CaseStudy[] = [
     id: "hub-tablet",
     title: "HUB TABLET",
     subtitle: "NORWEGIAN\nTECH START-UP",
-    body: "In designing this brand I wanted to create something as clean as possible without unnecessary graphics, while still making a solid, visually appealing identity. The client wanted to stand out as modern yet classy, since this piece of tech is for the hotel guest experience. So far two hotel branches are on board, Smart Hotel and Comfort Xpress, with beta testing under way, and we have also received a grant from Innovasjon Norge, a Norwegian federal grant institution. This is a fun piece of work in progress!",
+    body: "In designing this brand Ashton Hanson wanted to create something as clean as possible without unnecessary graphics, while still making a solid, visually appealing identity. The client wanted to stand out as modern yet classy, since this piece of tech is for the hotel guest experience. So far two hotel branches are on board, Smart Hotel and Comfort Xpress, with beta testing under way, and we have also received a grant from Innovasjon Norge, a Norwegian federal grant institution. This is a fun piece of work in progress!",
     sections: [
       {
         heading: "OLD HUB TABLET LAYOUT",
@@ -65,7 +65,7 @@ export const brandingCases: CaseStudy[] = [
     id: "wagyu-yume",
     title: "WAGYU YUME",
     subtitle: "JAPANESE FOOD TRUCK",
-    body: "This client was looking for something fun yet professional, in an effort to follow a popular illustrated, cartoonish branding style in the advertising market. The client has been very pleased with the logo and the vehicle wrap so far. I will continue to assist them with branding.",
+    body: "This client was looking for something fun yet professional, in an effort to follow a popular illustrated, cartoonish branding style in the advertising market. The client has been very pleased with the logo and the vehicle wrap so far. Ashton Hanson will continue to assist them with branding.",
     media: [
       {
         src: "/branding/wagyu-yume/logo.jpg",

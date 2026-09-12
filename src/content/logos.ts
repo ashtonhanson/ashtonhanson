@@ -1,12 +1,12 @@
 import type { CaseStudy } from "@/content/types";
 
 export const logosIntro =
-  "A logo is the cornerstone of any brand’s identity, a visual symbol that embodies its essence and makes a memorable impact. I specialize in designing logos that are not only visually striking but also deeply meaningful. By combining thoughtful typography, unique design elements, and a strategic approach, I create logos that capture the heart of your brand and leave a lasting impression on your audience.";
+  "A logo is the cornerstone of any brand’s identity, a visual symbol that embodies its essence and makes a memorable impact. Ashton Hanson specializes in designing logos that are not only visually striking but also deeply meaningful. By combining thoughtful typography, unique design elements, and a strategic approach, Ashton Hanson creates logos that capture the heart of your brand and leave a lasting impression on your audience.";
 
 /** Sentence-length segments so the intro can wrap like a normal paragraph. */
 export const logosIntroLines = [
   "A logo is the cornerstone of any brand’s identity, a visual symbol that embodies its essence and makes a memorable impact.",
-  "I specialize in designing logos that are not only visually striking but also deeply meaningful. By combining thoughtful typography, unique design elements, and a strategic approach, I create logos that capture the heart of your brand and leave a lasting impression on your audience.",
+  "Ashton Hanson specializes in designing logos that are not only visually striking but also deeply meaningful. By combining thoughtful typography, unique design elements, and a strategic approach, Ashton Hanson creates logos that capture the heart of your brand and leave a lasting impression on your audience.",
 ] as const;
 
 export const logoCases: CaseStudy[] = [
@@ -26,7 +26,7 @@ export const logoCases: CaseStudy[] = [
     id: "red-rover",
     title: "RED ROVER",
     subtitle: "DOG OBEDIENCE\nTRAINING",
-    body: "I was asked to design a logo for their dog training business. They wanted something professional that would depict a solid, dependable organization people could trust. Red was chosen as the main color to convey a serious yet professional presence. The client was extremely happy with the final result. They have become a popular dog training business in town, with a 5-star rating and over 211 positive reviews.",
+    body: "Ashton Hanson was asked to design a logo for their dog training business. They wanted something professional that would depict a solid, dependable organization people could trust. Red was chosen as the main color to convey a serious yet professional presence. The client was extremely happy with the final result. They have become a popular dog training business in town, with a 5-star rating and over 211 positive reviews.",
     media: [
       {
         src: "/logos/red-rover.jpeg",
