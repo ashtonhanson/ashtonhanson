@@ -149,6 +149,10 @@
 }
 
 .experiment-root .experiment-chrome {
+  /* Shared edge inset so the logo and menu toggle mirror each other. */
+  --chrome-inline: clamp(1rem, 3.2vw, 2rem);
+  --chrome-inline-start: max(var(--chrome-inline), env(safe-area-inset-left));
+  --chrome-inline-end: max(var(--chrome-inline), env(safe-area-inset-right));
   position: sticky;
   top: 0;
   z-index: 200;
@@ -166,14 +170,32 @@
   align-items: center;
   justify-content: flex-start;
   gap: 1.25rem;
-  padding: 0.85rem 1.25rem;
+  padding-block: max(0.85rem, env(safe-area-inset-top)) 0.85rem;
+  padding-inline: var(--chrome-inline-start) var(--chrome-inline-end);
   background: transparent;
 }
 
-@media (max-width: 767px) {
-  .experiment-root .experiment-header {
-    justify-content: flex-end;
-  }
+.experiment-root .experiment-brand {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-start;
+  width: 44px;
+  height: 44px;
+  border-radius: 0.5rem;
+  color: var(--logo-blue);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.experiment-root .experiment-brand-mark {
+  display: block;
+  width: auto;
+  height: 40px;
+  /* The SVG's art sits ~6.7px in from its left edge and ~1px high in its
+     viewBox — nudge it so its visible edge matches the toggle's bars. */
+  transform: translate(3.3px, 0.9px);
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .experiment-root .experiment-nav {
@@ -222,94 +244,126 @@
   font-weight: 800;
 }
 
-.experiment-root .experiment-burger {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.experiment-root .menu-toggle {
+  display: inline-grid;
   flex-shrink: 0;
-  width: 2.85rem;
-  height: 2.85rem;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-inline-start: auto;
   padding: 0;
   border: 0;
+  border-radius: 0.5rem;
   background: transparent;
+  color: var(--logo-blue);
   cursor: pointer;
   pointer-events: auto;
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  color: var(--logo-blue);
   filter: drop-shadow(0 0 10px rgb(255 255 255 / 0.9))
     drop-shadow(0 0 22px rgb(255 255 255 / 0.55));
 }
 
-.experiment-root .experiment-burger-mark {
+.experiment-root .menu-toggle:focus-visible,
+.experiment-root .experiment-brand:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
+.experiment-root .menu-toggle__icon {
+  position: relative;
   display: block;
-  width: 1.85rem;
-  height: auto;
-  overflow: visible;
-  transform-origin: 50% 58%;
+  width: 24px;
+  height: 24px;
 }
 
-.experiment-root .experiment-burger-outline {
-  stroke: currentColor;
-  stroke-width: 12;
-  stroke-linejoin: round;
-  stroke-linecap: round;
+/* Bars sit as outlines while closed; ink fills them bottom-to-top on open. */
+.experiment-root .menu-toggle__icon > span {
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 24px;
+  height: 4px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1.5px currentColor;
+  transform-origin: center;
+  transition:
+    transform 240ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 160ms ease;
 }
 
-.experiment-root .experiment-burger-fill {
-  fill: currentColor;
-  /* Drained — ink sits below the mark until open. */
+.experiment-root .menu-toggle__icon > span::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
   clip-path: inset(100% 0 0 0);
-  transition: clip-path 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: clip-path 380ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.experiment-root .experiment-burger.is-open .experiment-burger-fill {
-  /* Fills upward like ink rising into the A. */
+.experiment-root .menu-toggle__icon > span:nth-child(1) {
+  transform: translateY(-7px);
+}
+
+.experiment-root .menu-toggle__icon > span:nth-child(2) {
+  transform: scaleX(1);
+}
+
+.experiment-root .menu-toggle__icon > span:nth-child(3) {
+  transform: translateY(7px);
+}
+
+/* Drain top-down on close. */
+.experiment-root .menu-toggle__icon > span:nth-child(2)::before {
+  transition-delay: 60ms;
+}
+
+.experiment-root .menu-toggle__icon > span:nth-child(3)::before {
+  transition-delay: 120ms;
+}
+
+.experiment-root .menu-toggle[aria-expanded="true"] .menu-toggle__icon > span:nth-child(1) {
+  transform: translateY(0) rotate(45deg);
+}
+
+.experiment-root .menu-toggle[aria-expanded="true"] .menu-toggle__icon > span:nth-child(2) {
+  transform: scaleX(0);
+  opacity: 0;
+}
+
+.experiment-root .menu-toggle[aria-expanded="true"] .menu-toggle__icon > span:nth-child(3) {
+  transform: translateY(0) rotate(-45deg);
+}
+
+/* Fill bottom-up on open, like ink rising into the mark. */
+.experiment-root .menu-toggle[aria-expanded="true"] .menu-toggle__icon > span::before {
   clip-path: inset(0 0 0 0);
   transition-duration: 560ms;
   transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.experiment-root .experiment-burger:not(.is-open) .experiment-burger-fill {
-  /* Slightly quicker drain on close. */
-  transition-duration: 380ms;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+.experiment-root .menu-toggle[aria-expanded="true"] .menu-toggle__icon > span:nth-child(3)::before {
+  transition-delay: 0ms;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .experiment-root .experiment-burger:hover .experiment-burger-mark {
-    animation: experiment-burger-hover 1.85s ease-in-out infinite;
-  }
-
-  .experiment-root .experiment-burger.is-open:hover .experiment-burger-mark {
-    animation-duration: 2.4s;
-  }
+.experiment-root .menu-toggle[aria-expanded="true"] .menu-toggle__icon > span:nth-child(2)::before {
+  transition-delay: 90ms;
 }
 
-@keyframes experiment-burger-hover {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-  40% {
-    transform: translate3d(0, -0.28rem, 0);
-  }
-  70% {
-    transform: translate3d(0, 0.14rem, 0);
-  }
+.experiment-root .menu-toggle[aria-expanded="true"] .menu-toggle__icon > span:nth-child(1)::before {
+  transition-delay: 180ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .experiment-root .experiment-burger-fill {
+  .experiment-root .menu-toggle[aria-expanded] .menu-toggle__icon > span:nth-child(n),
+  .experiment-root .menu-toggle[aria-expanded] .menu-toggle__icon > span:nth-child(n)::before {
     transition: none;
-  }
-
-  .experiment-root .experiment-burger:hover .experiment-burger-mark {
-    animation: none;
   }
 }
 
 @media (min-width: 768px) {
-  .experiment-root .experiment-burger {
+  .experiment-root .menu-toggle {
     display: none;
   }
 }
@@ -334,8 +388,12 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 0.35rem;
-  padding: 0.15rem 1.25rem 1rem;
+  padding: 0.15rem var(--chrome-inline-end) 1rem;
   background: transparent;
+}
+
+.experiment-root .experiment-nav-mobile[hidden] {
+  display: none;
 }
 
 @keyframes experiment-nav-parallax-in {

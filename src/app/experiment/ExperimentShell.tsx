@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SkyClouds } from "@/components/SkyClouds";
@@ -12,9 +18,10 @@ const experimentNav = [
   { href: "/contact", label: "CONTACT" },
 ] as const;
 
-/** Upright mark arrow — reads as an A. */
-const LOGO_ARROW_PATH =
-  "M130.3,48.8L48.9,217.3c-3.9,6.2,5.5,12.9,12.3,7.8l70.9-52.2c2.2-1.5,5.2-1.5,7.4,0l70.9,52.2c6.8,5.2,16-2.3,13.2-7.4l-82.3-169C139.3,44.3,132.5,44.3,130.3,48.8z";
+const MENU_ID = "experiment-mobile-nav";
+const DESKTOP_QUERY = "(min-width: 768px)";
+/** Finalized AH / bow-tie mark — transparent SVG supplied by Ashton. */
+const BRAND_LOGO_SRC = "/AH%20logo/AH%20logo-01.svg";
 
 function isActive(href: string, pathname: string) {
   if (href === "/") return pathname === "/";
@@ -23,7 +30,19 @@ function isActive(href: string, pathname: string) {
 
 export function ExperimentShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+  // Remember which route opened the menu — navigating anywhere closes it.
+  const [openPath, setOpenPath] = useState<string | null>(null);
+  const open = openPath === pathname;
+  const toggleRef = useRef<HTMLButtonElement>(null);
+
+  /** Single source of truth for the menu — every open/close goes through here. */
+  const setMenuOpen = useCallback(
+    (next: boolean, { restoreFocus = false } = {}) => {
+      setOpenPath(next ? pathname : null);
+      if (restoreFocus) toggleRef.current?.focus();
+    },
+    [pathname],
+  );
 
   useEffect(() => {
     document.documentElement.classList.add("is-logo-study");
@@ -33,8 +52,21 @@ export function ExperimentShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false, { restoreFocus: true });
+    };
+    const desktop = window.matchMedia(DESKTOP_QUERY);
+    const onBreakpoint = (event: MediaQueryListEvent) => {
+      if (event.matches) setMenuOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    desktop.addEventListener("change", onBreakpoint);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      desktop.removeEventListener("change", onBreakpoint);
+    };
+  }, [open, setMenuOpen]);
 
   return (
     <div className="experiment-root">
@@ -44,6 +76,21 @@ export function ExperimentShell({ children }: { children: React.ReactNode }) {
       </div>
       <div className="experiment-chrome">
         <header className="experiment-header">
+          <Link
+            href="/"
+            className="experiment-brand"
+            aria-label="Ashton Hanson — Home"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- static SVG keeps its own transparency */}
+            <img
+              className="experiment-brand-mark"
+              src={BRAND_LOGO_SRC}
+              alt=""
+              width={269}
+              height={283}
+              decoding="async"
+            />
+          </Link>
           <nav className="experiment-nav" aria-label="Primary">
             {experimentNav.map((link) => (
               <Link
@@ -56,49 +103,40 @@ export function ExperimentShell({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
           <button
+            ref={toggleRef}
             type="button"
-            className={`experiment-burger${open ? " is-open" : ""}`}
+            className="menu-toggle"
+            aria-controls={MENU_ID}
             aria-expanded={open}
-            aria-controls="experiment-mobile-nav"
             aria-label={open ? "Close menu" : "Open menu"}
-            onClick={() => setOpen((value) => !value)}
+            onClick={() => setMenuOpen(!open)}
           >
-            <svg
-              className="experiment-burger-mark"
-              viewBox="48 44 176 182"
-              aria-hidden="true"
-            >
-              <path
-                className="experiment-burger-fill"
-                d={LOGO_ARROW_PATH}
-              />
-              <path
-                className="experiment-burger-outline"
-                d={LOGO_ARROW_PATH}
-                fill="none"
-              />
-            </svg>
+            <span className="menu-toggle__icon" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </span>
           </button>
         </header>
-        {open ? (
-          <nav
-            id="experiment-mobile-nav"
-            className="experiment-nav-mobile"
-            aria-label="Primary"
-          >
-            {experimentNav.map((link, index) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={isActive(link.href, pathname) ? "is-active" : undefined}
-                style={{ "--nav-i": index } as CSSProperties}
-                onClick={() => setOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-        ) : null}
+        <nav
+          id={MENU_ID}
+          className={`experiment-nav-mobile${open ? " is-open" : ""}`}
+          aria-label="Primary"
+          hidden={!open}
+          inert={!open}
+        >
+          {experimentNav.map((link, index) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={isActive(link.href, pathname) ? "is-active" : undefined}
+              style={{ "--nav-i": index } as CSSProperties}
+              onClick={() => setMenuOpen(false)}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
       </div>
       {children}
     </div>
